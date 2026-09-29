@@ -392,7 +392,7 @@ const store = {
 const S = {
   tab: 'feed', prevTab: 'feed', session: null, me: null,
   tricks: [], clips: [], myVotes: new Set(), myLikes: new Set(), totd: null,
-  landed: new Set(),        // trick ids I've been verified on (my Trick Book)
+  landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
@@ -427,13 +427,16 @@ const trickById = id => S.tricks.find(t => t.id === id) || {id, name: id, catego
 const sportOf = t => SPORTS[t.sport] ? t.sport : 'ski';
 const tricksFor = (sport, cat) => S.tricks.filter(t => sportOf(t) === sport && (!cat || t.category === cat));
 const basePoints = (trickId, grab) => Math.round(trickById(trickId).pts * (grab && grab !== 'No grab' ? 1.2 : 1));
-// One and done: a trick pays only the first time it's verified (rules live in supabase/004_no_farming.sql).
+// What a clip would pay you. Mirrors resolve_clip() in supabase/006_grab_points.sql:
+// new trick = full points; new grab on a trick you have = just the grab (20% of base); exact repeat = 0.
 function payout(trickId, grab){
-  const base = basePoints(trickId, grab), totd = trickId === S.totd;
-  if (!S.landed.has(trickId)) return {pts: base * (totd ? 2 : 1), fresh: true,
-    why: totd ? '🆕 New trick + 🔥 Trick of the Day: 2×' : '🆕 New trick! Full points'};
-  if (totd) return {pts: base, fresh: false, why: 'Already landed, but it\'s the Trick of the Day: pays once today'};
-  return {pts: 0, fresh: false, why: '✓ Already in your Trick Book. Repeats pay 0.'};
+  const base = trickById(trickId).pts, totd = trickId === S.totd, x = totd ? 2 : 1, grabbed = grab && grab !== 'No grab';
+  const grabs = S.landed.get(trickId);
+  if (!grabs) return {pts: Math.round(base * (grabbed ? 1.2 : 1) * x),
+    why: totd ? '🆕 New trick + 🔥 Trick of the Day: 2×' : grabbed ? '🆕 New trick! Grab adds 20%' : '🆕 New trick! Full points'};
+  if (grabbed && !grabs.has(grab)) return {pts: Math.round(base * .2 * x), why: `🆕 New grab! A ${grab} is worth 20% of the trick`};
+  if (totd) return {pts: base, why: 'Already landed, but it\'s the Trick of the Day: pays once today'};
+  return {pts: 0, why: grabbed ? `✓ You've landed this with a ${grab}. Try a new grab for points.` : '✓ Already in your Trick Book. Add a grab for points.'};
 }
 const videoUrl = path => db.storage.from('clips').getPublicUrl(path).data.publicUrl;
 const winChance = (me, them) => Math.round(100 / (1 + Math.pow(10, (them - me) / 400)));
@@ -537,10 +540,13 @@ async function loadAll(){
   S.duels = mustOk(duels).map(d => ({...d, other: d.challenger === myId() ? d.op : d.ch}));
   noticeResults(before);
 }
-// Every trick someone has been verified on: their Trick Book.
+// Every trick someone has been verified on, and which grabs they've done it with: their Trick Book.
+// Returns a Map of trick id -> Set of grabs.
 async function landedTricks(userId){
-  const rows = mustOk(await db.from('clips').select('trick_id').eq('user_id', userId).eq('status', 'verified'));
-  return new Set(rows.map(r => r.trick_id));
+  const rows = mustOk(await db.from('clips').select('trick_id, grab').eq('user_id', userId).eq('status', 'verified'));
+  const book = new Map();
+  for (const r of rows){ if (!book.has(r.trick_id)) book.set(r.trick_id, new Set()); book.get(r.trick_id).add(r.grab); }
+  return book;
 }
 async function loadBook(id, name){
   S.book = {id, name, landed: await landedTricks(id), sport: (S.book && S.book.id === id && S.book.sport) || S.sport};
@@ -874,7 +880,8 @@ const views = {
           const got = B.landed.has(t.id);
           return `<div class="book-row ${got ? 'done' : ''}">
             <span class="check ${got ? 'on' : ''}" aria-label="${got ? 'Landed' : 'Not yet'}">${got ? '✓' : ''}</span>
-            <div><b>${esc(t.name)}</b>${t.id === S.totd ? ' <span class="pill totd">🔥 Today 2×</span>' : ''}<div class="hint mono">${t.pts} pts</div></div>
+            <div><b>${esc(t.name)}</b>${t.id === S.totd ? ' <span class="pill totd">🔥 Today 2×</span>' : ''}<div class="hint mono">${t.pts} pts${
+              got ? ` · grabs: ${[...B.landed.get(t.id)].filter(g => g !== 'No grab').map(esc).join(', ') || 'none yet'} (+${Math.round(t.pts * .2)} each new one)` : ''}</div></div>
             ${mine && !got ? `<button class="btn small" data-act="book-record" data-id="${t.id}">🎥 Try it</button>` : `<span class="hint">${got ? 'Landed' : ''}</span>`}
           </div>`;
         }).join('')}</div>`;

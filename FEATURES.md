@@ -25,8 +25,8 @@ points, every ski trick with a grab totals about 1,070, so Legend means landing 
 - Each trick has a base value, e.g. 180 = 10, 540 = 35, Cork 720 = 70, Double Cork 1080 = 120.
 - A grab adds 20%.
 - Categories: Park, Rails, Pipe, Moguls, Backcountry.
-- **One and done:** a trick pays only the first time it's verified, so nobody can farm 180s. Repeats still show in
-  the feed but pay 0. Exception: a repeat of the Trick of the Day pays normal points once that day.
+- **One and done:** a trick pays only the first time it's verified, so nobody can farm 180s. Landing it later with a
+  *new grab* pays just the grab (20% of the trick). Exact repeats still show in the feed but pay 0. Exception: a repeat of the Trick of the Day pays normal points once that day.
 - **Trick Book:** a checklist of every trick (ski and snowboard) showing which ones you've landed.
 
 ### Duel rank ✅
@@ -79,6 +79,7 @@ Behind the scenes:
 | Skiing alone, phone in pocket | ❌ | ✅ personal stats only, no rank points |
 
 ## Ideas for later
+- **Trick tips:** a short "how to land it" guide on each trick in the Trick Book, for riders who keep bailing it.
 - **Trick of the Day**: a daily challenge trick for bonus points.
 - **Feed** with likes and comments ✅ (basic feed is in).
 - **Skill brackets** so beginners compete with beginners, which also means fewer people getting hurt chasing points.
