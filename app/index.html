@@ -222,7 +222,8 @@ select:focus,input:focus{border-color:var(--ice)}
 .stat b{display:block;font-family:var(--display);font-weight:900;font-size:30px;line-height:1;font-style:italic}
 .stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
 .medals{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.medals .card{padding:12px;display:flex;gap:10px;align-items:center}
+.medals .card{padding:14px 10px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+.medals .rank-word{white-space:nowrap}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .tile{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;padding:0;cursor:pointer}
 .tile video{width:100%;height:100%;object-fit:cover;display:block}
@@ -257,7 +258,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .cam-empty .big-cam svg{width:44px;height:44px;stroke:var(--accent-ink);fill:none;stroke-width:2.2}
 
 /* ---------- judge reel (swipe up) ---------- */
-.reel{height:calc(100dvh - 150px);overflow-y:auto;scroll-snap-type:y mandatory;margin-inline:-16px;
+.reel{height:calc(100dvh - 196px - env(safe-area-inset-bottom,0px));overflow-y:auto;scroll-snap-type:y mandatory;margin-inline:-16px;
   scrollbar-width:none;overscroll-behavior:contain}
 .reel::-webkit-scrollbar{display:none}
 .reel-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
@@ -304,6 +305,35 @@ select:focus,input:focus{border-color:var(--ice)}
 .friend{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
 .friend:first-child{border-top:0}
 .friend .acts{display:flex;gap:6px}
+
+/* ---------- mountain conditions ---------- */
+.wx{padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center}
+.wx .now{font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;line-height:1}
+.wx .snow{text-align:right}
+.wx .snow b{display:block;font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;line-height:1;color:var(--ice);text-shadow:0 0 14px rgba(92,225,255,.4)}
+.wx .days{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wx .day{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px}
+.wx .day .ico{font-size:20px;line-height:1.3}
+
+/* ---------- achievements ---------- */
+.achs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.ach{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+.ach .emb{width:54px;height:60px;display:grid;place-items:center;font-size:24px;
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  background:linear-gradient(160deg,#2B3A52,#141B27)}
+.ach.got .emb{background:linear-gradient(160deg,#FFB070,var(--accent) 55%,#9E1170)}
+.ach:not(.got){opacity:.4}
+.ach:not(.got) .emb{filter:grayscale(1)}
+.ach b{font-size:11px;line-height:1.15}
+.ach span{font-size:10px;color:var(--muted);line-height:1.2}
+
+/* trick book: category ring + grab chips */
+.ring{--p:0;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:800;font-family:var(--mono);
+  background:conic-gradient(var(--good) calc(var(--p) * 1%), var(--raise) 0)}
+.ring i{width:26px;height:26px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-style:normal}
+.chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--good-soft);color:var(--good);border:1px solid rgba(59,224,138,.35)}
+.chip.next{background:none;color:var(--muted);border:1px dashed var(--line)}
 
 /* tab bar */
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(10,13,19,.85);
@@ -391,7 +421,7 @@ const store = {
 };
 const S = {
   tab: 'feed', prevTab: 'feed', session: null, me: null,
-  tricks: [], clips: [], myVotes: new Set(), myLikes: new Set(), totd: null,
+  tricks: [], clips: [], myVotes: new Set(), myLikes: new Set(), totd: null, wx: null,
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
@@ -440,6 +470,76 @@ function payout(trickId, grab){
 }
 const videoUrl = path => db.storage.from('clips').getPublicUrl(path).data.publicUrl;
 const winChance = (me, them) => Math.round(100 / (1 + Math.pow(10, (them - me) / 400)));
+// Each rider gets their own avatar colour, picked from their username.
+function avStyle(name){
+  let h = 0; for (const ch of String(name || '')) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return `style="background:linear-gradient(135deg,hsl(${h} 70% 48%),hsl(${(h + 50) % 360} 65% 30%));color:#fff;border-color:transparent"`;
+}
+
+// ---------- mountain conditions (Open-Meteo: free, no account needed) ----------
+const RESORT_GEO = {
+  'Eldora': [39.9372, -105.5827], 'Winter Park': [39.8868, -105.7625], 'Copper': [39.5022, -106.1511],
+  'Arapahoe Basin': [39.6425, -105.8719], 'Breckenridge': [39.4817, -106.0384], 'Keystone': [39.6045, -105.9540],
+};
+const WX_ICON = c => c === 0 ? '☀️' : c <= 2 ? '🌤️' : c === 3 ? '☁️' : c <= 48 ? '🌫️' : c <= 67 ? '🌧️'
+  : c <= 77 ? '🌨️' : c <= 82 ? '🌦️' : c <= 86 ? '🌨️' : '⛈️';
+async function loadWeather(){
+  const resort = S.me && S.me.home_resort, geo = RESORT_GEO[resort];
+  if (!geo){ S.wx = null; return; }
+  const key = 'wx-' + resort, cached = store.get(key, null);
+  if (cached){ try { const c = JSON.parse(cached); if (Date.now() - c.at < 30 * 60000){ S.wx = c; return; } } catch (e) {} }
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${geo[0]}&longitude=${geo[1]}` +
+      '&current=temperature_2m,wind_speed_10m,weather_code&daily=snowfall_sum,temperature_2m_max,temperature_2m_min,weather_code' +
+      '&past_days=1&forecast_days=4&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FDenver';
+    const r = await fetch(url); if (!r.ok) return;
+    const j = await r.json();
+    S.wx = {at: Date.now(), resort, current: j.current, daily: j.daily};
+    store.set(key, JSON.stringify(S.wx));
+  } catch (e) { /* no signal on the hill: just skip the card */ }
+}
+function wxCard(){
+  if (!S.me.home_resort) return `<button class="card wx" data-act="tab" data-tab="ranks" style="width:100%;text-align:left;cursor:pointer">
+    <div><div class="label">Mountain conditions</div><div class="hint">Set your home mountain on the Ranks tab to see snow and weather here.</div></div>
+    <span style="font-size:26px">🏔️</span></button>`;
+  const W = S.wx; if (!W || W.resort !== S.me.home_resort) return '';
+  const d = W.daily, fresh = (d.snowfall_sum[0] || 0) + (d.snowfall_sum[1] || 0);  // yesterday + today
+  const day = i => new Date(d.time[i] + 'T12:00').toLocaleDateString('en-US', {weekday: 'short'});
+  return `<section class="card wx">
+    <div><div class="label">${esc(W.resort)} · now</div>
+      <div class="now">${WX_ICON(W.current.weather_code)} ${Math.round(W.current.temperature_2m)}°</div>
+      <div class="hint">Wind ${Math.round(W.current.wind_speed_10m)} mph</div></div>
+    <div class="snow"><b>${fresh >= 0.1 ? fresh.toFixed(1) : '0'}″</b><span class="hint">new snow, 2 days</span></div>
+    <div class="days">${[2, 3, 4].map(i => `<div class="day"><div class="label">${day(i)}</div><div class="ico">${WX_ICON(d.weather_code[i])}</div>
+      <div class="mono">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</div>
+      ${d.snowfall_sum[i] >= 0.1 ? `<div style="color:var(--ice);font-weight:700">❄ ${d.snowfall_sum[i].toFixed(1)}″</div>` : ''}</div>`).join('')}</div>
+  </section>`;
+}
+
+// ---------- achievements: badges earned from a rider's Trick Book ----------
+const hasName = (L, re) => [...L.keys()].filter(id => re.test(trickById(id).name)).length;
+const inCat = (L, cat) => [...L.keys()].filter(id => trickById(id).category === cat).length;
+const ACHIEVEMENTS = [
+  {icon: '🎿', name: 'First Send',    desc: 'Land any trick',        test: L => L.size >= 1},
+  {icon: '🌀', name: 'Spin Cycle',    desc: '3 spins',               test: L => hasName(L, /\b(180|360|540|720|900|1080)\b/) >= 3},
+  {icon: '🔁', name: 'Switch Hitter', desc: '3 switch tricks',       test: L => hasName(L, /Switch|Cab/) >= 3},
+  {icon: '🛤️', name: 'Rail Rat',      desc: '5 rail tricks',         test: L => inCat(L, 'Rails') >= 5},
+  {icon: '🙃', name: 'Upside Down',   desc: 'Any flip',              test: L => hasName(L, /flip|Rodeo|Misty|McTwist|Flair/i) >= 1},
+  {icon: '🍾', name: 'Corkscrew',     desc: 'Any cork',              test: L => hasName(L, /Cork/) >= 1},
+  {icon: '🤏', name: 'Grab Bag',      desc: '4 different grabs',     test: L => new Set([...L.values()].flatMap(s => [...s]).filter(g => g !== 'No grab')).size >= 4},
+  {icon: '🌙', name: 'Pipe Dream',    desc: '2 pipe tricks',         test: L => inCat(L, 'Pipe') >= 2},
+  {icon: '🏔️', name: 'Off Piste',     desc: 'A backcountry trick',   test: L => inCat(L, 'Backcountry') >= 1},
+  {icon: '💥', name: 'Big Air',       desc: 'A 100+ point trick',    test: L => [...L.keys()].some(id => trickById(id).pts >= 100)},
+  {icon: '🤝', name: 'Both Worlds',   desc: 'Ski and snowboard',     test: L => new Set([...L.keys()].map(id => sportOf(trickById(id)))).size === 2},
+  {icon: '📖', name: 'Bookworm',      desc: 'Half your Trick Book',  test: L => Object.keys(SPORTS).some(sp => {
+    const all = tricksFor(sp); return all.length && all.filter(t => L.has(t.id)).length >= all.length / 2; })},
+];
+function achievementsHtml(L){
+  const got = ACHIEVEMENTS.filter(a => a.test(L)).length;
+  return `<div class="row" style="margin-bottom:10px"><div class="label">Achievements</div><span class="hint mono">${got}/${ACHIEVEMENTS.length}</span></div>
+  <div class="achs">${ACHIEVEMENTS.map(a => { const on = a.test(L); return `<div class="ach ${on ? 'got' : ''}" title="${esc(a.desc)}">
+    <div class="emb">${a.icon}</div><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></div>`; }).join('')}</div>`;
+}
 
 // Minutes until midnight in Denver, when the Trick of the Day changes.
 function totdResetsIn(){
@@ -556,12 +656,13 @@ async function loadBoard(){
   S.board.rows = mustOk(await db.rpc('leaderboard', {p_period: S.board.period, p_resort: S.board.resort || null, p_ids: ids}));
 }
 async function loadProfile(id){
-  const [p, clips] = await Promise.all([
+  const [p, clips, landed] = await Promise.all([
     db.from('profiles').select('*').eq('id', id).single(),
     db.from('clips').select(CLIP_SELECT).eq('user_id', id).order('created_at', {ascending: false}).limit(60),
+    landedTricks(id),
   ]);
   const all = mustOk(clips);
-  S.profile = {id, data: mustOk(p), clips: id === myId() ? all : all.filter(c => c.status === 'verified')};
+  S.profile = {id, data: mustOk(p), landed, clips: id === myId() ? all : all.filter(c => c.status === 'verified')};
 }
 async function loadComments(clipId){
   S.comments[clipId] = mustOk(await db.from('comments').select('id, body, created_at, user_id, profiles(username)')
@@ -582,7 +683,8 @@ function noticeResults(before){
       const name = trickById(c.trick_id).name;
       if (c.status === 'verified'){
         const a = rankInfo(before ? before.points : 0, TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
-        toast(a.label !== b.label ? `🏅 Rank up! ${b.label}` : `✅ Verified! ${name} earned +${c.points_awarded} pts`, 4500);
+        if (a.label !== b.label) showRankUp(b);
+        else toast(c.points_awarded ? `✅ Verified! ${name} earned +${c.points_awarded} pts` : `✅ Verified! ${name} (repeat, no new points)`, 4500);
       } else toast(`The community didn't verify your ${name}`, 4500);
     }
   }
@@ -618,7 +720,7 @@ function clipCard(c){
   const liked = S.myLikes.has(c.id), open = S.openComments === c.id;
   return `<article class="card" id="clip-${c.id}">
     <div class="card-head">
-      <button class="avatar linkname ${mine ? 'you' : ''}" data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
+      <button class="avatar linkname ${mine ? 'you' : ''}" ${mine ? '' : avStyle(who)} data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
       <div class="who"><div class="name"><button class="linkname" data-act="profile" data-id="${c.user_id}">${esc(who)}</button>
         ${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
         <div class="meta">${esc(c.resort || '')} · ${ago(c.created_at)} ago</div></div>
@@ -724,7 +826,7 @@ const views = {
   feed(){
     // Other people's clips only show here once verified, so judging stays anonymous.
     const clips = S.clips.filter(c => c.status === 'verified' || c.user_id === myId());
-    return `${rankHero()}${totdCard()}
+    return `${rankHero()}${wxCard()}${totdCard()}
       <div class="stack">${clips.length ? clips.map(clipCard).join('')
         : `<div class="card empty"><strong>No clips yet</strong>Verified tricks show up here. Be the first.</div>`}</div>`;
   },
@@ -785,13 +887,14 @@ const views = {
         const myL = d.challenger === myId() ? d.letters_challenger : d.letters_opponent;
         const theirL = d.challenger === myId() ? d.letters_opponent : d.letters_challenger;
         return `<button class="duel-row" data-act="open-duel" data-id="${d.id}">
-          <div class="avatar">${esc(initials(d.other.username))}</div>
+          <div class="avatar" ${avStyle(d.other.username)}>${esc(initials(d.other.username))}</div>
           <div><b>vs ${esc(d.other.username)}</b><div class="hint" style="display:flex;gap:10px;align-items:center;margin-top:4px">
             You ${lettersHtml(myL, true)} Them ${lettersHtml(theirL, true)}</div></div>
           ${d.turn === myId() ? '<span class="your-turn">Your turn</span>' : '<span class="hint">Their turn</span>'}</button>`;
       }).join('') : `<div class="empty"><strong>No duels yet</strong>Challenge a friend below.</div>`}</div>
 
     <h3>Friends</h3>
+    <button class="btn small" style="margin-bottom:10px" data-act="invite">📨 Invite friends to Sendit</button>
     <form class="inline-form" id="friend-search">
       <input id="friend-q" placeholder="Find riders by username" value="${esc(S.search.q)}" autocomplete="off" aria-label="Search usernames">
       <button class="btn small" type="submit">Search</button></form>
@@ -807,7 +910,7 @@ const views = {
     ${done.length ? `<h3>Recent duels</h3><div class="card"><ul class="board">${done.map(d => {
         const won = d.winner === myId();
         return `<li data-act="open-duel" data-id="${d.id}"><span class="n">${won ? 'W' : 'L'}</span>
-          <div class="avatar">${esc(initials(d.other.username))}</div>
+          <div class="avatar" ${avStyle(d.other.username)}>${esc(initials(d.other.username))}</div>
           <div><b>${esc(d.other.username)}</b><div class="hint">${won ? 'You won' : 'You lost'}</div></div>
           <span class="score" style="color:var(--${won ? 'good' : 'bad'})">${won ? '+' : '−'}${d.rating_change || 0}</span></li>`;
       }).join('')}</ul></div>` : ''}`;
@@ -824,7 +927,7 @@ const views = {
     </div>
     <button class="card book-link" data-act="book" data-id="${me.id}" data-name="${esc(me.username)}">
       <span style="font-size:30px">📖</span>
-      <div style="flex:1"><div class="label">Trick Book</div><div class="hint">Your checklist of every trick. Each one pays once.</div></div>
+      <div style="flex:1"><div class="label">Trick Book</div><div class="hint">Your checklist of every trick and the grabs you've done on each.</div></div>
       <span class="count t-gold rank-word">${S.landed.size}/${S.tricks.length}</span></button>
     <h3>The road to Legend</h3>
     ${ladder(me.points, TRICK_TIERS)}
@@ -864,7 +967,7 @@ const views = {
     const banked = done.reduce((n, t) => n + t.pts, 0);
     return `<button class="linkish back" data-act="book-back">← Back</button>
     <h2>${mine ? 'Your' : esc(B.name) + '’s'} Trick Book</h2>
-    <p class="sub">Every trick pays once, the first time it's verified. Tick them all off to climb.</p>
+    <p class="sub">A trick pays full points the first time it's verified, and each new grab on it adds a little more. Tick them all off to climb.</p>
     ${sportSwitch(B.sport, 'book-sport')}
     <section class="card me-card" style="margin-top:14px">
       <div class="row"><span class="rank-word t-gold" style="font-size:40px">${done.length} / ${all.length}</span>
@@ -875,14 +978,15 @@ const views = {
     <div class="stack" style="margin-top:14px">${SPORTS[B.sport].cats.map(cat => {
       const list = tricksFor(B.sport, cat); if (!list.length) return '';
       const n = list.filter(t => B.landed.has(t.id)).length;
-      return `<div class="card"><div class="book-cat"><span class="label">${cat}</span><span class="hint mono">${n}/${list.length}</span></div>
+      return `<div class="card"><div class="book-cat"><span class="label">${cat}</span><span class="ring" style="--p:${Math.round(n / list.length * 100)}" aria-label="${n} of ${list.length}"><i>${n}/${list.length}</i></span></div>
         ${list.map(t => {
           const got = B.landed.has(t.id);
           return `<div class="book-row ${got ? 'done' : ''}">
             <span class="check ${got ? 'on' : ''}" aria-label="${got ? 'Landed' : 'Not yet'}">${got ? '✓' : ''}</span>
-            <div><b>${esc(t.name)}</b>${t.id === S.totd ? ' <span class="pill totd">🔥 Today 2×</span>' : ''}<div class="hint mono">${t.pts} pts${
-              got ? ` · grabs: ${[...B.landed.get(t.id)].filter(g => g !== 'No grab').map(esc).join(', ') || 'none yet'} (+${Math.round(t.pts * .2)} each new one)` : ''}</div></div>
-            ${mine && !got ? `<button class="btn small" data-act="book-record" data-id="${t.id}">🎥 Try it</button>` : `<span class="hint">${got ? 'Landed' : ''}</span>`}
+            <div><b>${esc(t.name)}</b>${t.id === S.totd ? ' <span class="pill totd">🔥 Today 2×</span>' : ''}<div class="hint mono">${t.pts} pts</div>${got ? `<div class="chips">${
+              [...B.landed.get(t.id)].filter(g => g !== 'No grab').map(g => `<span class="chip">${esc(g)}</span>`).join('')}${
+              mine ? `<span class="chip next">+${Math.round(t.pts * .2)} per new grab</span>` : ''}</div>` : ''}</div>
+            ${mine && !got ? `<button class="btn small" data-act="book-record" data-id="${t.id}">🎥 Try it</button>` : ''}
           </div>`;
         }).join('')}</div>`;
     }).join('')}</div>`;
@@ -912,6 +1016,7 @@ const views = {
       <div class="card">${badgeSVG(tr.tier.key, 44, tr.div)}<div><div class="label">Tricks</div>${rankWord(tr, 22)}</div></div>
       <div class="card">${badgeSVG(dr.tier.key, 44, dr.div)}<div><div class="label">Duels</div>${rankWord(dr, 22)}</div></div>
     </div>
+    ${achievementsHtml(P.landed || new Map())}
     <button class="btn" style="width:100%;margin-bottom:16px" data-act="book" data-id="${u.id}" data-name="${esc(u.username)}">📖 ${mine ? 'My' : esc(u.username) + '’s'} Trick Book</button>
     ${best ? `<div class="label" style="margin-bottom:8px">Best trick · <span style="color:var(--accent)">${esc(trickById(best.trick_id).name)} +${best.points_awarded}</span></div>` : ''}
     <div class="label" style="margin-block:14px 8px">${mine ? 'Your clips' : 'Verified clips'}</div>
@@ -939,7 +1044,7 @@ function friendRow(p, kind){
       : f.incoming ? `<button class="btn small good" data-act="accept-friend" data-id="${p.id}">Accept</button>` : '<span class="hint">Sent</span>';
   }
   return `<div class="friend">
-    <button class="avatar linkname" data-act="profile" data-id="${p.id}" aria-label="${esc(p.username)}'s profile">${esc(initials(p.username))}</button>
+    <button class="avatar linkname" ${avStyle(p.username)} data-act="profile" data-id="${p.id}" aria-label="${esc(p.username)}'s profile">${esc(initials(p.username))}</button>
     <div><b>${esc(p.username)}</b><div class="hint">${esc(rankInfo(p.rating, TIERS).label)} · ${p.rating}${kind === 'friend' ? ` · ${winChance(S.me.rating, p.rating)}% win chance` : ''}</div></div>
     <div class="acts">${acts}</div></div>`;
 }
@@ -1211,6 +1316,16 @@ function showSplash(){
   </div>`;
   setTimeout(closeSplash, 2800);
 }
+// A short, calm celebration when you move up a rank or division.
+function showRankUp(r){
+  $('overlay').innerHTML = `<div class="splash" id="splash" data-act="close-splash" style="--splash-c:${BADGE[r.tier.key][1]}66">
+    <div class="label" style="color:var(--accent-hot)">Rank up</div>
+    ${badgeSVG(r.tier.key, 170, r.div, {glow: true})}
+    ${rankWord(r, 60)}
+    <div class="hint" style="margin-top:14px">Tap to keep riding</div></div>`;
+  if (navigator.vibrate) navigator.vibrate(60);
+  setTimeout(closeSplash, 3500);
+}
 function closeSplash(){
   const s = $('splash'); if (!s) return;
   s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; }, 350);
@@ -1219,6 +1334,7 @@ function closeSplash(){
 async function refresh(force = false){
   try {
     await loadAll();
+    await loadWeather();
     if (S.tab === 'ranks') await loadBoard();
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
     if (S.tab === 'duels' && S.duelId) await loadDuelMoves(S.duelId);
@@ -1460,6 +1576,13 @@ document.addEventListener('click', async e => {
       S.tab = 'book'; S.book = null; render(true); window.scrollTo(0, 0);
       try { await loadBook(id, b.dataset.name); } catch (err){ toast(err.message); }
       return render(true);
+    case 'invite': {
+      const url = location.origin + location.pathname, text = `Come duel me on Sendit. I'm ${S.me.username}.`;
+      if (navigator.share){ try { await navigator.share({title: 'Sendit', text, url}); } catch (e) {} return; }
+      try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Invite link copied. Paste it to your friends.'); }
+      catch (e) { toast(url, 6000); }
+      return;
+    }
     case 'book-back': return openTab(S.bookBack || 'ranks');
     case 'book-sport': S.book.sport = b.dataset.k; return render(true);
     case 'book-record': S.postPreset = id; S.sport = sportOf(trickById(id)); store.set('sport', S.sport); return openTab('record');
