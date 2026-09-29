@@ -22,7 +22,9 @@ Every verified trick adds points. Reach a points total and you rank up.
 - Each trick has a base value, e.g. 180 = 10, 540 = 35, Cork 720 = 70, Double Cork 1080 = 120.
 - A grab adds 20%.
 - Categories: Park, Rails, Pipe, Moguls, Backcountry.
-- *Possible later fix:* landing the same trick again earns less, so people can't farm 180s.
+- **One and done:** a trick pays only the first time it's verified, so nobody can farm 180s. Repeats still show in
+  the feed but pay 0. Exception: a repeat of the Trick of the Day pays normal points once that day.
+- **Trick Book:** a checklist of every trick (ski and snowboard) showing which ones you've landed.
 
 ### Duel rank ✅
 Based on your duel wins and losses, using the chess rating system (ELO).
