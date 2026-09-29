@@ -2,6 +2,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#06080C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sendit">
 <title>Sendit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -367,7 +374,10 @@ select:focus,input:focus{border-color:var(--ice)}
 <div class="app">
   <header class="top">
     <div class="brand">Send<span>it</span></div>
-    <button class="me-chip" data-act="tab" data-tab="ranks" id="me-chip" aria-label="Your rank" hidden></button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="pill wait" id="outbox-chip" data-act="flush" hidden></button>
+      <button class="me-chip" data-act="tab" data-tab="ranks" id="me-chip" aria-label="Your rank" hidden></button>
+    </div>
   </header>
   <main id="view"><p class="sub">Loading…</p></main>
 </div>
@@ -1183,7 +1193,7 @@ function startRecording(){
   const R = S.rec, mime = pickMime();
   if (!R.stream) return;
   R.chunks = [];
-  R.recorder = new MediaRecorder(R.stream, mime ? {mimeType: mime, videoBitsPerSecond: 2500000} : undefined);
+  R.recorder = new MediaRecorder(R.stream, mime ? {mimeType: mime, videoBitsPerSecond: 1800000} : undefined);
   R.recorder.ondataavailable = e => { if (e.data && e.data.size) R.chunks.push(e.data); };
   R.recorder.onstop = () => {
     const type = (R.recorder.mimeType || mime || 'video/webm').split(';')[0];
@@ -1250,9 +1260,67 @@ function syncPost(){
   $('post-why').textContent = p.why;
 }
 
+// ---------- offline outbox ----------
+// No signal on the hill? Clips wait on the phone (in IndexedDB, the browser's own storage)
+// and upload by themselves when the connection comes back.
+const outbox = {
+  _db: null,
+  open(){
+    if (this._db) return this._db;
+    this._db = new Promise((res, rej) => {
+      const r = indexedDB.open('sendit', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('outbox', {keyPath: 'id'});
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return this._db;
+  },
+  async run(mode, fn){
+    const dbh = await this.open();
+    return new Promise((res, rej) => {
+      const tx = dbh.transaction('outbox', mode), req = fn(tx.objectStore('outbox'));
+      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
+    });
+  },
+  add(item){ return this.run('readwrite', s => s.put(item)); },
+  all(){ return this.run('readonly', s => s.getAll()); },
+  remove(id){ return this.run('readwrite', s => s.delete(id)); },
+};
+const looksOffline = err => !navigator.onLine || /fetch|network|load failed|timed? ?out/i.test(String(err && err.message));
+async function queueClip(item){
+  await outbox.add({id: crypto.randomUUID(), recordedAt: new Date().toISOString(), ...item});
+  await updateOutboxChip();
+}
+async function updateOutboxChip(){
+  let n = 0; try { n = (await outbox.all()).length; } catch (e) {}
+  const chip = $('outbox-chip'); if (!chip) return;
+  chip.hidden = !n || !S.me; chip.textContent = `📤 ${n} waiting`;
+}
+let flushing = false;
+async function flushOutbox(){
+  if (flushing || !navigator.onLine || !S.me) return;
+  flushing = true;
+  let sent = 0;
+  try {
+    for (const it of await outbox.all()){
+      try {
+        const clipId = await uploadClip(it.fields, it.blob);
+        if (it.kind === 'duel') await duelMove(it.duelId, true, it.trick, clipId);
+        await outbox.remove(it.id); sent++;
+      } catch (err){
+        if (looksOffline(err)) break;                 // still no signal: try again later
+        await outbox.remove(it.id);                   // a real error (e.g. duel moved on): don't retry forever
+        toast(`Couldn't upload a saved clip: ${err.message}`, 5000);
+      }
+    }
+  } catch (e) { /* storage unavailable (private browsing) */ }
+  flushing = false;
+  await updateOutboxChip();
+  if (sent){ toast(`📤 Uploaded ${sent} saved clip${sent > 1 ? 's' : ''}`); await refresh(); }
+}
+window.addEventListener('online', () => flushOutbox());
+
 // Upload the recorded video and create the clip. Returns the new clip's id.
-async function uploadClip(fields){
-  const blob = S.rec.blob;
+async function uploadClip(fields, blob = S.rec.blob){
   if (!blob || !blob.size) throw new Error('Nothing recorded');
   if (blob.size > MAX_MB * 1024 * 1024) throw new Error(`Video is over ${MAX_MB} MB. Record a shorter clip.`);
   const type = blob.type || 'video/webm';
@@ -1353,6 +1421,7 @@ async function openTab(tab){
 }
 
 // Check for new clips, duel moves and results every 20 s, unless you're busy.
+setInterval(() => { if (S.me && !S.busy) flushOutbox(); }, 30000);
 setInterval(() => {
   if (!S.me || S.busy || ['record', 'judge'].includes(S.tab)) return;
   const a = document.activeElement;
@@ -1433,13 +1502,23 @@ async function deleteClip(id){
 
 async function submitPost(){
   const fields = {trick_id: $('post-trick').value, grab: $('post-grab').value, resort: $('post-resort').value};
+  const blob = S.rec.blob;
   S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
   try {
-    await uploadClip(fields);
+    if (!navigator.onLine) throw new Error('offline');
+    await uploadClip(fields, blob);
     resetRecorder();
     toast('Posted. Riders are judging it now.');
     S.tab = 'feed'; await refresh(true); window.scrollTo(0, 0);
   } catch (err){
+    if (looksOffline(err) && blob){
+      try {
+        await queueClip({kind: 'post', fields, blob});
+        resetRecorder(); S.tab = 'feed'; render(true); window.scrollTo(0, 0);
+        toast("No signal. Saved on your phone, and it uploads when you're back online.", 5000);
+        return;
+      } catch (e) { /* couldn't save it either: fall through to the error */ }
+    }
     console.error(err); toast('Post failed: ' + err.message, 5000);
     b.disabled = false; b.textContent = 'Post';
   } finally { S.busy = false; }
@@ -1492,14 +1571,24 @@ function startDuelRecording(kind){
 }
 async function sendDuelClip(){
   const ctx = S.rec.context, b = $('duel-send');
+  const fields = {trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]}, blob = S.rec.blob;
   S.busy = true; b.disabled = true; b.textContent = 'Uploading…';
   try {
-    const clipId = await uploadClip({trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]});
+    if (!navigator.onLine) throw new Error('offline');
+    const clipId = await uploadClip(fields, blob);
     if (await duelMove(ctx.duelId, true, ctx.kind === 'set' ? ctx.trickId : null, clipId)){
       toast(ctx.kind === 'set' ? `Sent! ${ctx.otherName} has to match it.` : 'Matched! Their turn to set.');
       resetRecorder(); await refresh(true); await openDuel(ctx.duelId);
     } else { b.disabled = false; b.textContent = 'Landed: send it'; }
   } catch (err){
+    if (looksOffline(err) && blob){
+      try {
+        await queueClip({kind: 'duel', fields, blob, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
+        const dId = ctx.duelId; resetRecorder(); await openDuel(dId);
+        toast("No signal. Your attempt is saved and sends when you're back online.", 5000);
+        return;
+      } catch (e) { /* fall through */ }
+    }
     toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.textContent = 'Landed: send it';
   } finally { S.busy = false; }
 }
@@ -1556,6 +1645,7 @@ document.addEventListener('click', async e => {
     case 'tab': return openTab(b.dataset.tab);
     case 'authmode': S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; return render(true);
     case 'close-splash': return closeSplash();
+    case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
     case 'close-modal': $('overlay').innerHTML = ''; return;
     case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
     // judging
@@ -1657,6 +1747,9 @@ document.addEventListener('submit', async e => {
   }
 });
 
+// ---------- installable app: keep a copy on the phone so it opens with no signal ----------
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
 // ---------- snow ----------
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
   const snow = $('snow');
@@ -1675,7 +1768,7 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'feed'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'feed'; await refresh(true); if (S.me) showSplash(); }
+    if (was !== now){ S.tab = 'feed'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); } }
   }, 0);
 });
 </script>
