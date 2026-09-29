@@ -124,7 +124,7 @@ def main():
     check("5 'not landed' votes -> rejected, 0 pts", judge(post(d, plain), landed=False), ("rejected", None))
     clip = post(d, plain)
     check("4 votes is not enough weight to decide", judge(clip, who=voters[:4])[0], "pending")
-    legend = user("legend", points=1000)
+    legend = user("legend", points=1500)
     check("a Legend vote (x2.25) tips it over 5", judge(clip, who=[legend])[0], "verified")
 
     print("\n-- Security (acting as a signed-in rider) --")

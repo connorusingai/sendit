@@ -372,11 +372,11 @@ const TIERS = [
   {min:1400,name:'Platinum',key:'plat'},{min:1200,name:'Gold',key:'gold'},
   {min:1000,name:'Silver',key:'silver'},{min:0,name:'Bronze',key:'bronze'},
 ];
-// Easy to climb at first, harder at the top: each gap is 50 pts bigger than the last.
-// Keep in sync with vote_weight() in supabase/005_rank_ladder.sql.
+// Upward curve: tier n needs 50 × n × (n+1) pts, so each gap is 100 bigger than the last.
+// Keep in sync with vote_weight() in supabase/008_rank_curve.sql.
 const TRICK_TIERS = [
-  {min:1000,name:'Legend',key:'legend',w:2.25},{min:700,name:'Diamond',key:'diamond',w:2},
-  {min:450,name:'Platinum',key:'plat',w:1.75},{min:250,name:'Gold',key:'gold',w:1.5},
+  {min:1500,name:'Legend',key:'legend',w:2.25},{min:1000,name:'Diamond',key:'diamond',w:2},
+  {min:600,name:'Platinum',key:'plat',w:1.75},{min:300,name:'Gold',key:'gold',w:1.5},
   {min:100,name:'Silver',key:'silver',w:1.25},{min:0,name:'Bronze',key:'bronze',w:1},
 ];
 const trickTierOf = p => TRICK_TIERS.find(t => p >= t.min);
