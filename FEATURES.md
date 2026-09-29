@@ -10,14 +10,17 @@ There are **two separate ranks**, and both use the same medals:
 ### Trick rank ✅
 Every verified trick adds points. Reach a points total and you rank up.
 
-| Rank | Points needed |
-|---|---|
-| Bronze | 0 |
-| Silver | 500 |
-| Gold | 1,000 |
-| Platinum | 2,000 |
-| Diamond | 3,500 |
-| Legend | 5,000 |
+| Rank | Points needed | Gap |
+|---|---|---|
+| Bronze | 0 | |
+| Silver | 100 | +100 |
+| Gold | 250 | +150 |
+| Platinum | 450 | +200 |
+| Diamond | 700 | +250 |
+| Legend | 1,000 | +300 |
+
+Easy to climb at first, harder at the top: each gap is 50 points bigger than the last. With one-and-done
+points, every ski trick with a grab totals about 1,070, so Legend means landing nearly the whole Trick Book.
 
 - Each trick has a base value, e.g. 180 = 10, 540 = 35, Cork 720 = 70, Double Cork 1080 = 120.
 - A grab adds 20%.

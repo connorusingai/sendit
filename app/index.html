@@ -372,10 +372,12 @@ const TIERS = [
   {min:1400,name:'Platinum',key:'plat'},{min:1200,name:'Gold',key:'gold'},
   {min:1000,name:'Silver',key:'silver'},{min:0,name:'Bronze',key:'bronze'},
 ];
+// Easy to climb at first, harder at the top: each gap is 50 pts bigger than the last.
+// Keep in sync with vote_weight() in supabase/005_rank_ladder.sql.
 const TRICK_TIERS = [
-  {min:5000,name:'Legend',key:'legend',w:2.25},{min:3500,name:'Diamond',key:'diamond',w:2},
-  {min:2000,name:'Platinum',key:'plat',w:1.75},{min:1000,name:'Gold',key:'gold',w:1.5},
-  {min:500,name:'Silver',key:'silver',w:1.25},{min:0,name:'Bronze',key:'bronze',w:1},
+  {min:1000,name:'Legend',key:'legend',w:2.25},{min:700,name:'Diamond',key:'diamond',w:2},
+  {min:450,name:'Platinum',key:'plat',w:1.75},{min:250,name:'Gold',key:'gold',w:1.5},
+  {min:100,name:'Silver',key:'silver',w:1.25},{min:0,name:'Bronze',key:'bronze',w:1},
 ];
 const trickTierOf = p => TRICK_TIERS.find(t => p >= t.min);
 const tierOf = r => TIERS.find(t => r >= t.min);
