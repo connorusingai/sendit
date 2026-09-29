@@ -515,16 +515,22 @@ async function submitPost(){
 
 async function submitAuth(){
   const email = $('auth-email').value.trim(), password = $('auth-pass').value;
-  S.busy = true; render();
+  const username = $('auth-user') ? $('auth-user').value.trim() : '';
+  if (S.authMode === 'signup' && !/^[A-Za-z0-9_.-]{3,24}$/.test(username)){
+    toast('Username: 3–24 letters, numbers, _ . or -'); return;
+  }
+  // Only disable the button. Calling render() here would rebuild the form and empty its boxes.
+  const btn = document.querySelector('#auth-form button[type=submit]');
+  S.busy = true; btn.disabled = true;
   try {
     if (S.authMode === 'signup'){
-      const username = $('auth-user') ? $('auth-user').value.trim() : '';
       const taken = await db.from('profiles').select('id').eq('username', username).maybeSingle();
       if (taken.data){ toast('That username is taken. Try another.'); return; }
       const r = await db.auth.signUp({email, password, options: {data: {username}}});
       if (r.error) throw r.error;
       if (!r.data.session){
-        S.authMode = 'signin';
+        S.authMode = 'signin'; render();
+        $('auth-email').value = email;
         toast('Check your email and click the confirmation link, then sign in here.', 8000);
       }
     } else {
@@ -536,7 +542,10 @@ async function submitAuth(){
       : /invalid login/i.test(err.message) ? 'Wrong email or password.'
       : err.message;
     toast(msg, 5000);
-  } finally { S.busy = false; render(); }
+  } finally {
+    S.busy = false;
+    const b = document.querySelector('#auth-form button[type=submit]'); if (b) b.disabled = false;
+  }
 }
 
 document.addEventListener('click', async e => {
