@@ -46,13 +46,14 @@ a{color:var(--ice)}
 .brand{font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.5px;line-height:1;
   text-transform:uppercase;font-style:italic;transform:skewX(-6deg)}
 .brand span{color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7)}
-.me-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
-  border-radius:999px;padding:6px 12px 6px 8px;cursor:pointer}
+.me-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:3px 12px 3px 4px;cursor:pointer}
 .me-chip:hover{border-color:var(--accent)}
 .me-chip b{font-family:var(--mono);font-size:13px}
 
 h2{font-family:var(--display);font-weight:900;font-size:34px;text-transform:uppercase;letter-spacing:.3px;
   margin:8px 0 2px;line-height:1;text-wrap:balance;font-style:italic}
+h3{font-family:var(--display);font-weight:900;font-size:22px;text-transform:uppercase;font-style:italic;margin:22px 0 10px;line-height:1}
 .sub{color:var(--muted);font-size:13.5px;margin:0 0 16px}
 .stack{display:flex;flex-direction:column;gap:16px}
 .label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -60,21 +61,48 @@ h2{font-family:var(--display);font-weight:900;font-size:34px;text-transform:uppe
 .hint{font-size:12px;color:var(--muted)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
-/* rank medals: hexagons with a moving sheen */
-.sym{display:inline-block;flex:none;vertical-align:middle}
-.medal{position:relative;width:14px;height:16px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);overflow:hidden}
-.medal.big{width:44px;height:50px;filter:drop-shadow(0 0 10px rgba(255,255,255,.15))}
-.medal.big::after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.65) 50%,transparent 60%);
-  transform:translateX(-60%)}
-@media (prefers-reduced-motion:no-preference){ .medal.big::after{animation:sheen 3.2s ease-in-out infinite} }
-@keyframes sheen{0%,55%{transform:translateX(-60%)}85%,100%{transform:translateX(60%)}}
-.m-bronze{background:linear-gradient(145deg,#F0B07A,#A0592A 60%,#6A3514)}
-.m-silver{background:linear-gradient(145deg,#FFFFFF,#A9B4BF 60%,#6E7984)}
-.m-gold{background:linear-gradient(145deg,#FFE88A,#E8AE1C 60%,#9E6C00)}
-.m-plat{background:linear-gradient(145deg,#E4FFFB,#6FE0D3 60%,#2F8A80)}
-.m-diamond{background:linear-gradient(145deg,#E3F2FF,#6FB4FF 55%,#3552E6)}
-.m-legend{background:linear-gradient(145deg,#FFD0A0,#FF6B1A 50%,#C0218A)}
-.tier{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+/* ---------- rank badges (chunky, game-style) ---------- */
+.badge-svg{display:block;flex:none;overflow:visible;filter:drop-shadow(0 4px 0 rgba(0,0,0,.45))}
+.badge-svg.glow-bronze{filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 14px rgba(200,116,60,.55))}
+.badge-svg.glow-silver{filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 14px rgba(200,215,230,.5))}
+.badge-svg.glow-gold{filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 16px rgba(242,185,30,.6))}
+.badge-svg.glow-plat{filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 16px rgba(95,224,207,.6))}
+.badge-svg.glow-diamond{filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 18px rgba(98,168,255,.7))}
+.badge-svg.glow-legend{filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 20px rgba(255,107,26,.8))}
+@media (prefers-reduced-motion:no-preference){
+  .badge-svg.float{animation:float 3s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-4px) rotate(-2deg)}}
+}
+.rank-word{font-family:var(--display);font-weight:900;font-style:italic;text-transform:uppercase;line-height:.9;
+  -webkit-text-stroke:1.5px #0A0D14;paint-order:stroke fill;text-shadow:0 3px 0 #0A0D14}
+.t-bronze{color:#F2A36A} .t-silver{color:#E3EAF1} .t-gold{color:#FFD23F}
+.t-plat{color:#6FF0DE} .t-diamond{color:#8CC0FF} .t-legend{color:#FF8A3D}
+
+/* rank hero on the Feed */
+.hero{display:flex;gap:14px;align-items:center;padding:14px 16px;margin-bottom:14px;cursor:pointer;
+  background:radial-gradient(120% 120% at 0% 0%, var(--hero-c, rgba(255,107,26,.25)), transparent 60%),linear-gradient(180deg,var(--surface-2),var(--surface));
+  border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);width:100%;text-align:left}
+.hero .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+
+/* opening rank reveal */
+.splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:radial-gradient(60% 45% at 50% 42%, var(--splash-c), transparent 70%),rgba(4,6,10,.96);cursor:pointer;padding:24px;text-align:center}
+.splash .bar{width:min(280px,80vw)}
+@media (prefers-reduced-motion:no-preference){
+  .splash .badge-svg{animation:slam .7s cubic-bezier(.2,1.6,.4,1) both}
+  .splash .rank-word{animation:slam .7s .15s cubic-bezier(.2,1.6,.4,1) both}
+  .splash.out{animation:fade .35s ease-in forwards}
+  @keyframes slam{from{transform:scale(2.4) rotate(-12deg);opacity:0}}
+  @keyframes fade{to{opacity:0;visibility:hidden}}
+}
+
+/* tier ladder */
+.ladder{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px;scroll-snap-type:x mandatory}
+.rung{flex:none;width:92px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 6px}
+.rung.locked .badge-svg{filter:grayscale(1) brightness(.45)}
+.rung.here{border-color:var(--accent);box-shadow:var(--glow)}
+.rung b{font-family:var(--display);font-style:italic;text-transform:uppercase;font-size:15px}
 
 /* cards */
 .card{background:linear-gradient(180deg,var(--surface-2),var(--surface) 140px);border:1px solid var(--line);
@@ -105,6 +133,7 @@ video.clip{display:block;width:100%;aspect-ratio:16/10;background:#000;object-fi
 .pill.no{background:var(--bad-soft);color:var(--bad);border-color:rgba(255,84,112,.4)}
 .pill.wait{background:var(--ice-soft);color:var(--ice);border-color:rgba(92,225,255,.4)}
 .pill.totd{background:var(--accent-soft);color:var(--accent-hot);border-color:rgba(255,107,26,.5)}
+.pill.sport{background:var(--raise);color:var(--muted);border-color:var(--line)}
 
 /* like / comment bar */
 .social{display:flex;align-items:center;gap:6px}
@@ -120,8 +149,8 @@ video.clip{display:block;width:100%;aspect-ratio:16/10;background:#000;object-fi
 .comment{display:flex;gap:8px;font-size:13.5px;align-items:baseline}
 .comment b{font-weight:700;margin-right:4px}
 .comment .x{margin-left:auto;background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
-.comment-form{display:flex;gap:8px}
-.comment-form input{flex:1;min-width:0}
+.inline-form{display:flex;gap:8px}
+.inline-form input{flex:1;min-width:0}
 
 /* buttons & forms */
 .btn{border:1px solid var(--line);background:var(--raise);border-radius:12px;padding:12px 14px;
@@ -145,6 +174,12 @@ select:focus,input:focus{border-color:var(--ice)}
 .preview .big{font-family:var(--display);font-weight:900;font-size:46px;line-height:1;color:var(--accent);text-shadow:0 0 20px rgba(255,107,26,.55)}
 .linkish{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12.5px;align-self:flex-start}
 
+/* sport switch: big ski / snowboard buttons */
+.sport-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sport-switch button{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:10px;cursor:pointer;
+  font-family:var(--display);font-weight:900;font-style:italic;font-size:20px;text-transform:uppercase;display:flex;gap:8px;align-items:center;justify-content:center}
+.sport-switch button.on{border-color:var(--ice);background:var(--ice-soft);color:var(--ice);box-shadow:0 0 16px rgba(92,225,255,.3)}
+
 /* Trick of the Day hero */
 .totd-card{position:relative;border-radius:18px;padding:1.5px;margin-bottom:18px;
   background:linear-gradient(120deg,var(--accent),#C0218A 45%,var(--ice))}
@@ -158,13 +193,12 @@ select:focus,input:focus{border-color:var(--ice)}
 /* ranks */
 .me-card{padding:18px 16px;display:flex;flex-direction:column;gap:10px}
 .rank-line{display:flex;align-items:center;gap:14px}
-.rank-name{font-family:var(--display);font-weight:900;font-size:32px;text-transform:uppercase;line-height:1;font-style:italic}
-.bar{height:8px;border-radius:4px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-hot));box-shadow:0 0 12px rgba(255,107,26,.7)}
+.bar{height:10px;border-radius:5px;background:var(--bg);border:1.5px solid #0A0D14;overflow:hidden;box-shadow:inset 0 2px 0 rgba(0,0,0,.4)}
+.bar i{display:block;height:100%;background:linear-gradient(180deg,#FFB070,var(--accent) 60%,#C84A00);box-shadow:0 0 12px rgba(255,107,26,.7)}
 .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
 .seg button{border:0;background:transparent;padding:7px 12px;border-radius:7px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--accent);color:var(--accent-ink)}
-.filters{display:flex;gap:8px;align-items:center;margin-block:20px 10px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;align-items:center;margin-block:12px 10px;flex-wrap:wrap}
 .filters select{width:auto;flex:1;min-width:140px;padding:8px 10px}
 .board{list-style:none;margin:0;padding:0}
 .board li{display:grid;grid-template-columns:28px 36px 1fr auto;align-items:center;gap:10px;padding:11px 14px;
@@ -182,14 +216,13 @@ select:focus,input:focus{border-color:var(--ice)}
 
 /* profile */
 .prof-head{display:flex;align-items:center;gap:14px;margin-block:6px 16px}
-.prof-head .avatar{width:64px;height:64px;font-size:20px}
 .prof-head h2{margin:0}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
 .stat b{display:block;font-family:var(--display);font-weight:900;font-size:30px;line-height:1;font-style:italic}
 .stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
 .medals{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.medals .card{padding:14px;display:flex;gap:12px;align-items:center}
+.medals .card{padding:12px;display:flex;gap:10px;align-items:center}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .tile{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;padding:0;cursor:pointer}
 .tile video{width:100%;height:100%;object-fit:cover;display:block}
@@ -198,20 +231,88 @@ select:focus,input:focus{border-color:var(--ice)}
 .tile em{position:absolute;right:6px;top:5px;font-style:normal;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);text-shadow:0 1px 4px #000}
 .back{margin-top:6px}
 
+/* ---------- record ---------- */
+.cam{position:relative;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:9/14;max-height:62vh;margin-inline:auto;width:100%;border:1px solid var(--line)}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .timer{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-weight:700;
+  background:rgba(0,0,0,.6);padding:4px 10px;border-radius:999px;font-size:14px}
+.cam .timer.live{background:var(--bad);color:#fff}
+.cam .controls{position:absolute;left:0;right:0;bottom:16px;display:flex;align-items:center;justify-content:center;gap:28px}
+.shutter{width:76px;height:76px;border-radius:50%;border:5px solid #fff;background:var(--bad);cursor:pointer;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.shutter.stop{background:transparent;display:grid;place-items:center}
+.shutter.stop::after{content:"";width:28px;height:28px;border-radius:6px;background:var(--bad)}
+.cam-side{width:48px;height:48px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;font-size:20px}
+.cam-empty{display:grid;place-items:center;gap:14px;text-align:center;padding:24px;height:100%;color:var(--muted)}
+.cam-empty .big-cam{width:96px;height:96px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 0 30px rgba(255,107,26,.5);border:0;cursor:pointer}
+.cam-empty .big-cam svg{width:44px;height:44px;stroke:var(--accent-ink);fill:none;stroke-width:2.2}
+
+/* ---------- judge reel (swipe up) ---------- */
+.reel{height:calc(100dvh - 150px);overflow-y:auto;scroll-snap-type:y mandatory;margin-inline:-16px;
+  scrollbar-width:none;overscroll-behavior:contain}
+.reel::-webkit-scrollbar{display:none}
+.reel-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
+.reel-item video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.reel-info{position:absolute;left:14px;right:90px;bottom:18px;text-shadow:0 1px 8px #000}
+.reel-info .trick{font-size:30px}
+.reel-actions{position:absolute;right:12px;bottom:18px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.round{width:62px;height:62px;border-radius:50%;border:3px solid #0A0D14;cursor:pointer;font-size:26px;font-weight:900;
+  display:grid;place-items:center;box-shadow:0 4px 0 rgba(0,0,0,.5)}
+.round.yes{background:var(--good);color:#04160C}
+.round.no{background:var(--bad);color:#1A0207}
+.round.skip{width:46px;height:46px;background:rgba(255,255,255,.14);color:#fff;font-size:18px;border-color:transparent}
+.round-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:-10px;text-shadow:0 1px 4px #000}
+.reel-reasons{position:absolute;inset:auto 12px 18px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  background:rgba(6,8,12,.9);padding:12px;border-radius:16px;border:1px solid var(--line)}
+.reel-reasons .label{grid-column:1 / -1}
+.reel-done{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);pointer-events:none;
+  font-family:var(--display);font-weight:900;font-style:italic;font-size:44px;text-transform:uppercase}
+.reel-end{height:100%;scroll-snap-align:start;display:grid;place-items:center;text-align:center;padding:24px}
+.reel-top{position:absolute;top:10px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;text-shadow:0 1px 6px #000}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(4,6,10,.8);display:grid;place-items:center;padding:24px}
+.modal .card{max-width:360px;padding:22px;text-align:center;display:flex;flex-direction:column;gap:12px}
+
+/* ---------- duels ---------- */
+.duel-row{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);
+  cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+.duel-row:first-child{border-top:0}
+.duel-row:hover{background:var(--raise)}
+.letters{display:flex;gap:5px}
+.letters b{width:30px;height:36px;display:grid;place-items:center;border-radius:8px;font-family:var(--display);font-style:italic;
+  font-weight:900;font-size:24px;border:2px dashed var(--line);color:var(--line)}
+.letters.small b{width:20px;height:24px;font-size:15px;border-radius:5px;border-width:1.5px}
+.letters b.hit{border:2px solid #0A0D14;background:var(--bad);color:#1A0207;box-shadow:0 3px 0 rgba(0,0,0,.5)}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:18px 14px}
+.vs .side{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.vs .side.r{align-items:flex-end}
+.vs .mid{font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;color:var(--accent);text-shadow:0 0 16px rgba(255,107,26,.6)}
+.log{list-style:none;margin:0;padding:0 14px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.log li{padding-left:12px;border-left:2px solid var(--line);color:var(--muted)}
+.log li.hot{border-left-color:var(--accent);color:var(--ink)}
+.turn{padding:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px;background:rgba(0,0,0,.2)}
+.turn .what{font-family:var(--display);font-weight:900;font-style:italic;font-size:24px;text-transform:uppercase;line-height:1}
+.your-turn{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:3px 9px}
+.friend{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
+.friend:first-child{border-top:0}
+.friend .acts{display:flex;gap:6px}
+
 /* tab bar */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(10,13,19,.82);
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(10,13,19,.85);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
-.tabs button{border:0;background:none;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;position:relative}
+.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
+.tabs button{border:0;background:none;padding:10px 2px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;position:relative}
 .tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .tabs button.on{color:var(--accent)}
 .tabs button.on svg{filter:drop-shadow(0 0 6px rgba(255,107,26,.8))}
 .tabs button.on::before{content:"";position:absolute;top:0;left:30%;right:30%;height:2px;border-radius:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.tabs button.rec-tab .dot{width:50px;height:50px;margin-top:-22px;border-radius:50%;display:grid;place-items:center;
+  background:linear-gradient(180deg,var(--accent-hot),var(--accent));border:3px solid #0A0D14;box-shadow:0 4px 0 rgba(0,0,0,.5),0 0 20px rgba(255,107,26,.5)}
+.tabs button.rec-tab svg{stroke:var(--accent-ink);width:24px;height:24px}
+.tabs button.rec-tab.on::before{display:none}
 .tabs .badge{position:absolute;top:6px;left:calc(50% + 6px);background:var(--ice);color:#021218;
   font-size:10px;border-radius:999px;min-width:16px;padding:0 4px;line-height:16px}
-.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;
   background:#0B0F16;color:var(--ink);border:1px solid var(--accent);box-shadow:var(--glow);
   padding:11px 16px;border-radius:12px;font-weight:700;font-size:14px;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion:no-preference){
@@ -231,6 +332,7 @@ select:focus,input:focus{border-color:var(--ice)}
   <main id="view"><p class="sub">Loading…</p></main>
 </div>
 <div class="tabs" id="tabbar" hidden><nav id="tabs"></nav></div>
+<div id="overlay"></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script type="module">
@@ -238,18 +340,23 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // ---------- connection ----------
 // The publishable key is meant to be public. The real security is the rules in
-// supabase/001_schema.sql and 002_social.sql, which the database enforces no matter what this page does.
+// supabase/001–003 .sql, which the database enforces no matter what this page does.
 const SUPABASE_URL = 'https://kyabslzotdtcwtjcygew.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_sP394lJIxwiubaTzlkwSrg_poXVTb27';
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---------- catalog ----------
-// Trick names and points come from the database; these are just menu choices.
-const CATS = ['Park','Rails','Pipe','Moguls','Backcountry'];
-const GRABS = ['No grab','Mute','Safety','Japan','Tail','Critical'];
+const SPORTS = {
+  ski:       {label: 'Ski',       icon: '⛷️', cats: ['Park','Rails','Pipe','Moguls','Backcountry'],
+              grabs: ['No grab','Mute','Safety','Japan','Tail','Critical']},
+  snowboard: {label: 'Snowboard', icon: '🏂', cats: ['Park','Rails','Pipe','Backcountry'],
+              grabs: ['No grab','Indy','Melon','Method','Mute','Stalefish','Tail','Nose']},
+};
 const RESORTS = ['Eldora','Winter Park','Copper','Arapahoe Basin','Breckenridge','Keystone'];
 const REASONS = [['fell','Fell'],['wrong_trick','Wrong trick'],['cant_see',"Can't see"]];
-const MAX_MB = 50; // Supabase free plan limit per file
+const MAX_SECONDS = 20;       // longest recording
+const MAX_MB = 50;            // Supabase free plan limit per file
+const JUDGE_BREAK = 10;       // suggest a break after this many votes in one sitting
 const TIERS = [
   {min:1800,name:'Legend',key:'legend'},{min:1600,name:'Diamond',key:'diamond'},
   {min:1400,name:'Platinum',key:'plat'},{min:1200,name:'Gold',key:'gold'},
@@ -260,28 +367,38 @@ const TRICK_TIERS = [
   {min:2000,name:'Platinum',key:'plat',w:1.75},{min:1000,name:'Gold',key:'gold',w:1.5},
   {min:500,name:'Silver',key:'silver',w:1.25},{min:0,name:'Bronze',key:'bronze',w:1},
 ];
-const tierOf = r => TIERS.find(t => r >= t.min);
 const trickTierOf = p => TRICK_TIERS.find(t => p >= t.min);
+const tierOf = r => TIERS.find(t => r >= t.min);
 const CLIP_SELECT = '*, profiles!clips_user_id_fkey(username, points), likes(count), comments(count)';
+const PROFILE_BITS = 'id, username, points, rating';
 
 // ---------- state ----------
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('sendit-' + k); return v == null ? d : v; } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem('sendit-' + k, v); } catch (e) {} },
+};
 const S = {
   tab: 'feed', prevTab: 'feed', session: null, me: null,
   tricks: [], clips: [], myVotes: new Set(), myLikes: new Set(), totd: null,
-  board: {period: 'all', resort: '', rows: []},
-  profile: null,            // {id, data, clips} while viewing someone's page
-  openComments: null, comments: {},
-  authMode: 'signin', reasonFor: null, busy: false, postPreset: null,
+  friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
+  search: {q: '', results: null},
+  board: {scope: 'friends', period: 'all', resort: '', rows: []},
+  profile: null, openComments: null, comments: {},
+  sport: store.get('sport', 'ski'),
+  authMode: 'signin', busy: false, postPreset: null, splashDone: false,
+  judge: {list: [], voted: {}, reasonFor: null, count: 0, breakShown: false},
+  rec: {mode: 'idle', stream: null, recorder: null, chunks: [], blob: null, url: null, facing: 'environment',
+        startedAt: 0, tick: null, stopTimer: null, context: null},
 };
 let seenStatus = null; // my clip id -> status, so we notice when one gets verified
 
 // ---------- helpers ----------
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const initials = n => String(n || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || '?';
-const sym = (key, big) => `<span class="sym medal ${big ? 'big ' : ''}m-${key}"></span>`;
-const tierTag = t => `<span class="tier">${sym(t.key)}${t.name}</span>`;
 const $ = id => document.getElementById(id);
 const count = rel => (rel && rel[0] ? rel[0].count : 0);
+const myId = () => S.session && S.session.user.id;
+const mustOk = r => { if (r.error) throw r.error; return r.data; };
 function ago(iso){
   const m = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60000));
   if (m < 60) return m + 'm';
@@ -292,11 +409,12 @@ function toast(msg, ms = 2800){
   const t = $('toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, ms);
 }
-const trickById = id => S.tricks.find(t => t.id === id) || {id, name: id, category: '', pts: 0};
+const trickById = id => S.tricks.find(t => t.id === id) || {id, name: id, category: '', pts: 0, sport: 'ski'};
+const sportOf = t => SPORTS[t.sport] ? t.sport : 'ski';
+const tricksFor = (sport, cat) => S.tricks.filter(t => sportOf(t) === sport && (!cat || t.category === cat));
 const basePoints = (trickId, grab) => Math.round(trickById(trickId).pts * (grab && grab !== 'No grab' ? 1.2 : 1));
 const videoUrl = path => db.storage.from('clips').getPublicUrl(path).data.publicUrl;
-const myId = () => S.session && S.session.user.id;
-const mustOk = r => { if (r.error) throw r.error; return r.data; };
+const winChance = (me, them) => Math.round(100 / (1 + Math.pow(10, (them - me) / 400)));
 
 // Minutes until midnight in Denver, when the Trick of the Day changes.
 function totdResetsIn(){
@@ -307,15 +425,80 @@ function totdResetsIn(){
   return `${Math.floor(left / 60)}h ${left % 60}m`;
 }
 
+// ---------- ranks: tier + division (I, II, III) ----------
+// Each tier is split into three divisions, like game ranks. Legend is the top and has none.
+const ROMAN = ['', 'I', 'II', 'III'];
+function rankInfo(value, table){
+  const t = table.find(x => value >= x.min), i = table.indexOf(t), next = i > 0 ? table[i - 1] : null;
+  if (!next) return {tier: t, div: 0, label: t.name, pct: 100, toNext: 0, nextLabel: null};
+  const span = next.min - t.min, into = value - t.min;
+  const div = Math.min(3, Math.floor(into / span * 3) + 1);
+  const divTop = t.min + Math.round(span * div / 3);
+  const pct = (into - span * (div - 1) / 3) / (span / 3) * 100;
+  return {tier: t, div, label: `${t.name} ${ROMAN[div]}`, pct, toNext: divTop - value,
+          nextLabel: div < 3 ? `${t.name} ${ROMAN[div + 1]}` : `${next.name} I`};
+}
+
+// Chunky game-style badge: a shield with a mountain, and more gear each tier up.
+// Stars under the shield show the division (1-3).
+const BADGE = {
+  bronze: ['#F6B98A','#C8743C','#6E3410'], silver: ['#FFFFFF','#B9C4CF','#5E6A78'],
+  gold:   ['#FFF0A0','#F2B91E','#8C5A00'], plat:   ['#E8FFFB','#5FE0CF','#177066'],
+  diamond:['#E6F4FF','#62A8FF','#2436C4'], legend: ['#FFD6A6','#FF6B1A','#9E1170'],
+};
+const ORDER = ['bronze','silver','gold','plat','diamond','legend'];
+function star(cx, cy, r){
+  let d = '';
+  for (let i = 0; i < 10; i++){
+    const a = (-90 + i * 36) * Math.PI / 180, rr = i % 2 ? r * .45 : r;
+    d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(1) + ' ' + (cy + rr * Math.sin(a)).toFixed(1);
+  }
+  return d + 'Z';
+}
+function badgeSVG(key, size = 64, div = 0, {glow = false, float = false} = {}){
+  const [hi, mid, lo] = BADGE[key], lvl = ORDER.indexOf(key), g = 'bg-' + key, O = '#0A0D14';
+  let back = '', front = '';
+  if (lvl >= 5) back += `<path d="M26 50 C20 34 28 22 32 4 C38 18 41 22 46 10 C50 20 54 22 60 0 C66 22 70 20 74 10 C79 22 82 18 88 4 C92 22 100 34 94 50 Z" fill="#FFB02E" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M36 46 C34 36 38 28 40 20 C44 28 50 30 52 22 C56 30 64 30 68 22 C70 30 76 28 80 20 C82 28 86 36 84 46 Z" fill="#FF6B1A"/>`;
+  if (lvl >= 3) back += `<g stroke="${O}" stroke-width="4"><rect x="55" y="6" width="10" height="112" rx="5" fill="${hi}" transform="rotate(40 60 62)"/>
+      <rect x="55" y="6" width="10" height="112" rx="5" fill="${hi}" transform="rotate(-40 60 62)"/></g>`;
+  if (lvl >= 2) back += `<g fill="${mid}" stroke="${O}" stroke-width="4" stroke-linejoin="round">
+      <path d="M30 36 C14 32 4 46 8 66 C14 60 20 58 30 60 Z"/><path d="M90 36 C106 32 116 46 112 66 C106 60 100 58 90 60 Z"/></g>`;
+  if (lvl === 4) front += `<path d="M60 2 L72 13 L60 27 L48 13 Z" fill="#A8ECFF" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M60 6 L66 13 L60 13 Z" fill="#fff"/>`;
+  if (lvl === 5) front += `<path d="M42 26 L40 8 L50 16 L60 3 L70 16 L80 8 L78 26 Z" fill="#FFD23F" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="60" cy="18" r="3.5" fill="#FF5470" stroke="${O}" stroke-width="2"/>`;
+  const stars = [];
+  for (let i = 0; i < div; i++) stars.push(star(60 + (i - (div - 1) / 2) * 25, 119, 12));
+  const h = Math.round(size * 132 / 120);
+  return `<svg class="badge-svg ${glow ? 'glow-' + key : ''} ${float ? 'float' : ''}" viewBox="0 0 120 132" width="${size}" height="${h}" aria-hidden="true">
+    <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${hi}"/><stop offset=".55" stop-color="${mid}"/><stop offset="1" stop-color="${lo}"/></linearGradient></defs>
+    ${back}
+    <path d="M60 14 L94 26 V58 C94 82 80 99 60 108 C40 99 26 82 26 58 V26 Z" fill="url(#${g})" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M60 21 L88 31 V50 C74 44 46 45 32 54 V31 Z" fill="#fff" opacity=".3"/>
+    <path d="M36 86 L52 60 L59 69 L69 52 L85 86 Z" fill="${lo}" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M69 52 L75 63 L71 61 L67 65 L64 61 Z" fill="#fff"/><path d="M52 60 L56 67 L52 66 L49 64 Z" fill="#fff"/>
+    ${front}
+    ${stars.map(d => `<path d="${d}" fill="#FFD23F" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`).join('')}
+  </svg>`;
+}
+const rankWord = (info, size) => `<span class="rank-word t-${info.tier.key}" style="font-size:${size}px">${esc(info.label)}</span>`;
+const miniBadge = points => badgeSVG(trickTierOf(points).key, 22);
+
 // ---------- loading from the database ----------
 async function loadAll(){
   if (!S.tricks.length) S.tricks = mustOk(await db.from('tricks').select('*').order('pts'));
-  const [me, clips, votes, likes, totd] = await Promise.all([
+  const [me, clips, votes, likes, totd, friends, duels] = await Promise.all([
     db.from('profiles').select('*').eq('id', myId()).single(),
-    db.from('clips').select(CLIP_SELECT).order('created_at', {ascending: false}).limit(60),
+    db.from('clips').select(CLIP_SELECT).order('created_at', {ascending: false}).limit(80),
     db.from('votes').select('clip_id'),  // the database only returns MY votes
     db.from('likes').select('clip_id').eq('user_id', myId()),
     db.rpc('trick_of_day'),
+    db.from('friendships').select(`requester, addressee, status, created_at,
+      req:profiles!friendships_requester_fkey(${PROFILE_BITS}), addr:profiles!friendships_addressee_fkey(${PROFILE_BITS})`),
+    db.from('duels').select(`*, ch:profiles!duels_challenger_fkey(${PROFILE_BITS}), op:profiles!duels_opponent_fkey(${PROFILE_BITS})`)
+      .order('updated_at', {ascending: false}).limit(40),
   ]);
   const before = S.me;
   S.me = mustOk(me);
@@ -323,10 +506,16 @@ async function loadAll(){
   S.myVotes = new Set(mustOk(votes).map(v => v.clip_id));
   S.myLikes = new Set(mustOk(likes).map(l => l.clip_id));
   S.totd = mustOk(totd);
+  S.friends = mustOk(friends).map(f => {
+    const incoming = f.addressee === myId();
+    return {...f, incoming, other: incoming ? f.req : f.addr};
+  });
+  S.duels = mustOk(duels).map(d => ({...d, other: d.challenger === myId() ? d.op : d.ch}));
   noticeResults(before);
 }
 async function loadBoard(){
-  S.board.rows = mustOk(await db.rpc('leaderboard', {p_period: S.board.period, p_resort: S.board.resort || null}));
+  const ids = S.board.scope === 'friends' ? [myId(), ...acceptedFriends().map(f => f.other.id)] : null;
+  S.board.rows = mustOk(await db.rpc('leaderboard', {p_period: S.board.period, p_resort: S.board.resort || null, p_ids: ids}));
 }
 async function loadProfile(id){
   const [p, clips] = await Promise.all([
@@ -340,6 +529,11 @@ async function loadComments(clipId){
   S.comments[clipId] = mustOk(await db.from('comments').select('id, body, created_at, user_id, profiles(username)')
     .eq('clip_id', clipId).order('created_at'));
 }
+async function loadDuelMoves(duelId){
+  S.duelMoves[duelId] = mustOk(await db.from('duel_moves').select('*, clips(video_path)').eq('duel_id', duelId).order('id'));
+}
+const acceptedFriends = () => S.friends.filter(f => f.status === 'accepted');
+const activeDuelWith = id => S.duels.find(d => d.status === 'active' && d.other && d.other.id === id);
 
 // Toast when one of my clips gets decided while the app is open.
 function noticeResults(before){
@@ -349,71 +543,64 @@ function noticeResults(before){
       if (seenStatus[c.id] !== 'pending' || c.status === 'pending') continue;
       const name = trickById(c.trick_id).name;
       if (c.status === 'verified'){
-        const up = before && trickTierOf(S.me.points) !== trickTierOf(before.points);
-        toast(up ? `🏅 Rank up! You reached ${trickTierOf(S.me.points).name}`
-                 : `✅ Verified! ${name} earned +${c.points_awarded} pts`, 4500);
+        const a = rankInfo(before ? before.points : 0, TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
+        toast(a.label !== b.label ? `🏅 Rank up! ${b.label}` : `✅ Verified! ${name} earned +${c.points_awarded} pts`, 4500);
       } else toast(`The community didn't verify your ${name}`, 4500);
     }
   }
   seenStatus = Object.fromEntries(mine.map(c => [c.id, c.status]));
 }
 
-// ---------- pieces ----------
+// ---------- shared pieces ----------
 const ICON = {
   fire: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z"/></svg>',
   chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  cam:  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>',
 };
+const sportSwitch = (current, act) => `<div class="sport-switch" role="group" aria-label="Ski or snowboard">${
+  Object.entries(SPORTS).map(([k, s]) => `<button type="button" class="${current === k ? 'on' : ''}" data-act="${act}" data-k="${k}" aria-pressed="${current === k}">${s.icon} ${s.label}</button>`).join('')}</div>`;
+function trickSelect(id, sport, selected){
+  return `<select id="${id}" aria-label="Trick">${SPORTS[sport].cats.map(cat => {
+    const list = tricksFor(sport, cat); if (!list.length) return '';
+    return `<optgroup label="${cat}">${list.map(t => `<option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)} (${t.pts})</option>`).join('')}</optgroup>`;
+  }).join('')}</select>`;
+}
+const lettersHtml = (n, small) => `<div class="letters ${small ? 'small' : ''}">${['S','K','I'].map((l, i) => `<b class="${i < n ? 'hit' : ''}">${l}</b>`).join('')}</div>`;
 
-function clipCard(c, {judge = false} = {}){
-  const t = trickById(c.trick_id), mine = c.user_id === myId();
-  const who = c.profiles ? c.profiles.username : 'Skier';
+function clipCard(c){
+  const t = trickById(c.trick_id), sp = SPORTS[sportOf(t)], mine = c.user_id === myId();
+  const who = c.profiles ? c.profiles.username : 'Rider';
   const media = c.video_path
     ? `<video class="clip" src="${esc(videoUrl(c.video_path))}" controls playsinline muted preload="metadata"></video>`
     : `<div class="poster" role="img" aria-label="${esc(t.name)}"><span class="play">No video</span><div class="tname">${esc(t.name)}</div></div>`;
-  let status;
-  if (c.status === 'verified') status = `<span class="pill ok">Verified</span>`;
-  else if (c.status === 'rejected') status = `<span class="pill no">Not verified</span>`;
-  else status = `<span class="pill wait">Judging</span>`;
-
-  const head = judge
-    ? `<div class="avatar">?</div><div class="who"><div class="name">Anonymous skier</div>
-         <div class="meta">${esc(c.resort || '')} · ${ago(c.created_at)} ago</div></div>`
-    : `<button class="avatar linkname ${mine ? 'you' : ''}" data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
-       <div class="who"><div class="name"><button class="linkname" data-act="profile" data-id="${c.user_id}">${esc(who)}</button>
-         ${c.profiles ? sym(trickTierOf(c.profiles.points).key) : ''}</div>
-         <div class="meta">${esc(c.resort || '')} · ${ago(c.created_at)} ago</div></div>`;
-
+  const status = c.status === 'verified' ? `<span class="pill ok">Verified</span>`
+    : c.status === 'rejected' ? `<span class="pill no">Not verified</span>` : `<span class="pill wait">Judging</span>`;
   const shown = c.status === 'verified' ? c.points_awarded : basePoints(c.trick_id, c.grab) * (c.totd ? 2 : 1);
-  let actions = '';
-  if (judge && S.reasonFor === c.id) actions = `
-    <div class="label">What went wrong?</div>
-    <div class="btns" style="grid-template-columns:1fr 1fr 1fr">${REASONS.map(([k, label]) =>
-      `<button class="btn bad small" data-act="vote" data-id="${c.id}" data-y="0" data-reason="${k}">${label}</button>`).join('')}</div>
-    <button class="linkish" data-act="noreason">Cancel</button>`;
-  else if (judge) actions = `<div class="btns">
-      <button class="btn bad" data-act="askreason" data-id="${c.id}">Not landed</button>
-      <button class="btn good" data-act="vote" data-id="${c.id}" data-y="1">Landed</button></div>`;
-  else {
-    const liked = S.myLikes.has(c.id), open = S.openComments === c.id;
-    actions = `<div class="row">
-      <div class="social">
-        <button class="icon-btn ${liked ? 'lit' : ''}" data-act="like" data-id="${c.id}" aria-pressed="${liked}" aria-label="Fire">${ICON.fire}${count(c.likes)}</button>
-        <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
-      </div>
-      ${mine && c.status === 'pending' ? `<button class="linkish" data-act="delete" data-id="${c.id}">Delete</button>` : ''}
-    </div>`;
-  }
-
+  const liked = S.myLikes.has(c.id), open = S.openComments === c.id;
   return `<article class="card" id="clip-${c.id}">
-    <div class="card-head">${head}${status}</div>
+    <div class="card-head">
+      <button class="avatar linkname ${mine ? 'you' : ''}" data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
+      <div class="who"><div class="name"><button class="linkname" data-act="profile" data-id="${c.user_id}">${esc(who)}</button>
+        ${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
+        <div class="meta">${esc(c.resort || '')} · ${ago(c.created_at)} ago</div></div>
+      ${status}
+    </div>
     ${media}
     <div class="card-foot">
       <div class="row"><div class="trick">${esc(t.name)} <small>· ${esc(c.grab)} · ${esc(t.category)}</small></div>
         <div class="pts">+${shown}</div></div>
-      ${c.totd ? '<div><span class="pill totd">🔥 Trick of the Day · 2× points</span></div>' : ''}
-      ${actions}
+      <div class="row" style="justify-content:flex-start;gap:6px">
+        <span class="pill sport">${sp.icon} ${sp.label}</span>
+        ${c.totd ? '<span class="pill totd">🔥 Trick of the Day · 2×</span>' : ''}</div>
+      <div class="row">
+        <div class="social">
+          <button class="icon-btn ${liked ? 'lit' : ''}" data-act="like" data-id="${c.id}" aria-pressed="${liked}" aria-label="Fire">${ICON.fire}${count(c.likes)}</button>
+          <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
+        </div>
+        ${mine && c.status === 'pending' ? `<button class="linkish" data-act="delete" data-id="${c.id}">Delete</button>` : ''}
+      </div>
     </div>
-    ${!judge && S.openComments === c.id ? commentsPanel(c.id) : ''}
+    ${open ? commentsPanel(c.id) : ''}
   </article>`;
 }
 
@@ -421,49 +608,67 @@ function commentsPanel(clipId){
   const list = S.comments[clipId];
   const body = !list ? '<div class="hint">Loading…</div>'
     : !list.length ? '<div class="hint">No comments yet. Say something nice.</div>'
-    : list.map(m => `<div class="comment"><div><b>${esc(m.profiles ? m.profiles.username : 'Skier')}</b>${esc(m.body)}
+    : list.map(m => `<div class="comment"><div><b>${esc(m.profiles ? m.profiles.username : 'Rider')}</b>${esc(m.body)}
         <span class="hint"> · ${ago(m.created_at)}</span></div>
         ${m.user_id === myId() ? `<button class="x" data-act="delcomment" data-id="${m.id}" data-clip="${clipId}" aria-label="Delete comment">×</button>` : ''}</div>`).join('');
   return `<div class="comments">${body}
-    <form class="comment-form" data-clip="${clipId}">
+    <form class="inline-form comment-form" data-clip="${clipId}">
       <input id="comment-${clipId}" maxlength="280" placeholder="Add a comment" autocomplete="off" aria-label="Comment">
       <button class="btn small primary" type="submit">Send</button>
     </form></div>`;
 }
 
+function rankHero(){
+  const r = rankInfo(S.me.points, TRICK_TIERS), d = rankInfo(S.me.rating, TIERS);
+  return `<button class="hero" data-act="tab" data-tab="ranks" style="--hero-c:${BADGE[r.tier.key][1]}55">
+    ${badgeSVG(r.tier.key, 92, r.div, {glow: true, float: true})}
+    <div class="grow">
+      <div class="label">Trick rank</div>
+      ${rankWord(r, 38)}
+      <div class="bar"><i style="width:${Math.max(4, r.pct)}%"></i></div>
+      <div class="hint">${r.nextLabel ? `<b class="mono" style="color:var(--ink)">${r.toNext}</b> pts to ${esc(r.nextLabel)}` : 'Top rank. Legend.'}
+        · Duels: ${esc(d.label)}</div>
+    </div>
+  </button>`;
+}
+
 function totdCard(){
   if (!S.totd) return '';
-  const t = trickById(S.totd);
+  const t = trickById(S.totd), sp = SPORTS[sportOf(t)];
   return `<section class="totd-card"><div class="totd-in">
     <div class="label" style="color:var(--accent-hot)">Trick of the Day · resets in ${totdResetsIn()}</div>
     <div class="totd-name">${esc(t.name)}</div>
-    <div class="hint">${esc(t.category)} · worth <b class="mono" style="color:var(--ink)">${t.pts * 2}</b> pts today instead of ${t.pts}</div>
+    <div class="hint">${sp.icon} ${sp.label} · ${esc(t.category)} · worth <b class="mono" style="color:var(--ink)">${t.pts * 2}</b> pts today instead of ${t.pts}</div>
     <div class="totd-x">2×</div>
-    <button class="btn primary" data-act="totdpost">Post your ${esc(t.name)}</button>
+    <button class="btn primary" data-act="totdpost">Record your ${esc(t.name)}</button>
   </div></section>`;
 }
 
-function rankCard(title, val, table, unit, extra){
-  const t = table.find(x => val >= x.min), i = table.indexOf(t), next = i > 0 ? table[i - 1] : null;
-  const pct = next ? (val - t.min) / (next.min - t.min) * 100 : 100;
-  return `<section class="card me-card">
+function rankCard(title, value, table, unit, extra){
+  const r = rankInfo(value, table);
+  return `<section class="card me-card" style="background:radial-gradient(120% 100% at 0% 0%, ${BADGE[r.tier.key][1]}40, transparent 60%),linear-gradient(180deg,var(--surface-2),var(--surface))">
     <div class="row"><div class="label">${title}</div><span class="hint">${extra}</span></div>
-    <div class="rank-line">${sym(t.key, true)}
-      <div><div class="rank-name">${t.name}</div><div class="mono hint">${val} ${unit}</div></div></div>
-    <div class="bar"><i style="width:${Math.max(3, pct)}%"></i></div>
-    <div class="hint">${next ? `${next.min - val} ${unit} to ${next.name}` : 'Top rank'}</div>
+    <div class="rank-line">${badgeSVG(r.tier.key, 84, r.div, {glow: true})}
+      <div>${rankWord(r, 36)}<div class="mono hint" style="margin-top:6px">${value} ${unit}</div></div></div>
+    <div class="bar"><i style="width:${Math.max(4, r.pct)}%"></i></div>
+    <div class="hint">${r.nextLabel ? `${r.toNext} ${unit} to ${esc(r.nextLabel)}` : 'Top rank'}</div>
   </section>`;
 }
 
-const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
+function ladder(value, table){
+  const here = table.find(x => value >= x.min);
+  return `<div class="ladder">${[...table].reverse().map(t => `
+    <div class="rung ${value < t.min ? 'locked' : ''} ${t === here ? 'here' : ''}">
+      ${badgeSVG(t.key, 54, 0)}<b class="t-${t.key}">${t.name}</b><span class="hint mono">${t.min}+</span></div>`).join('')}</div>`;
+}
 
 // ---------- views ----------
 const views = {
   auth(){
     const up = S.authMode === 'signup';
     return `<h2>${up ? 'Join Sendit' : 'Drop in'}</h2>
-      <p class="sub">${up ? 'Film a trick, get it verified by other skiers, and rank up from Bronze to Legend.'
-                          : 'Sign in to post, judge and climb the leaderboard.'}</p>
+      <p class="sub">${up ? 'Film a trick, get it verified by other riders, and rank up from Bronze to Legend.'
+                          : 'Sign in to record, judge, duel and climb the leaderboard.'}</p>
       <form class="card form" id="auth-form">
         ${up ? `<div class="field"><label class="label" for="auth-user">Username</label>
           <input id="auth-user" autocomplete="username" required minlength="3" maxlength="24"></div>` : ''}
@@ -476,61 +681,127 @@ const views = {
         <button class="linkish" type="button" data-act="authmode">${up ? 'Already have an account? Sign in' : 'New here? Create an account'}</button>
       </form>`;
   },
+
   feed(){
     // Other people's clips only show here once verified, so judging stays anonymous.
     const clips = S.clips.filter(c => c.status === 'verified' || c.user_id === myId());
-    return `${totdCard()}
-      <div class="stack">${clips.length ? clips.map(c => clipCard(c)).join('')
+    return `${rankHero()}${totdCard()}
+      <div class="stack">${clips.length ? clips.map(clipCard).join('')
         : `<div class="card empty"><strong>No clips yet</strong>Verified tricks show up here. Be the first.</div>`}</div>`;
   },
+
   judge(){
-    const me = trickTierOf(S.me.points), q = judgeQueue();
-    return `<h2>Judge</h2>
-      <p class="sub">You won't see who posted, so judge the trick, not the skier. Your vote counts ×${me.w} at ${me.name}.</p>
-      <div class="stack">${q.length ? q.map(c => clipCard(c, {judge: true})).join('')
-        : `<div class="card empty"><strong>All caught up</strong>No clips are waiting for your vote.</div>`}</div>`;
+    const J = S.judge;
+    if (!J.list.length) return `<h2>Judge</h2>
+      <div class="card empty"><strong>All caught up</strong>No clips need your vote right now. Nice.</div>`;
+    const w = trickTierOf(S.me.points);
+    return `<div class="reel" id="reel">${J.list.map(reelItem).join('')}
+      <div class="reel-end"><div><div class="rank-word t-gold" style="font-size:44px">All caught up</div>
+        <p class="sub" style="margin-top:10px">That's every clip waiting on you. Go ride.</p>
+        <button class="btn primary" data-act="tab" data-tab="feed">Back to the feed</button></div></div>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:8px">Swipe up for the next clip · your vote counts ×${w.w} · riders stay anonymous</p>`;
   },
-  post(){
-    return `<h2>Post a trick</h2><p class="sub">Pick the trick you landed. Other skiers will judge it.</p>
-    <form class="card form" id="post-form">
-      <div class="field"><label class="label" for="post-video">Clip</label>
-        <input type="file" id="post-video" accept="video/mp4,video/quicktime,video/webm" required>
-        <span class="hint">Up to ${MAX_MB} MB, about 15 seconds of phone video.</span></div>
-      <div class="two">
-        <div class="field"><label class="label" for="post-cat">Category</label>
-          <select id="post-cat">${CATS.map(c => `<option>${c}</option>`).join('')}</select></div>
-        <div class="field"><label class="label" for="post-grab">Grab</label>
-          <select id="post-grab">${GRABS.map(g => `<option>${g}</option>`).join('')}</select></div>
-      </div>
-      <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick"></select></div>
-      <div class="field"><label class="label" for="post-resort">Resort</label>
-        <select id="post-resort">${RESORTS.map(r => `<option ${S.me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
-      <div class="preview"><div><div class="label">Worth</div><span class="hint" id="post-why">A grab adds 20%</span></div>
-        <div><span class="big" id="post-pts">0</span> <span class="label">pts</span></div></div>
-      <button class="btn primary" type="submit" id="post-btn">Post for judging</button>
-    </form>`;
+
+  record(){
+    const R = S.rec, ctx = R.context;
+    const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    const title = ctx ? (ctx.kind === 'set' ? 'Duel: set your trick' : 'Duel: match it') : 'Record';
+    const ctxLine = ctx ? `<p class="sub">${ctx.kind === 'set' ? 'Setting' : 'Matching'} <b style="color:var(--ink)">${esc(trickById(ctx.trickId).name)}</b> vs ${esc(ctx.otherName)}. Land it on camera.</p>`
+                        : `<p class="sub">Clips are filmed in the app, so nobody can post old or downloaded videos.</p>`;
+    let body;
+    if (!canRecord) body = `<div class="cam"><div class="cam-empty"><div>
+        <strong class="rank-word t-silver" style="font-size:28px">Camera not available</strong>
+        <p>This browser can't record here. The camera needs the app to be opened over a secure (https) link. That comes when Sendit goes online.</p></div></div></div>`;
+    else if (R.mode === 'review') body = `<div class="cam"><video src="${R.url}" controls playsinline loop autoplay muted></video></div>
+      ${ctx ? duelReviewForm(ctx) : postForm()}`;
+    else if (R.mode === 'live' || R.mode === 'recording') body = `<div class="cam">
+        <video id="rec-live" autoplay muted playsinline></video>
+        <div class="timer ${R.mode === 'recording' ? 'live' : ''}" id="rec-timer">${R.mode === 'recording' ? '● 0.0s' : `max ${MAX_SECONDS}s`}</div>
+        <div class="controls">
+          <button class="cam-side" data-act="cam-close" aria-label="Close camera">✕</button>
+          <button class="shutter ${R.mode === 'recording' ? 'stop' : ''}" data-act="${R.mode === 'recording' ? 'rec-stop' : 'rec-start'}" aria-label="Record or stop"></button>
+          <button class="cam-side" data-act="cam-flip" aria-label="Flip camera">⟲</button>
+        </div></div>`;
+    else body = `${ctx ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
+      <div class="cam"><div class="cam-empty"><div style="display:grid;gap:14px;justify-items:center">
+        <button class="big-cam" data-act="cam-open" aria-label="Open camera">${ICON.cam}</button>
+        <strong class="rank-word t-legend" style="font-size:30px">Tap to film</strong>
+        <span>Up to ${MAX_SECONDS} seconds. Have a friend film you, or prop your phone up.</span></div></div></div>
+      ${ctx ? '<button class="linkish" data-act="rec-cancel" style="margin-top:12px">Cancel duel attempt</button>' : ''}`;
+    return `<h2>${title}</h2>${ctxLine}${body}`;
   },
+
+  duels(){
+    if (S.duelId) return duelDetail();
+    const mine = S.duels.filter(d => d.status === 'active');
+    const done = S.duels.filter(d => d.status === 'done').slice(0, 5);
+    const incoming = S.friends.filter(f => f.status === 'pending' && f.incoming);
+    const sent = S.friends.filter(f => f.status === 'pending' && !f.incoming);
+    const friends = acceptedFriends();
+    const results = S.search.results;
+    return `<h2>Duels</h2><p class="sub">Game of S.K.I.: land a trick and your friend has to match it. Miss and you take a letter. Spell S-K-I and you lose rating.</p>
+
+    <div class="card">${mine.length ? mine.map(d => {
+        const myL = d.challenger === myId() ? d.letters_challenger : d.letters_opponent;
+        const theirL = d.challenger === myId() ? d.letters_opponent : d.letters_challenger;
+        return `<button class="duel-row" data-act="open-duel" data-id="${d.id}">
+          <div class="avatar">${esc(initials(d.other.username))}</div>
+          <div><b>vs ${esc(d.other.username)}</b><div class="hint" style="display:flex;gap:10px;align-items:center;margin-top:4px">
+            You ${lettersHtml(myL, true)} Them ${lettersHtml(theirL, true)}</div></div>
+          ${d.turn === myId() ? '<span class="your-turn">Your turn</span>' : '<span class="hint">Their turn</span>'}</button>`;
+      }).join('') : `<div class="empty"><strong>No duels yet</strong>Challenge a friend below.</div>`}</div>
+
+    <h3>Friends</h3>
+    <form class="inline-form" id="friend-search">
+      <input id="friend-q" placeholder="Find riders by username" value="${esc(S.search.q)}" autocomplete="off" aria-label="Search usernames">
+      <button class="btn small" type="submit">Search</button></form>
+    ${results ? `<div class="card" style="margin-top:10px">${results.length ? results.map(p => friendRow(p, 'search')).join('')
+        : '<div class="empty" style="padding:16px">Nobody by that name yet.</div>'}</div>` : ''}
+    ${incoming.length ? `<div class="label" style="margin:16px 0 8px">Requests</div>
+      <div class="card">${incoming.map(f => friendRow(f.other, 'incoming')).join('')}</div>` : ''}
+    <div class="label" style="margin:16px 0 8px">Your crew · ${friends.length}</div>
+    <div class="card">${friends.length ? friends.map(f => friendRow(f.other, 'friend')).join('')
+      : '<div class="empty" style="padding:18px">Search for your friends above to add them.</div>'}</div>
+    ${sent.length ? `<p class="hint" style="margin-top:8px">Waiting on: ${sent.map(f => esc(f.other.username)).join(', ')}</p>` : ''}
+
+    ${done.length ? `<h3>Recent duels</h3><div class="card"><ul class="board">${done.map(d => {
+        const won = d.winner === myId();
+        return `<li data-act="open-duel" data-id="${d.id}"><span class="n">${won ? 'W' : 'L'}</span>
+          <div class="avatar">${esc(initials(d.other.username))}</div>
+          <div><b>${esc(d.other.username)}</b><div class="hint">${won ? 'You won' : 'You lost'}</div></div>
+          <span class="score" style="color:var(--${won ? 'good' : 'bad'})">${won ? '+' : '−'}${d.rating_change || 0}</span></li>`;
+      }).join('')}</ul></div>` : ''}`;
+  },
+
   ranks(){
     const me = S.me, b = S.board;
     const verified = S.clips.filter(c => c.user_id === me.id && c.status === 'verified').length;
-    return `<h2>Ranks</h2><p class="sub">Every verified trick adds points. Hit a points total to rank up.</p>
+    const doneDuels = S.duels.filter(d => d.status === 'done'), wins = doneDuels.filter(d => d.winner === me.id).length;
+    return `<h2>Ranks</h2><p class="sub">Every verified trick adds points. Each tier has three divisions: fill the bar to earn the next star.</p>
     <div class="stack">
       ${rankCard('Trick rank', me.points, TRICK_TIERS, 'pts', `${verified} verified`)}
-      ${rankCard('Duel rank', me.rating, TIERS, 'rating', 'Duels coming soon')}
+      ${rankCard('Duel rank', me.rating, TIERS, 'rating', `${wins}W · ${doneDuels.length - wins}L`)}
     </div>
+    <h3>The road to Legend</h3>
+    ${ladder(me.points, TRICK_TIERS)}
+    <h3>Leaderboard</h3>
     <div class="filters">
+      <div class="seg" role="group" aria-label="Who">
+        <button class="${b.scope === 'friends' ? 'on' : ''}" data-act="scope" data-k="friends">Friends</button>
+        <button class="${b.scope === 'global' ? 'on' : ''}" data-act="scope" data-k="global">Everyone</button></div>
       <div class="seg" role="group" aria-label="Time period">
         <button class="${b.period === 'all' ? 'on' : ''}" data-act="period" data-k="all">All time</button>
-        <button class="${b.period === 'week' ? 'on' : ''}" data-act="period" data-k="week">This week</button></div>
+        <button class="${b.period === 'week' ? 'on' : ''}" data-act="period" data-k="week">Week</button></div>
       <select id="board-resort" aria-label="Home mountain">
         <option value="">All mountains</option>${RESORTS.map(r => `<option ${b.resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
     </div>
     <div class="card">${b.rows.length ? `<ol class="board">${b.rows.map((u, i) => `
       <li class="${u.id === me.id ? 'you' : ''}" data-act="profile" data-id="${u.id}"><span class="n">${i + 1}</span>
-        <div class="avatar ${u.id === me.id ? 'you' : ''}">${esc(initials(u.username))}</div>
-        <div><b>${esc(u.username)}</b><div class="hint">${tierTag(trickTierOf(u.points))}${u.home_resort ? ' · ' + esc(u.home_resort) : ''}</div></div>
+        ${badgeSVG(trickTierOf(u.points).key, 34)}
+        <div><b>${esc(u.username)}</b><div class="hint">${esc(rankInfo(u.points, TRICK_TIERS).label)}${u.home_resort ? ' · ' + esc(u.home_resort) : ''}</div></div>
         <span class="score">${u.score} <small class="hint">pts</small></span></li>`).join('')}</ol>`
-      : `<div class="empty"><strong>Nobody yet</strong>${b.resort ? 'No skiers call ' + esc(b.resort) + ' home yet.' : 'Be the first on the board.'}</div>`}</div>
+      : `<div class="empty"><strong>Nobody yet</strong>${b.scope === 'friends' ? 'Add friends in the Duels tab.' : 'Be the first on the board.'}</div>`}</div>
     <section class="card form" style="margin-top:20px">
       <div class="label">Your profile</div>
       <div class="hint">Signed in as <b>${esc(me.username)}</b> · ${esc(S.session.user.email)}</div>
@@ -541,6 +812,7 @@ const views = {
         <button class="btn" data-act="signout">Sign out</button></div>
     </section>`;
   },
+
   profile(){
     const P = S.profile;
     if (!P || !P.data) return '<p class="sub">Loading…</p>';
@@ -548,17 +820,22 @@ const views = {
     const verified = P.clips.filter(c => c.status === 'verified');
     const fire = P.clips.reduce((n, c) => n + count(c.likes), 0);
     const best = verified.reduce((a, c) => (!a || c.points_awarded > a.points_awarded ? c : a), null);
+    const tr = rankInfo(u.points, TRICK_TIERS), dr = rankInfo(u.rating, TIERS);
+    const f = S.friends.find(x => x.other && x.other.id === u.id);
+    const friendBit = mine ? '' : f && f.status === 'accepted' ? '<span class="pill ok" style="display:inline-block;margin-top:6px">Friends</span>'
+      : f ? '<span class="pill wait" style="display:inline-block;margin-top:6px">Request pending</span>'
+      : `<button class="btn small" style="margin-top:8px" data-act="add-friend" data-id="${u.id}">+ Add friend</button>`;
     return `<button class="linkish back" data-act="back">← Back</button>
-    <div class="prof-head"><div class="avatar ${mine ? 'you' : ''}">${esc(initials(u.username))}</div>
-      <div><h2>${esc(u.username)}</h2><div class="hint">${u.home_resort ? '🏔 ' + esc(u.home_resort) : 'No home mountain yet'}</div></div></div>
+    <div class="prof-head">${badgeSVG(tr.tier.key, 72, tr.div, {glow: true})}
+      <div><h2>${esc(u.username)}</h2><div class="hint">${u.home_resort ? '🏔 ' + esc(u.home_resort) : 'No home mountain yet'}</div>${friendBit}</div></div>
     <div class="stats">
       <div class="stat"><b>${u.points}</b><span>Points</span></div>
       <div class="stat"><b>${verified.length}</b><span>Verified</span></div>
       <div class="stat"><b>${fire}</b><span>🔥 Fire</span></div>
     </div>
     <div class="medals">
-      <div class="card">${sym(trickTierOf(u.points).key, true)}<div><div class="label">Trick rank</div><b>${trickTierOf(u.points).name}</b></div></div>
-      <div class="card">${sym(tierOf(u.rating).key, true)}<div><div class="label">Duel rank</div><b>${tierOf(u.rating).name}</b></div></div>
+      <div class="card">${badgeSVG(tr.tier.key, 44, tr.div)}<div><div class="label">Tricks</div>${rankWord(tr, 22)}</div></div>
+      <div class="card">${badgeSVG(dr.tier.key, 44, dr.div)}<div><div class="label">Duels</div>${rankWord(dr, 22)}</div></div>
     </div>
     ${best ? `<div class="label" style="margin-bottom:8px">Best trick · <span style="color:var(--accent)">${esc(trickById(best.trick_id).name)} +${best.points_awarded}</span></div>` : ''}
     <div class="label" style="margin-block:14px 8px">${mine ? 'Your clips' : 'Verified clips'}</div>
@@ -567,65 +844,324 @@ const views = {
         ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline loop preload="metadata"></video>` : ''}
         <em>${c.status === 'verified' ? '+' + c.points_awarded : c.status === 'pending' ? 'judging' : '✕'}</em>
         <span>${esc(trickById(c.trick_id).name)}</span></button>`).join('')}</div>`
-      : `<div class="card empty"><strong>No clips yet</strong>${mine ? 'Post your first trick.' : 'Nothing verified yet.'}</div>`}`;
+      : `<div class="card empty"><strong>No clips yet</strong>${mine ? 'Record your first trick.' : 'Nothing verified yet.'}</div>`}`;
   },
 };
 
-// ---------- post form ----------
+function friendRow(p, kind){
+  const f = S.friends.find(x => x.other && x.other.id === p.id);
+  let acts = '';
+  if (kind === 'incoming') acts = `<button class="btn small good" data-act="accept-friend" data-id="${p.id}">Accept</button>
+      <button class="btn small" data-act="remove-friend" data-id="${p.id}" aria-label="Decline">✕</button>`;
+  else if (kind === 'friend'){
+    const d = activeDuelWith(p.id);
+    acts = d ? `<button class="btn small" data-act="open-duel" data-id="${d.id}">View duel</button>`
+             : `<button class="btn small primary" data-act="challenge" data-id="${p.id}">Challenge</button>`;
+  } else {
+    acts = !f ? `<button class="btn small" data-act="add-friend" data-id="${p.id}">+ Add</button>`
+      : f.status === 'accepted' ? '<span class="hint">Friends</span>'
+      : f.incoming ? `<button class="btn small good" data-act="accept-friend" data-id="${p.id}">Accept</button>` : '<span class="hint">Sent</span>';
+  }
+  return `<div class="friend">
+    <button class="avatar linkname" data-act="profile" data-id="${p.id}" aria-label="${esc(p.username)}'s profile">${esc(initials(p.username))}</button>
+    <div><b>${esc(p.username)}</b><div class="hint">${esc(rankInfo(p.rating, TIERS).label)} · ${p.rating}${kind === 'friend' ? ` · ${winChance(S.me.rating, p.rating)}% win chance` : ''}</div></div>
+    <div class="acts">${acts}</div></div>`;
+}
+
+function duelDetail(){
+  const d = S.duels.find(x => x.id === S.duelId);
+  if (!d) return '<button class="linkish back" data-act="duels-home">← All duels</button><p class="sub">Duel not found.</p>';
+  const iAmCh = d.challenger === myId(), other = d.other;
+  const myL = iAmCh ? d.letters_challenger : d.letters_opponent, theirL = iAmCh ? d.letters_opponent : d.letters_challenger;
+  const moves = S.duelMoves[d.id] || [];
+  const name = uid => uid === myId() ? 'You' : other.username;
+  const log = moves.map(m => {
+    const t = esc(trickById(m.trick_id).name), n = esc(name(m.user_id));
+    const text = m.kind === 'set' ? (m.landed ? `${n} landed a ${t}` : `${n} bailed a ${t}`)
+                                  : (m.landed ? `${n} matched the ${t}` : `${n} missed the ${t} and took a letter`);
+    const clip = m.clips && m.clips.video_path ? ` · <button class="linkish" data-act="watch-move" data-id="${m.id}">watch</button>` : '';
+    return text + clip;
+  });
+  let turn;
+  if (d.status === 'done'){
+    const won = d.winner === myId();
+    turn = `<div class="what" style="color:var(--${won ? 'good' : 'bad'})">${won ? 'You won!' : `${esc(other.username)} won`}</div>
+      <div class="hint">Rating ${won ? '+' : '−'}${d.rating_change || 0}</div>
+      ${activeDuelWith(other.id) ? '' : `<button class="btn primary" data-act="challenge" data-id="${other.id}">Rematch</button>`}`;
+  } else if (d.turn !== myId()){
+    turn = `<div class="what">${esc(other.username)}'s turn</div>
+      <div class="hint">${d.phase === 'set' ? 'They\'re picking a trick to set.' : `They're trying to match your ${esc(trickById(d.trick_id).name)}.`}</div>`;
+  } else if (d.phase === 'set'){
+    const sport = S.duelSport || S.sport;
+    turn = `<div class="what">Your turn: set a trick</div>
+      ${sportSwitch(sport, 'duel-sport')}
+      ${trickSelect('duel-trick', sport, S.duelTrick)}
+      <div class="btns"><button class="btn" data-act="duel-bail">I bailed</button>
+        <button class="btn primary" data-act="duel-record" data-kind="set">🎥 Record attempt</button></div>
+      <span class="hint">Land it on camera and ${esc(other.username)} has to match it.</span>`;
+  } else {
+    const setMove = [...moves].reverse().find(m => m.kind === 'set' && m.landed);
+    turn = `<div class="what">Match the ${esc(trickById(d.trick_id).name)}</div>
+      ${setMove && setMove.clips && setMove.clips.video_path ? `<video class="clip" style="border-radius:12px" src="${esc(videoUrl(setMove.clips.video_path))}" controls playsinline muted preload="metadata"></video>` : ''}
+      <div class="btns"><button class="btn bad" data-act="duel-miss">I missed</button>
+        <button class="btn primary" data-act="duel-record" data-kind="match">🎥 Record my match</button></div>`;
+  }
+  const watching = S.watchMove && moves.find(m => m.id === S.watchMove);
+  return `<button class="linkish back" data-act="duels-home">← All duels</button>
+  <div class="card" style="margin-top:10px">
+    <div class="vs">
+      <div class="side"><b>You</b>${lettersHtml(myL)}<span class="hint">${S.me.rating} rating</span></div>
+      <div class="mid">VS</div>
+      <div class="side r"><b>${esc(other.username)}</b>${lettersHtml(theirL)}<span class="hint">${other.rating} rating</span></div>
+    </div>
+    ${watching && watching.clips ? `<video class="clip" src="${esc(videoUrl(watching.clips.video_path))}" controls autoplay playsinline muted></video>` : ''}
+    <ul class="log">${log.length ? log.slice(-8).map((l, i, a) => `<li class="${i === a.length - 1 ? 'hot' : ''}">${l}</li>`).join('')
+      : `<li class="hot">${iAmCh ? 'You' : esc(other.username)} started the duel and sets first.</li>`}</ul>
+    <div class="turn">${turn}</div>
+  </div>
+  ${d.status === 'active' ? '<p style="margin-top:14px"><button class="linkish" data-act="forfeit">Forfeit this duel</button></p>' : ''}`;
+}
+
+// ---------- judge reel ----------
+function reelItem(c){
+  const J = S.judge, t = trickById(c.trick_id), sp = SPORTS[sportOf(t)];
+  const voted = c.id in J.voted;
+  let actions;
+  if (voted) actions = `<div class="reel-done" style="color:var(--${J.voted[c.id] ? 'good' : 'bad'})">${J.voted[c.id] ? '✓ Landed' : '✕ Not landed'}</div>`;
+  else if (J.reasonFor === c.id) actions = `<div class="reel-reasons"><div class="label">What went wrong?</div>
+      ${REASONS.map(([k, l]) => `<button class="btn bad small" data-act="vote" data-id="${c.id}" data-y="0" data-reason="${k}">${l}</button>`).join('')}
+      <button class="linkish" data-act="noreason" style="grid-column:1 / -1">Cancel</button></div>`;
+  else actions = `<div class="reel-actions">
+      <button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">✓</button><span class="round-label">Landed</span>
+      <button class="round no" data-act="askreason" data-id="${c.id}" aria-label="Not landed">✕</button><span class="round-label">Nope</span>
+      <button class="round skip" data-act="skip" data-id="${c.id}" aria-label="Skip">↓</button><span class="round-label">Skip</span></div>`;
+  return `<section class="reel-item" id="reel-${c.id}" data-id="${c.id}">
+    ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
+    <div class="reel-top"><span class="pill sport">${sp.icon} Anonymous rider</span><span class="hint">${esc(c.resort || '')} · ${ago(c.created_at)}</span></div>
+    ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(t.name)}</div>
+      <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · 🔥 Trick of the Day' : ''}</div></div>`}
+    ${actions}
+  </section>`;
+}
+function refreshReelItem(id){
+  const el = id && $('reel-' + id), c = S.judge.list.find(x => x.id === id);
+  if (!el || !c) return;
+  const video = el.querySelector('video'), t = video ? video.currentTime : 0;
+  el.outerHTML = reelItem(c);
+  const fresh = $('reel-' + id), v = fresh.querySelector('video');
+  if (reelObserver) reelObserver.observe(fresh);
+  if (v){ v.currentTime = t; v.play().catch(() => {}); }
+}
+function nextReel(id){
+  const el = $('reel-' + id);
+  if (el && el.nextElementSibling) el.nextElementSibling.scrollIntoView({behavior: 'smooth'});
+}
+let reelObserver;
+function watchReel(){
+  if (reelObserver) reelObserver.disconnect();
+  const reel = $('reel'); if (!reel) return;
+  // Play the clip that's on screen; pause the rest.
+  reelObserver = new IntersectionObserver(entries => {
+    for (const e of entries){
+      const v = e.target.querySelector('video'); if (!v) continue;
+      if (e.isIntersecting && e.intersectionRatio > .6) v.play().catch(() => {}); else v.pause();
+    }
+  }, {root: reel, threshold: [0, .6, 1]});
+  reel.querySelectorAll('.reel-item').forEach(el => reelObserver.observe(el));
+}
+function maybeBreak(){
+  const J = S.judge;
+  if (J.count < JUDGE_BREAK || J.breakShown) return;
+  J.breakShown = true;
+  $('overlay').innerHTML = `<div class="modal"><div class="card">
+    <div class="rank-word t-plat" style="font-size:36px">${J.count} clips judged</div>
+    <p class="sub" style="margin:0">That's a solid session and a real help. Take a break, or keep going if you want.</p>
+    <div class="btns"><button class="btn" data-act="judge-done">I'm done</button><button class="btn primary" data-act="close-modal">Keep going</button></div>
+  </div></div>`;
+}
+
+// ---------- recording ----------
+function pickMime(){
+  const options = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  return options.find(t => MediaRecorder.isTypeSupported(t)) || '';
+}
+async function openCamera(){
+  const R = S.rec;
+  try {
+    stopStream();
+    R.stream = await navigator.mediaDevices.getUserMedia({
+      video: {facingMode: {ideal: R.facing}, width: {ideal: 1280}, height: {ideal: 720}}, audio: false});
+    R.mode = 'live'; render(true);
+  } catch (err){
+    toast(err.name === 'NotAllowedError' ? 'Camera blocked. Allow camera access in your browser settings.' : 'Camera error: ' + err.message, 5000);
+  }
+}
+function attachStream(){ const v = $('rec-live'); if (v && S.rec.stream){ v.srcObject = S.rec.stream; v.play().catch(() => {}); } }
+function stopStream(){ const R = S.rec; if (R.stream){ R.stream.getTracks().forEach(t => t.stop()); R.stream = null; } }
+function startRecording(){
+  const R = S.rec, mime = pickMime();
+  if (!R.stream) return;
+  R.chunks = [];
+  R.recorder = new MediaRecorder(R.stream, mime ? {mimeType: mime, videoBitsPerSecond: 2500000} : undefined);
+  R.recorder.ondataavailable = e => { if (e.data && e.data.size) R.chunks.push(e.data); };
+  R.recorder.onstop = () => {
+    const type = (R.recorder.mimeType || mime || 'video/webm').split(';')[0];
+    R.blob = new Blob(R.chunks, {type});
+    if (R.url) URL.revokeObjectURL(R.url);
+    R.url = URL.createObjectURL(R.blob);
+    clearInterval(R.tick); clearTimeout(R.stopTimer);
+    stopStream(); R.mode = 'review'; render(true);
+  };
+  R.recorder.start(250);
+  R.startedAt = Date.now(); R.mode = 'recording';
+  // Update just the button and timer, so the live preview keeps running
+  const shutter = document.querySelector('.shutter'); shutter.classList.add('stop'); shutter.dataset.act = 'rec-stop';
+  const timer = $('rec-timer'); timer.classList.add('live');
+  R.tick = setInterval(() => { timer.textContent = `● ${((Date.now() - R.startedAt) / 1000).toFixed(1)}s / ${MAX_SECONDS}s`; }, 100);
+  R.stopTimer = setTimeout(() => { if (R.recorder && R.recorder.state === 'recording') R.recorder.stop(); }, MAX_SECONDS * 1000);
+}
+function resetRecorder(keepContext){
+  const R = S.rec;
+  if (R.recorder && R.recorder.state === 'recording'){ R.recorder.onstop = null; R.recorder.stop(); }
+  clearInterval(R.tick); clearTimeout(R.stopTimer); stopStream();
+  if (R.url) URL.revokeObjectURL(R.url);
+  Object.assign(R, {mode: 'idle', recorder: null, chunks: [], blob: null, url: null});
+  if (!keepContext) R.context = null;
+}
+function postForm(){
+  const sp = SPORTS[S.sport];
+  return `<form class="card form" id="post-form" style="margin-top:14px">
+    ${sportSwitch(S.sport, 'sport')}
+    <div class="two">
+      <div class="field"><label class="label" for="post-cat">Category</label>
+        <select id="post-cat">${sp.cats.map(c => `<option>${c}</option>`).join('')}</select></div>
+      <div class="field"><label class="label" for="post-grab">Grab</label>
+        <select id="post-grab">${sp.grabs.map(g => `<option>${g}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick"></select></div>
+    <div class="field"><label class="label" for="post-resort">Resort</label>
+      <select id="post-resort">${RESORTS.map(r => `<option ${S.me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+    <div class="preview"><div><div class="label">Worth</div><span class="hint" id="post-why">A grab adds 20%</span></div>
+      <div><span class="big" id="post-pts">0</span> <span class="label">pts</span></div></div>
+    <div class="btns"><button class="btn" type="button" data-act="retake">Retake</button>
+      <button class="btn primary" type="submit" id="post-btn">Post</button></div>
+  </form>`;
+}
+function duelReviewForm(ctx){
+  return `<div class="card form" style="margin-top:14px">
+    <div class="trick">${esc(trickById(ctx.trickId).name)}</div>
+    <p class="hint" style="margin:0">Did you land it? Sending this counts as landed, and ${esc(ctx.otherName)} can watch it. It also goes to judging for points.</p>
+    <div class="btns"><button class="btn" data-act="retake">Retake</button>
+      <button class="btn primary" data-act="duel-send" id="duel-send">Landed: send it</button></div>
+    <button class="linkish" data-act="duel-bail-after">Actually, I bailed</button>
+  </div>`;
+}
 function syncPost(){
   const cat = $('post-cat'); if (!cat) return;
-  if (S.postPreset){ cat.value = trickById(S.postPreset).category; }
+  if (S.postPreset && sportOf(trickById(S.postPreset)) === S.sport) cat.value = trickById(S.postPreset).category;
   const sel = $('post-trick'), prev = S.postPreset || sel.value;
-  sel.innerHTML = S.tricks.filter(t => t.category === cat.value)
+  sel.innerHTML = tricksFor(S.sport, cat.value)
     .map(t => `<option value="${t.id}">${esc(t.name)}${t.id === S.totd ? ' 🔥 2×' : ''}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   S.postPreset = null;
   const double = sel.value === S.totd;
-  $('post-pts').textContent = basePoints(sel.value, $('post-grab').value) * (double ? 2 : 1);
+  $('post-pts').textContent = sel.value ? basePoints(sel.value, $('post-grab').value) * (double ? 2 : 1) : 0;
   $('post-why').textContent = double ? '🔥 Trick of the Day: 2× points' : 'A grab adds 20%';
+}
+
+// Upload the recorded video and create the clip. Returns the new clip's id.
+async function uploadClip(fields){
+  const blob = S.rec.blob;
+  if (!blob || !blob.size) throw new Error('Nothing recorded');
+  if (blob.size > MAX_MB * 1024 * 1024) throw new Error(`Video is over ${MAX_MB} MB. Record a shorter clip.`);
+  const type = blob.type || 'video/webm';
+  const ext = type.includes('mp4') ? 'mp4' : type.includes('quicktime') ? 'mov' : 'webm';
+  const path = `${myId()}/${crypto.randomUUID()}.${ext}`;  // must start with my user id (storage rule)
+  const up = await db.storage.from('clips').upload(path, blob, {contentType: type});
+  if (up.error) throw up.error;
+  const ins = await db.from('clips').insert({...fields, video_path: path}).select('id').single();
+  if (ins.error){ await db.storage.from('clips').remove([path]); throw ins.error; }
+  return ins.data.id;
 }
 
 // ---------- render ----------
 const TABS = [
   ['feed','Feed','<path d="M4 5h16M4 12h16M4 19h10"/>'],
   ['judge','Judge','<path d="M5 12l4 4L19 6"/>'],
-  ['post','Post','<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>'],
+  ['record','Record','<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'],
+  ['duels','Duels','<path d="M5 19L19 5M14 5h5v5M5 5l5 5M14 14l5 5"/>'],
   ['ranks','Ranks','<path d="M4 20h16M7 20V11M12 20V5M17 20v-6"/>'],
 ];
-function render(){
+const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
+const KEEP = ['board-resort', 'friend-q'];  // keep what's typed/picked across redraws
+
+function render(force = false){
   const signedIn = !!(S.session && S.me);
   $('tabbar').hidden = !signedIn; $('me-chip').hidden = !signedIn;
   if (!signedIn){ $('view').innerHTML = views.auth(); return; }
-  $('me-chip').innerHTML = `${sym(trickTierOf(S.me.points).key)}<b>${S.me.points}</b><span class="hint">pts</span>`;
+  const r = rankInfo(S.me.points, TRICK_TIERS);
+  $('me-chip').innerHTML = `${badgeSVG(r.tier.key, 26)}<b>${S.me.points}</b>`;
   const judgeCount = judgeQueue().length;
-  $('tabs').innerHTML = TABS.map(([id, label, icon]) =>
-    `<button class="${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}" aria-label="${label}">
-      <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}
-      ${id === 'judge' && judgeCount ? `<span class="badge">${judgeCount}</span>` : ''}</button>`).join('');
-  // Don't rebuild the post form while it's being filled in
-  if (S.tab === 'post' && $('post-form')) return;
+  const duelCount = S.duels.filter(d => d.status === 'active' && d.turn === myId()).length
+    + S.friends.filter(f => f.status === 'pending' && f.incoming).length;
+  $('tabs').innerHTML = TABS.map(([id, label, icon]) => {
+    const badge = id === 'judge' ? judgeCount : id === 'duels' ? duelCount : 0;
+    if (id === 'record') return `<button class="rec-tab ${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="record" aria-label="Record">
+      <span class="dot"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></span>${label}</button>`;
+    return `<button class="${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}" aria-label="${label}">
+      <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}${badge ? `<span class="badge">${badge}</span>` : ''}</button>`;
+  }).join('');
+  // Don't rebuild screens that are mid-use: the reel, the camera, or the post form
+  if (!force && ((S.tab === 'judge' && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))) return;
+  const keep = {}; KEEP.forEach(id => { const el = $(id); if (el) keep[id] = el.value; });
   $('view').innerHTML = views[S.tab]();
+  for (const [id, v] of Object.entries(keep)){ const el = $(id); if (el) el.value = v; }
   syncPost();
+  if (S.tab === 'judge') watchReel();
+  if (S.tab === 'record' && (S.rec.mode === 'live' || S.rec.mode === 'recording')) attachStream();
 }
 
-async function refresh(){
+function showSplash(){
+  if (S.splashDone) return;
+  S.splashDone = true;
+  const r = rankInfo(S.me.points, TRICK_TIERS);
+  $('overlay').innerHTML = `<div class="splash" id="splash" data-act="close-splash" style="--splash-c:${BADGE[r.tier.key][1]}66">
+    ${badgeSVG(r.tier.key, 190, r.div, {glow: true})}
+    <div class="label">Your rank</div>
+    ${rankWord(r, 64)}
+    <div class="mono" style="font-weight:700">${S.me.points} pts${r.nextLabel ? ` · ${r.toNext} to ${esc(r.nextLabel)}` : ''}</div>
+    <div class="bar"><i style="width:${Math.max(4, r.pct)}%"></i></div>
+    <div class="hint" style="margin-top:14px">Tap to drop in</div>
+  </div>`;
+  setTimeout(closeSplash, 2800);
+}
+function closeSplash(){
+  const s = $('splash'); if (!s) return;
+  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; }, 350);
+}
+
+async function refresh(force = false){
   try {
     await loadAll();
     if (S.tab === 'ranks') await loadBoard();
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
+    if (S.tab === 'duels' && S.duelId) await loadDuelMoves(S.duelId);
   } catch (err){ console.error(err); toast('Could not reach the server: ' + err.message); }
-  render();
+  render(force);
 }
 
 async function openTab(tab){
-  S.tab = tab; S.reasonFor = null; S.openComments = null; $('view').innerHTML = '';
+  if (S.tab === 'record' && tab !== 'record') resetRecorder();
+  if (tab === 'judge') S.judge = {list: judgeQueue(), voted: {}, reasonFor: null, count: 0, breakShown: false};
+  if (tab === 'duels') S.duelId = null;
+  S.tab = tab; S.openComments = null; $('view').innerHTML = '';
   if (tab === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
-  render(); window.scrollTo(0, 0);
+  render(true); window.scrollTo(0, 0);
 }
 
-// Check for new clips and results every 20 s, unless you're busy typing or watching.
+// Check for new clips, duel moves and results every 20 s, unless you're busy.
 setInterval(() => {
-  if (!S.me || S.busy || S.tab === 'post') return;
+  if (!S.me || S.busy || ['record', 'judge'].includes(S.tab)) return;
   const a = document.activeElement;
   if (a && ['INPUT','TEXTAREA','SELECT'].includes(a.tagName)) return;
   if ([...document.querySelectorAll('video')].some(v => !v.paused)) return;
@@ -634,34 +1170,37 @@ setInterval(() => {
 
 // ---------- actions ----------
 async function vote(clipId, landed, reason){
+  const J = S.judge;
   const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
-  if (r.error){ toast('Vote failed: ' + r.error.message); return; }
-  S.reasonFor = null;
-  toast(landed ? 'Voted landed' : 'Voted not landed');
-  await refresh();
+  if (r.error){ toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
+  J.voted[clipId] = landed; J.reasonFor = null; J.count++;
+  S.myVotes.add(clipId);
+  refreshReelItem(clipId);
+  setTimeout(() => nextReel(clipId), 450);
+  maybeBreak();
+  loadAll().then(() => render()).catch(() => {});  // update badges quietly
 }
 
-async function toggleLike(id, btn){
+async function toggleLike(id){
   const c = S.clips.find(x => x.id === id) || (S.profile && S.profile.clips.find(x => x.id === id));
   const liked = S.myLikes.has(id);
   // Update the screen right away, then tell the database
   if (liked) S.myLikes.delete(id); else S.myLikes.add(id);
   if (c){ c.likes = [{count: Math.max(0, count(c.likes) + (liked ? -1 : 1))}]; }
-  render();
+  render(true);
   if (!liked){ const b = document.querySelector(`[data-act="like"][data-id="${id}"]`); if (b) b.classList.add('pop'); }
   const r = liked ? await db.from('likes').delete().eq('clip_id', id).eq('user_id', myId())
                   : await db.from('likes').insert({clip_id: id});
-  if (r.error){ toast('Could not save: ' + r.error.message); await refresh(); }
+  if (r.error){ toast('Could not save: ' + r.error.message); await refresh(true); }
 }
 
 async function toggleComments(id){
-  if (S.openComments === id){ S.openComments = null; render(); return; }
-  S.openComments = id; render();
+  if (S.openComments === id){ S.openComments = null; render(true); return; }
+  S.openComments = id; render(true);
   try { await loadComments(id); } catch (err){ toast(err.message); }
-  render();
+  render(true);
   const input = $('comment-' + id); if (input) input.focus();
 }
-
 async function sendComment(clipId, input){
   const body = input.value.trim(); if (!body) return;
   input.disabled = true;
@@ -669,24 +1208,24 @@ async function sendComment(clipId, input){
   if (r.error){ toast('Comment failed: ' + r.error.message); input.disabled = false; return; }
   await loadComments(clipId);
   const c = S.clips.find(x => x.id === clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
-  render();
+  render(true);
   const again = $('comment-' + clipId); if (again) again.focus();
 }
-
 async function deleteComment(id, clipId){
   const r = await db.from('comments').delete().eq('id', id);
   if (r.error){ toast('Delete failed: ' + r.error.message); return; }
   await loadComments(clipId);
   const c = S.clips.find(x => x.id === clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
-  render();
+  render(true);
 }
 
 async function openProfile(id){
   if (S.tab !== 'profile') S.prevTab = S.tab;
+  if (S.tab === 'record') resetRecorder();
   S.tab = 'profile'; S.openComments = null;
-  S.profile = {id, data: null, clips: []}; render(); window.scrollTo(0, 0);
+  S.profile = {id, data: null, clips: []}; render(true); window.scrollTo(0, 0);
   try { await loadProfile(id); } catch (err){ toast(err.message); }
-  render();
+  render(true);
 }
 
 async function deleteClip(id){
@@ -696,31 +1235,88 @@ async function deleteClip(id){
   if (r.error){ toast('Delete failed: ' + r.error.message); return; }
   if (c.video_path) await db.storage.from('clips').remove([c.video_path]);
   toast('Clip deleted');
-  await refresh();
+  await refresh(true);
 }
 
 async function submitPost(){
-  const file = $('post-video').files[0];
-  if (!file){ toast('Pick a video first'); return; }
-  if (file.size > MAX_MB * 1024 * 1024){ toast(`That video is over ${MAX_MB} MB. Trim it and try again.`); return; }
-  const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-  const type = file.type || (ext === 'mov' ? 'video/quicktime' : ext === 'webm' ? 'video/webm' : 'video/mp4');
-  const path = `${myId()}/${crypto.randomUUID()}.${ext}`;  // must start with my user id (storage rule)
-  const clip = {trick_id: $('post-trick').value, grab: $('post-grab').value, resort: $('post-resort').value, video_path: path};
-
-  S.busy = true; $('post-btn').disabled = true; $('post-btn').textContent = 'Uploading…';
+  const fields = {trick_id: $('post-trick').value, grab: $('post-grab').value, resort: $('post-resort').value};
+  S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
   try {
-    const up = await db.storage.from('clips').upload(path, file, {contentType: type});
-    if (up.error) throw up.error;
-    const ins = await db.from('clips').insert(clip);
-    if (ins.error){ await db.storage.from('clips').remove([path]); throw ins.error; }
-    S.tab = 'feed'; $('view').innerHTML = '';
-    toast('Posted. Skiers are judging it now.');
-    await refresh(); window.scrollTo(0, 0);
+    await uploadClip(fields);
+    resetRecorder();
+    toast('Posted. Riders are judging it now.');
+    S.tab = 'feed'; await refresh(true); window.scrollTo(0, 0);
   } catch (err){
     console.error(err); toast('Post failed: ' + err.message, 5000);
-    const b = $('post-btn'); if (b){ b.disabled = false; b.textContent = 'Post for judging'; }
+    b.disabled = false; b.textContent = 'Post';
   } finally { S.busy = false; }
+}
+
+// ----- friends & duels -----
+async function addFriend(id){
+  const r = await db.from('friendships').insert({addressee: id});
+  if (r.error) toast(/duplicate|unique/i.test(r.error.message) ? 'You two are already connected' : 'Could not add: ' + r.error.message);
+  else toast('Friend request sent');
+  await refresh(true);
+}
+async function acceptFriend(id){
+  const r = await db.from('friendships').update({status: 'accepted'}).eq('requester', id).eq('addressee', myId());
+  if (r.error) toast('Could not accept: ' + r.error.message); else toast('You\'re friends now. Challenge them!');
+  await refresh(true);
+}
+async function removeFriend(id){
+  const f = S.friends.find(x => x.other && x.other.id === id); if (!f) return;
+  const r = await db.from('friendships').delete().eq('requester', f.requester).eq('addressee', f.addressee);
+  if (r.error) toast('Could not remove: ' + r.error.message);
+  await refresh(true);
+}
+async function challenge(id){
+  const r = await db.rpc('start_duel', {p_opponent: id});
+  if (r.error){ toast(r.error.message); return; }
+  S.tab = 'duels'; S.duelTrick = null; S.duelSport = null;
+  await refresh(true);
+  await openDuel(r.data);
+  toast('Duel on! You set first.');
+}
+async function openDuel(id){
+  if (S.tab === 'record') resetRecorder();
+  S.tab = 'duels'; S.duelId = id; S.watchMove = null;
+  render(true); window.scrollTo(0, 0);
+  try { await loadDuelMoves(id); } catch (err){ toast(err.message); }
+  render(true);
+}
+async function duelMove(duelId, landed, trickId, clipId){
+  const r = await db.rpc('duel_move', {p_duel: duelId, p_landed: landed, p_trick: trickId || null, p_clip: clipId || null});
+  if (r.error){ toast(r.error.message, 5000); return false; }
+  return true;
+}
+function startDuelRecording(kind){
+  const d = S.duels.find(x => x.id === S.duelId); if (!d) return;
+  const trickId = kind === 'set' ? $('duel-trick').value : d.trick_id;
+  resetRecorder();
+  S.rec.context = {duelId: d.id, kind, trickId, otherName: d.other.username};
+  S.tab = 'record'; render(true); window.scrollTo(0, 0);
+}
+async function sendDuelClip(){
+  const ctx = S.rec.context, b = $('duel-send');
+  S.busy = true; b.disabled = true; b.textContent = 'Uploading…';
+  try {
+    const clipId = await uploadClip({trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]});
+    if (await duelMove(ctx.duelId, true, ctx.kind === 'set' ? ctx.trickId : null, clipId)){
+      toast(ctx.kind === 'set' ? `Sent! ${ctx.otherName} has to match it.` : 'Matched! Their turn to set.');
+      resetRecorder(); await refresh(true); await openDuel(ctx.duelId);
+    } else { b.disabled = false; b.textContent = 'Landed: send it'; }
+  } catch (err){
+    toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.textContent = 'Landed: send it';
+  } finally { S.busy = false; }
+}
+async function bail(){
+  const d = S.duels.find(x => x.id === S.duelId); if (!d) return;
+  const trick = d.phase === 'set' ? ($('duel-trick') || {}).value : null;
+  if (await duelMove(d.id, false, trick, null)){
+    toast(d.phase === 'set' ? 'Bailed. Their turn to set.' : 'Letter taken. Shake it off.');
+    await refresh(true);
+  }
 }
 
 async function submitAuth(){
@@ -761,41 +1357,93 @@ async function submitAuth(){
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const act = b.dataset.act, id = b.dataset.id;
-  if (act === 'tab') await openTab(b.dataset.tab);
-  else if (act === 'authmode'){ S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; render(); }
-  else if (act === 'askreason'){ S.reasonFor = id; render(); }
-  else if (act === 'noreason'){ S.reasonFor = null; render(); }
-  else if (act === 'vote'){ b.disabled = true; await vote(id, b.dataset.y === '1', b.dataset.reason); }
-  else if (act === 'delete') await deleteClip(id);
-  else if (act === 'like') await toggleLike(id, b);
-  else if (act === 'comments') await toggleComments(id);
-  else if (act === 'delcomment') await deleteComment(id, b.dataset.clip);
-  else if (act === 'profile') await openProfile(id);
-  else if (act === 'back') await openTab(S.prevTab || 'feed');
-  else if (act === 'totdpost'){ S.postPreset = S.totd; await openTab('post'); }
-  else if (act === 'period'){ S.board.period = b.dataset.k; try { await loadBoard(); } catch (err){ toast(err.message); } render(); }
-  else if (act === 'playtile'){
-    const v = b.querySelector('video'); if (!v) return;
-    if (v.paused){ document.querySelectorAll('.tile video').forEach(o => o.pause()); v.muted = false; v.play(); } else v.pause();
+  switch (act){
+    case 'tab': return openTab(b.dataset.tab);
+    case 'authmode': S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; return render(true);
+    case 'close-splash': return closeSplash();
+    case 'close-modal': $('overlay').innerHTML = ''; return;
+    case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
+    // judging
+    case 'askreason': { const was = S.judge.reasonFor; S.judge.reasonFor = id; refreshReelItem(was); return refreshReelItem(id); }
+    case 'noreason': { const was = S.judge.reasonFor; S.judge.reasonFor = null; return refreshReelItem(was); }
+    case 'vote': b.disabled = true; return vote(id, b.dataset.y === '1', b.dataset.reason);
+    case 'skip': return nextReel(id);
+    // feed
+    case 'delete': return deleteClip(id);
+    case 'like': return toggleLike(id);
+    case 'comments': return toggleComments(id);
+    case 'delcomment': return deleteComment(id, b.dataset.clip);
+    case 'profile': return openProfile(id);
+    case 'back': return openTab(S.prevTab || 'feed');
+    case 'totdpost': S.postPreset = S.totd; S.sport = sportOf(trickById(S.totd)); return openTab('record');
+    case 'playtile': {
+      const v = b.querySelector('video'); if (!v) return;
+      if (v.paused){ document.querySelectorAll('.tile video').forEach(o => o.pause()); v.muted = false; v.play(); } else v.pause();
+      return;
+    }
+    // ranks
+    case 'scope': S.board.scope = b.dataset.k; try { await loadBoard(); } catch (err){ toast(err.message); } return render(true);
+    case 'period': S.board.period = b.dataset.k; try { await loadBoard(); } catch (err){ toast(err.message); } return render(true);
+    case 'signout': resetRecorder(); return db.auth.signOut();
+    // record
+    case 'sport':
+      S.sport = b.dataset.k; store.set('sport', S.sport);
+      if (S.rec.mode === 'review'){ const box = $('post-form'); if (box){ box.outerHTML = postForm(); syncPost(); } return; }
+      return render(true);
+    case 'cam-open': return openCamera();
+    case 'cam-flip': if (S.rec.mode === 'recording') return; S.rec.facing = S.rec.facing === 'environment' ? 'user' : 'environment'; return openCamera();
+    case 'cam-close': resetRecorder(true); return render(true);
+    case 'rec-start': return startRecording();
+    case 'rec-stop': if (S.rec.recorder && S.rec.recorder.state === 'recording') S.rec.recorder.stop(); return;
+    case 'retake': resetRecorder(true); return openCamera();
+    case 'rec-cancel': { const dId = S.rec.context && S.rec.context.duelId; resetRecorder(); return dId ? openDuel(dId) : render(true); }
+    // friends & duels
+    case 'add-friend': return addFriend(id);
+    case 'accept-friend': return acceptFriend(id);
+    case 'remove-friend': return removeFriend(id);
+    case 'challenge': return challenge(id);
+    case 'open-duel': return openDuel(id);
+    case 'duels-home': S.duelId = null; return render(true);
+    case 'duel-sport': S.duelSport = b.dataset.k; S.duelTrick = null; return render(true);
+    case 'duel-record': return startDuelRecording(b.dataset.kind);
+    case 'duel-send': return sendDuelClip();
+    case 'duel-bail': case 'duel-miss': return bail();
+    case 'duel-bail-after': {
+      const ctx = S.rec.context; resetRecorder();
+      if (await duelMove(ctx.duelId, false, ctx.kind === 'set' ? ctx.trickId : null, null)) toast('Logged as a bail.');
+      await refresh(true); return openDuel(ctx.duelId);
+    }
+    case 'watch-move': S.watchMove = Number(id); return render(true);
+    case 'forfeit':
+      if (!confirm('Forfeit this duel? You lose rating like a normal loss.')) return;
+      { const r = await db.rpc('forfeit_duel', {p_duel: S.duelId}); if (r.error) toast(r.error.message); }
+      return refresh(true);
   }
-  else if (act === 'signout') await db.auth.signOut();
 });
 document.addEventListener('change', async e => {
   const id = e.target.id;
   if (['post-cat','post-trick','post-grab'].includes(id)) syncPost();
-  if (id === 'board-resort'){ S.board.resort = e.target.value; try { await loadBoard(); } catch (err){ toast(err.message); } render(); }
+  if (id === 'duel-trick') S.duelTrick = e.target.value;
+  if (id === 'board-resort'){ S.board.resort = e.target.value; try { await loadBoard(); } catch (err){ toast(err.message); } render(true); }
   if (id === 'home-resort'){
     const r = await db.from('profiles').update({home_resort: e.target.value || null}).eq('id', myId());
     if (r.error) toast('Could not save: ' + r.error.message);
-    else { toast('Home mountain saved'); await refresh(); }
+    else { toast('Home mountain saved'); await refresh(true); }
   }
 });
-document.addEventListener('submit', e => {
+document.addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
   if (f.id === 'post-form' && !S.busy) submitPost();
   else if (f.id === 'auth-form' && !S.busy) submitAuth();
   else if (f.classList.contains('comment-form')) sendComment(f.dataset.clip, f.querySelector('input'));
+  else if (f.id === 'friend-search'){
+    const q = $('friend-q').value.trim(); S.search.q = q;
+    if (q.length < 2){ toast('Type at least 2 letters'); return; }
+    const r = await db.from('profiles').select(PROFILE_BITS).ilike('username', `%${q.replace(/[%_,()]/g, '')}%`).neq('id', myId()).limit(10);
+    if (r.error){ toast(r.error.message); return; }
+    S.search.results = r.data; render(true);
+  }
 });
 
 // ---------- snow ----------
@@ -815,8 +1463,8 @@ db.auth.onAuthStateChange((event, session) => {
   setTimeout(async () => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
-    if (!now){ S.me = null; seenStatus = null; S.tab = 'feed'; render(); return; }
-    if (was !== now){ S.tab = 'feed'; await refresh(); }
+    if (!now){ S.me = null; seenStatus = null; S.tab = 'feed'; S.splashDone = false; render(true); return; }
+    if (was !== now){ S.tab = 'feed'; await refresh(true); if (S.me) showSplash(); }
   }, 0);
 });
 </script>
