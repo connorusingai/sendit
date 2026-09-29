@@ -19,7 +19,7 @@ Keep the skier's side this simple. All the checking happens in the background.
 | Piece | State |
 |---|---|
 | Clickable prototype | ✅ [`prototype/index.html`](prototype/index.html), fake users, saves in your browser only · [live link](https://claude.ai/artifact/R2RN1gjaBDJzi2VtuPRERC) |
-| Real accounts + shared database | ⬜ Not started (plan: Supabase) |
+| Real accounts + shared database | 🔨 Database design written: [`supabase/001_schema.sql`](supabase/001_schema.sql). Setup steps: [`supabase/SETUP.md`](supabase/SETUP.md) |
 | Mobile app | ⬜ Not started |
 | AI verification | 🔨 Separate project, [`sendit-ai`](../sendit-ai/README.md) |
 
