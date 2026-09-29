@@ -79,8 +79,16 @@ Behind the scenes:
 | Smartwatch plus a friend filming | ✅ | ⚠️ less accurate (arms flail) |
 | Skiing alone, phone in pocket | ❌ | ✅ personal stats only, no rank points |
 
+## Built on 2026-09-29 (evening)
+- **Trick tips** ✅: 💡 on every Trick Book row. Specific tips for common tricks, plus general tips per type.
+  Flips and corks always say to learn them on a trampoline or airbag first.
+- **Mountain conditions** ✅: live weather + new snow for your home mountain on the Feed (Open-Meteo).
+- **Achievements** ✅: 12 badges on profiles (Switch Hitter, Rail Rat, Corkscrew…) from the Trick Book.
+- **Offline uploads** ✅: no signal? Clips save on the phone and upload when you're back online.
+- **Install to home screen** ✅: works like an app and opens with no signal.
+- **Invite friends** ✅ and a short **rank-up** moment.
+
 ## Ideas for later
-- **Trick tips:** a short "how to land it" guide on each trick in the Trick Book, for riders who keep bailing it.
 - **Trick of the Day**: a daily challenge trick for bonus points.
 - **Feed** with likes and comments ✅ (basic feed is in).
 - **Skill brackets** so beginners compete with beginners, which also means fewer people getting hurt chasing points.

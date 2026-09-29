@@ -249,6 +249,10 @@ select:focus,input:focus{border-color:var(--ice)}
 .check.on{background:var(--good);border-color:#0A0D14;color:#04160C;box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .book-cat{padding:10px 14px 4px;display:flex;justify-content:space-between}
 
+.tips{padding:4px 14px 14px 52px;background:rgba(92,225,255,.05);border-top:1px dashed var(--line)}
+.tips ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.tips .label{margin-top:10px;color:var(--ice)}
+
 /* ---------- record ---------- */
 .cam{position:relative;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:9/14;max-height:62vh;margin-inline:auto;width:100%;border:1px solid var(--line)}
 .cam video{width:100%;height:100%;object-fit:cover;display:block}
@@ -524,6 +528,54 @@ function wxCard(){
       <div class="mono">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</div>
       ${d.snowfall_sum[i] >= 0.1 ? `<div style="color:var(--ice);font-weight:700">❄ ${d.snowfall_sum[i].toFixed(1)}″</div>` : ''}</div>`).join('')}</div>
   </section>`;
+}
+
+// ---------- trick tips ----------
+// Standard coaching basics, kept short. Specific tips for common tricks; every trick also gets
+// the general tips for its type. Inverts always carry the "learn it on a trampoline or airbag" rule.
+const TIPS = {
+  '180': ['Pop straight up off the lip first, then turn. Spinning off the lip early makes you wash out.',
+          'Your head and shoulders steer: look where you want to go and your hips follow.',
+          'You land switch, so get comfortable riding switch on groomers first.'],
+  '360': ['Wind up a little on the approach (shoulders turned slightly back), then unwind as you pop.',
+          'Lead with your eyes. Look over your shoulder and find the landing at about 270°.',
+          'Commit to the whole rotation. Under-rotating is the most common way to bail a 360.'],
+  '540': ['Same motion as a 360 with more wind-up and a bit more speed. You land switch, so ride switch first.',
+          'Spot the landing over your shoulder after the first full turn, then open up for it.'],
+  '720': ['Build from clean 540s. You need a solid pop and more speed than you think.',
+          'Keep your arms and body tight while you spin, then open up to slow down for the landing.'],
+  'backflip': ['Learn it on a trampoline or airbag first. Always.',
+               'Stand tall at takeoff and drive your hips and chest up. Don\'t throw your head back early.',
+               'Tuck your knees to rotate faster, then open up when you spot the landing.'],
+  'board': ['Hop your skis 90° onto the rail so they sit across it, weight centred over the rail.',
+            'Keep your skis flat on the rail. Catching an edge is what slams you.',
+            'Shoulders stay in line with the rail. Look at the end of the rail, not your feet.'],
+  '5050': ['The best first rail: ride straight onto it with flat skis, knees soft, centred.',
+           'Look at the end of the feature and ride off it before you think about turning.'],
+  'sb-bs180': ['Backside means you turn so your back faces downhill first, which feels easiest for most riders.',
+               'Pop off your tail, turn your head and shoulders, and land switch with soft knees.'],
+  'sb-fs360': ['Frontside: you open your chest toward the downhill as you spin. You lose sight of the landing briefly.',
+               'Wind up slightly, pop off your tail, and look over your lead shoulder for the landing.'],
+  'sb-5050': ['Ride straight onto the box or rail with a flat base and your weight centred.',
+              'Keep your eyes on the end of the feature and ollie off at the end.'],
+  'sb-board': ['Ollie onto the rail and turn your board 90° so it sits across the rail.',
+               'Keep your base flat and your shoulders lined up with the rail.'],
+};
+const TIP_GROUPS = [
+  {test: t => /flip|Rodeo|Misty|McTwist|Flair|Cork/i.test(t.name), tips: [
+    '⚠ Upside down or off-axis: learn it on a trampoline or airbag first, ideally with a coach.',
+    'Never try a new invert on a jump you haven\'t hit many times already.']},
+  {test: t => /Switch|Cab/.test(t.name), tips: ['Switch tricks start with riding switch: spend time riding backwards on groomers until it feels normal.']},
+  {test: t => t.category === 'Rails', tips: ['Check the feature first: how long it is, and whether it\'s kinked or down.', 'Flat base, centred weight, soft knees. Commit all the way to the end.']},
+  {test: t => t.category === 'Pipe', tips: ['Carve up the wall, and pop off the lip toward the sky, not out into the flat bottom.']},
+  {test: t => t.category === 'Moguls', tips: ['Keep your upper body quiet and facing downhill. Pop off a bump you can see the landing of.']},
+  {test: t => t.category === 'Backcountry', tips: ['Scout the landing from below before you hit it, and ride with a partner and avalanche gear.', 'Pick your takeoff and landing lines, and control your speed before the lip.']},
+  {test: t => t.category === 'Park' && /\d{3}/.test(t.name), tips: ['Spot your landing before you open up, and land with your weight centred and your knees soft.']},
+];
+function tipsFor(t){
+  const out = [...(TIPS[t.id] || [])];
+  for (const g of TIP_GROUPS) if (g.test(t)) out.push(...g.tips);
+  return out.slice(0, 5);
 }
 
 // ---------- achievements: badges earned from a rider's Trick Book ----------
@@ -996,8 +1048,11 @@ const views = {
             <div><b>${esc(t.name)}</b>${t.id === S.totd ? ' <span class="pill totd">🔥 Today 2×</span>' : ''}<div class="hint mono">${t.pts} pts</div>${got ? `<div class="chips">${
               [...B.landed.get(t.id)].filter(g => g !== 'No grab').map(g => `<span class="chip">${esc(g)}</span>`).join('')}${
               mine ? `<span class="chip next">+${Math.round(t.pts * .2)} per new grab</span>` : ''}</div>` : ''}</div>
-            ${mine && !got ? `<button class="btn small" data-act="book-record" data-id="${t.id}">🎥 Try it</button>` : ''}
-          </div>`;
+            <div style="display:flex;gap:6px">
+              <button class="btn small" data-act="book-tip" data-id="${t.id}" aria-expanded="${S.bookTip === t.id}" aria-label="Tips for ${esc(t.name)}">💡</button>
+              ${mine && !got ? `<button class="btn small" data-act="book-record" data-id="${t.id}">🎥 Try it</button>` : ''}</div>
+          </div>${S.bookTip === t.id ? `<div class="tips"><div class="label">How to land it</div>
+            <ul>${tipsFor(t).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}`;
         }).join('')}</div>`;
     }).join('')}</div>`;
   },
@@ -1675,6 +1730,7 @@ document.addEventListener('click', async e => {
     }
     case 'book-back': return openTab(S.bookBack || 'ranks');
     case 'book-sport': S.book.sport = b.dataset.k; return render(true);
+    case 'book-tip': S.bookTip = S.bookTip === id ? null : id; return render(true);
     case 'book-record': S.postPreset = id; S.sport = sportOf(trickById(id)); store.set('sport', S.sport); return openTab('record');
     case 'totdpost': S.postPreset = S.totd; S.sport = sportOf(trickById(S.totd)); return openTab('record');
     case 'playtile': {
