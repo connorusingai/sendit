@@ -19,11 +19,12 @@ Keep the skier's side this simple. All the checking happens in the background.
 | Piece | State |
 |---|---|
 | Clickable prototype | ✅ [`prototype/index.html`](prototype/index.html), fake users, saves in your browser only · [live link](https://claude.ai/artifact/R2RN1gjaBDJzi2VtuPRERC) |
-| Real accounts + shared database | 🔨 Database design written: [`supabase/001_schema.sql`](supabase/001_schema.sql). Setup steps: [`supabase/SETUP.md`](supabase/SETUP.md) |
+| Real accounts + shared database | ✅ Supabase. Schema in [`supabase/`](supabase/), rules tested by [`supabase/tests/test_rules.py`](supabase/tests/test_rules.py) |
+| Live app | ✅ **https://connorusingai.github.io/sendit/** (the real app, [`app/index.html`](app/index.html)) |
 | Mobile app | ⬜ Not started |
 | AI verification | 🔨 Separate project, [`sendit-ai`](../sendit-ai/README.md) |
 
-To run the prototype locally, double-click `prototype/index.html` to open it in a browser.
+To run the real app locally, double-click `app/run.bat`. To run the old prototype, open `prototype/index.html`.
 
 ## Roadmap
 

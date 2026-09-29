@@ -1409,7 +1409,9 @@ async function submitAuth(){
     if (S.authMode === 'signup'){
       const taken = await db.from('profiles').select('id').eq('username', username).maybeSingle();
       if (taken.data){ toast('That username is taken. Try another.'); return; }
-      const r = await db.auth.signUp({email, password, options: {data: {username}}});
+      // The confirmation email links back to wherever this page is running (laptop or online)
+      const r = await db.auth.signUp({email, password,
+        options: {data: {username}, emailRedirectTo: location.origin + location.pathname}});
       if (r.error) throw r.error;
       if (!r.data.session){
         S.authMode = 'signin'; render();
