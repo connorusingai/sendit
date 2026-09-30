@@ -412,6 +412,8 @@ h2{font-size:30px;margin:4px 0 2px}
   background:linear-gradient(90deg,rgba(255,107,26,.22),rgba(192,33,138,.12) 55%,rgba(92,225,255,.1));border:1px solid rgba(255,107,26,.45)}
 .totd-strip .x{font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;color:var(--accent);text-shadow:0 0 16px rgba(255,107,26,.7);line-height:1}
 .totd-strip .nm{font-family:var(--display);font-weight:900;font-style:italic;font-size:20px;text-transform:uppercase;line-height:1}
+.session{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:12px}
+.session .btn{white-space:nowrap;flex:none}
 .totd-strip .btn{margin-left:auto;padding:9px 12px;font-size:12px;white-space:nowrap}
 
 /* the right-hand HUD rail (big screens only) */
@@ -1016,6 +1018,86 @@ function svgImage(svg){
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
   });
 }
+
+// ---------- today's session: a strip on the Feed, and a shareable recap card ----------
+const dayKey = iso => new Date(iso).toLocaleDateString('en-CA');           // YYYY-MM-DD in local time
+function todayStats(){
+  const today = dayKey(new Date().toISOString());
+  const mine = S.clips.filter(c => c.user_id === myId() && dayKey(c.created_at) === today);
+  const verified = mine.filter(c => c.status === 'verified');
+  return {
+    posted: mine.length, verified: verified.length,
+    points: verified.reduce((n, c) => n + (c.points_awarded || 0), 0),
+    fresh: verified.filter(c => (c.points_awarded || 0) >= trickById(c.trick_id).pts).length,   // paid full = new to your book
+    judging: mine.filter(c => c.status === 'pending').length,
+    tricks: mine, resort: (mine[0] && mine[0].resort) || S.me.home_resort || '',
+  };
+}
+function sessionStrip(){
+  const s = todayStats();
+  if (!s.posted) return '';
+  return `<div class="card session">
+    <div><div class="label">Today's session</div>
+      <div class="readout">${s.posted} CLIP${s.posted > 1 ? 'S' : ''} · ${s.verified} VERIFIED · +${s.points} PTS${s.fresh ? ` · ${s.fresh} NEW` : ''}${s.judging ? ` · ${s.judging} JUDGING` : ''}</div></div>
+    <button class="btn small" data-act="session-card">Recap ↗</button></div>`;
+}
+async function sessionCard(){
+  const s = todayStats(), r = rankInfo(S.me.points, TRICK_TIERS), W = 1080, H = 1350;
+  try { await document.fonts.ready; } catch (e) {}
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0B1422'); bg.addColorStop(1, '#06080C');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W * .2, 0, 0, W * .2, 0, 900); glow.addColorStop(0, 'rgba(92,225,255,.25)'); glow.addColorStop(1, 'rgba(92,225,255,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(92,225,255,.06)'; g.lineWidth = 2;
+  for (let x = 0; x < W; x += 60){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 60){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const font = (size, weight = 900, style = 'italic', fam = '"Big Shoulders Display", Impact, sans-serif') => `${style} ${weight} ${size}px ${fam}`;
+  g.font = font(84); g.fillStyle = '#EEF3F8'; g.fillText('SEND', 70, 140);
+  const sw = g.measureText('SEND').width; g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.8)'; g.shadowBlur = 30; g.fillText('IT', 70 + sw, 140); g.shadowBlur = 0;
+  g.font = font(34, 600, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF'; g.textAlign = 'right';
+  g.fillText(new Date().toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}).toUpperCase(), W - 70, 132);
+  g.textAlign = 'left';
+  g.font = font(150); g.fillStyle = '#EEF3F8'; g.fillText('SESSION', 70, 330);
+  g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.7)'; g.shadowBlur = 40; g.fillText('RECAP', 70, 470); g.shadowBlur = 0;
+  // three big stats
+  const stats = [[s.posted, 'CLIPS'], [s.verified, 'VERIFIED'], [`+${s.points}`, 'POINTS']];
+  stats.forEach(([v, label], i) => {
+    const x = 70 + i * 320;
+    g.fillStyle = 'rgba(24,32,46,.9)'; g.strokeStyle = 'rgba(92,225,255,.3)'; g.lineWidth = 3;
+    g.beginPath(); g.roundRect(x, 540, 290, 220, 24); g.fill(); g.stroke();
+    g.font = font(110); g.fillStyle = i === 2 ? '#FF6B1A' : '#EEF3F8'; g.fillText(String(v), x + 30, 670);
+    g.font = font(30, 700, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#8595A9'; g.fillText(label, x + 32, 725);
+  });
+  // the tricks
+  g.font = font(34, 700, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#8595A9'; g.fillText(`TRICKS${s.resort ? '  ·  ' + s.resort.toUpperCase() : ''}`, 70, 840);
+  s.tricks.slice(0, 5).forEach((c, i) => {
+    const y = 910 + i * 62, tr = trickById(c.trick_id);
+    g.font = font(52); g.fillStyle = '#EEF3F8'; g.fillText(tr.name.toUpperCase(), 70, y);
+    g.textAlign = 'right';
+    g.font = font(46, 800); g.fillStyle = c.status === 'verified' ? '#3BE08A' : c.status === 'pending' ? '#5CE1FF' : '#FF5470';
+    g.fillText(c.status === 'verified' ? `+${c.points_awarded || 0}` : c.status === 'pending' ? 'JUDGING' : 'NOT VERIFIED', W - 70, y);
+    g.textAlign = 'left';
+  });
+  // who
+  const badge = await svgImage(badgeSVG(r.tier.key, 110, r.div, {}));
+  g.drawImage(badge, 70, H - 190, 110, 121);
+  g.font = font(60); g.fillStyle = '#EEF3F8'; g.fillText(`@${S.me.username}`, 200, H - 120);
+  g.font = font(40, 800); g.fillStyle = BADGE[r.tier.key][0]; g.fillText(r.label.toUpperCase(), 200, H - 72);
+  g.textAlign = 'right'; g.font = font(28, 500, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF';
+  g.fillText('connorusingai.github.io/sendit', W - 70, H - 72);
+  const blob = await new Promise(ok => cv.toBlob(ok, 'image/png'));
+  const file = new File([blob], `sendit-session-${dayKey(new Date().toISOString())}.png`, {type: 'image/png'});
+  if (navigator.canShare && navigator.canShare({files: [file]})){
+    try { await navigator.share({files: [file], title: 'My Sendit session', text: `${s.verified} tricks verified today on Sendit.`}); } catch (e) {}
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('Session recap saved. Post it anywhere!');
+}
+
 async function shareCard(clipId){
   const c = S.clips.find(x => x.id === clipId) || (S.profile && S.profile.clips.find(x => x.id === clipId));
   if (!c) return;
@@ -1092,7 +1174,7 @@ const views = {
     // Other people's clips only show here once verified, so judging stays anonymous.
     const clips = S.clips.filter(c => c.status === 'verified' || c.user_id === myId());
     // Big screens show rank, conditions and the Trick of the Day in the right-hand rail instead
-    const top = WIDE.matches ? '' : hudTiles() + totdStrip();
+    const top = WIDE.matches ? sessionStrip() : hudTiles() + totdStrip() + sessionStrip();
     return `${top}
       <div class="stack">${clips.length ? clips.map(clipCard).join('')
         : `<div class="card empty"><strong>No clips yet</strong>Verified tricks show up here. Be the first.</div>`}</div>`;
@@ -1919,6 +2001,7 @@ document.addEventListener('click', async e => {
     // feed
     case 'delete': return deleteClip(id);
     case 'share-card': return shareCard(id);
+    case 'session-card': return sessionCard();
     case 'like': return toggleLike(id);
     case 'comments': return toggleComments(id);
     case 'delcomment': return deleteComment(id, b.dataset.clip);
