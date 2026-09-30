@@ -372,9 +372,88 @@ select:focus,input:focus{border-color:var(--ice)}
   .stack > *{animation:enter .35s ease-out both}
   @keyframes enter{from{opacity:0;transform:translateY(8px)}}
 }
+
+/* ================= HUD redesign (2026-09-30): denser, more futuristic ================= */
+body{background:
+    radial-gradient(70% 45% at 8% -8%, rgba(92,225,255,.14), transparent 70%),
+    radial-gradient(60% 40% at 95% -12%, rgba(255,107,26,.16), transparent 70%),
+    linear-gradient(rgba(92,225,255,.035) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgba(92,225,255,.035) 1px, transparent 1px) 0 0 / 44px 44px,
+    var(--bg);
+  background-attachment:fixed}
+.label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;font-weight:700}
+h2{font-size:30px;margin:4px 0 2px}
+.sub{margin-bottom:12px}
+.stack{gap:12px}
+.card{background:linear-gradient(180deg,rgba(24,32,46,.88),rgba(14,19,28,.9));
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border:1px solid rgba(92,225,255,.13);border-radius:14px;
+  box-shadow:inset 0 1px 0 rgba(92,225,255,.16),0 10px 30px rgba(0,0,0,.45)}
+.card-head{padding:10px 12px}
+.card-foot{padding:10px 12px 12px;gap:8px}
+.btn.primary{border-radius:0;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+/* HUD corner brackets */
+.frame{position:relative;overflow:visible}
+.frame::before,.frame::after{content:"";position:absolute;width:14px;height:14px;pointer-events:none;border:2px solid var(--ice);opacity:.7}
+.frame::before{top:-1px;left:-1px;border-right:0;border-bottom:0;border-top-left-radius:12px}
+.frame::after{bottom:-1px;right:-1px;border-left:0;border-top:0;border-bottom-right-radius:12px}
+.readout{font-family:var(--mono);font-size:11px;color:var(--ice);letter-spacing:.08em}
+
+/* phone: two HUD tiles side by side + a slim Trick of the Day banner */
+.hud2{display:grid;grid-template-columns:1.15fr 1fr;gap:10px;margin-bottom:10px}
+.htile{padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0;text-align:left;cursor:pointer;width:100%}
+.htile .rank-word{font-size:26px}
+.htile .row1{display:flex;gap:8px;align-items:center}
+.htile .temp{font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;line-height:1}
+.htile .snowline{font-family:var(--display);font-weight:900;font-style:italic;font-size:20px;color:var(--ice);line-height:1}
+.minidays{display:flex;gap:6px;font-size:11px;color:var(--muted)}
+.minidays span{display:flex;flex-direction:column;align-items:center;flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 0}
+.totd-strip{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:12px;
+  background:linear-gradient(90deg,rgba(255,107,26,.22),rgba(192,33,138,.12) 55%,rgba(92,225,255,.1));border:1px solid rgba(255,107,26,.45)}
+.totd-strip .x{font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;color:var(--accent);text-shadow:0 0 16px rgba(255,107,26,.7);line-height:1}
+.totd-strip .nm{font-family:var(--display);font-weight:900;font-style:italic;font-size:20px;text-transform:uppercase;line-height:1}
+.totd-strip .btn{margin-left:auto;padding:9px 12px;font-size:12px;white-space:nowrap}
+
+/* the right-hand HUD rail (big screens only) */
+.rail{display:none}
+.rail .card{padding:14px}
+.rail .hero{padding:12px 14px;margin:0}
+.rail .totd-card{margin:0}
+.rail .wx{margin:0}
+.mini-board{list-style:none;margin:6px 0 0;padding:0}
+.mini-board li{display:grid;grid-template-columns:20px 26px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);cursor:pointer;font-size:13.5px}
+.mini-board li:first-child{border-top:0}
+.mini-board li.you b{color:var(--accent)}
+.alert{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+
+/* ---------- laptop & desktop: sidebar nav | feed | HUD rail ---------- */
+@media (min-width:1000px){
+  .shell{margin-left:228px;display:grid;grid-template-columns:minmax(0,640px) 350px;gap:26px;justify-content:center;padding:0 28px}
+  .app{max-width:none;margin:0;padding-inline:0;padding-block:0 40px}
+  .rail{display:flex;flex-direction:column;gap:12px;position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto;padding:14px 2px 24px;scrollbar-width:thin}
+  .top{background:none}
+  .tabs{top:0;bottom:0;right:auto;width:228px;border-top:0;border-right:1px solid rgba(92,225,255,.14);padding:84px 14px 20px;
+    background:linear-gradient(180deg,rgba(10,14,22,.92),rgba(6,8,12,.95))}
+  .tabs::before{content:"SEND";position:absolute;top:24px;left:24px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;letter-spacing:.5px;transform:skewX(-6deg);color:var(--ink)}
+  .tabs::after{content:"IT";position:absolute;top:24px;left:96px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7);transform:skewX(-6deg)}
+  .tabs nav{display:flex;flex-direction:column;align-items:stretch;gap:6px;max-width:none}
+  .tabs button{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:10px;font-size:13px}
+  .tabs button:hover{background:rgba(92,225,255,.06)}
+  .tabs button.on{background:var(--accent-soft)}
+  .tabs button.on::before{top:8px;bottom:8px;left:0;right:auto;width:3px;height:auto}
+  .tabs .badge{position:static;margin-left:auto}
+  .tabs button.rec-tab{order:-1;margin-bottom:10px;background:linear-gradient(180deg,var(--accent-hot),var(--accent));color:var(--accent-ink);
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);border-radius:0;box-shadow:0 0 24px rgba(255,107,26,.4)}
+  .tabs button.rec-tab .dot{width:auto;height:auto;margin:0;background:none;border:0;box-shadow:none}
+  .tabs button.rec-tab.on{background:linear-gradient(180deg,var(--accent-hot),var(--accent))}
+  .brand{visibility:hidden}
+  .toast{bottom:28px;left:calc(50% + 114px)}
+  .reel{height:calc(100vh - 120px)}
+}
 </style>
 
 <div id="snow" aria-hidden="true"></div>
+<div class="shell">
 <div class="app">
   <header class="top">
     <div class="brand">Send<span>it</span></div>
@@ -384,6 +463,8 @@ select:focus,input:focus{border-color:var(--ice)}
     </div>
   </header>
   <main id="view"><p class="sub">Loading…</p></main>
+</div>
+<aside class="rail" id="rail" aria-label="Your stats"></aside>
 </div>
 <div class="tabs" id="tabbar" hidden><nav id="tabs"></nav></div>
 <div id="overlay"></div>
@@ -865,6 +946,65 @@ function ladder(value, table){
       ${badgeSVG(t.key, 54, 0)}<b class="t-${t.key}">${t.name}</b><span class="hint mono">${t.min}+</span></div>`).join('')}</div>`;
 }
 
+
+// ---------- HUD pieces: compact tiles on phones, a right-hand rail on big screens ----------
+const WIDE = matchMedia('(min-width: 1000px)');
+WIDE.addEventListener('change', () => { if (S.me) render(true); });
+
+function hudTiles(){
+  const r = rankInfo(S.me.points, TRICK_TIERS);
+  const rank = `<button class="card htile frame" data-act="tab" data-tab="ranks">
+    <div class="label">Trick rank</div>
+    <div class="row1">${badgeSVG(r.tier.key, 44, r.div, {glow: true})}${rankWord(r, 26)}</div>
+    <div class="bar"><i style="width:${Math.max(4, r.pct)}%"></i></div>
+    <div class="readout">${r.nextLabel ? `${r.toNext} PTS → ${esc(r.nextLabel).toUpperCase()}` : 'TOP RANK'}</div></button>`;
+  let wx;
+  if (!S.me.home_resort) wx = `<button class="card htile" data-act="tab" data-tab="ranks"><div class="label">Conditions</div>
+    <div style="font-size:26px">🏔️</div><div class="hint">Set your home mountain on Ranks</div></button>`;
+  else if (!S.wx || S.wx.resort !== S.me.home_resort) wx = `<div class="card htile"><div class="label">${esc(S.me.home_resort)}</div><div class="hint">Loading conditions…</div></div>`;
+  else {
+    const W = S.wx, d = W.daily, fresh = (d.snowfall_sum[0] || 0) + (d.snowfall_sum[1] || 0);
+    const day = i => new Date(d.time[i] + 'T12:00').toLocaleDateString('en-US', {weekday: 'narrow'});
+    wx = `<div class="card htile"><div class="label">${esc(W.resort)}</div>
+      <div class="row1"><span class="temp">${WX_ICON(W.current.weather_code)} ${Math.round(W.current.temperature_2m)}°</span></div>
+      <div class="snowline">${fresh >= 0.1 ? fresh.toFixed(1) : '0'}″ <span class="hint" style="font-family:var(--body);font-style:normal;font-size:11px">new snow</span></div>
+      <div class="minidays">${[2, 3, 4].map(i => `<span>${day(i)}<b>${WX_ICON(d.weather_code[i])}</b></span>`).join('')}</div></div>`;
+  }
+  return `<div class="hud2">${rank}${wx}</div>`;
+}
+
+function totdStrip(){
+  if (!S.totd) return '';
+  const t = trickById(S.totd);
+  return `<div class="totd-strip"><span class="x">2×</span>
+    <div><div class="label" style="color:var(--accent-hot)">Trick of the Day · ${totdResetsIn()}</div><div class="nm">${esc(t.name)}</div></div>
+    <button class="btn primary" data-act="totdpost">Record</button></div>`;
+}
+
+function miniBoard(){
+  const rows = (S.board.rows || []).slice(0, 6);
+  if (!rows.length) return '<div class="hint" style="margin-top:6px">Add friends in Duels to see them here.</div>';
+  return `<ol class="mini-board">${rows.map((u, i) => `<li class="${u.id === myId() ? 'you' : ''}" data-act="profile" data-id="${u.id}">
+    <span class="mono hint">${i + 1}</span>${badgeSVG(trickTierOf(u.points).key, 22)}<b>${esc(u.username)}</b><span class="mono">${u.score}</span></li>`).join('')}</ol>`;
+}
+
+function renderRail(){
+  const rail = $('rail');
+  if (!WIDE.matches || !S.me){ rail.innerHTML = ''; return; }
+  const myTurn = S.duels.filter(d => d.status === 'active' && d.turn === myId());
+  const requests = S.friends.filter(f => f.status === 'pending' && f.incoming);
+  const toJudge = judgeQueue().length;
+  rail.innerHTML = `${rankHero()}${wxCard()}${totdCard()}
+    <section class="card frame"><div class="row"><div class="label">Friends board</div>
+      <button class="linkish" data-act="tab" data-tab="ranks">See all</button></div>${miniBoard()}</section>
+    <section class="card"><div class="label">Needs you</div>
+      ${myTurn.map(d => `<button class="alert" data-act="open-duel" data-id="${d.id}"><span class="your-turn">Your turn</span> vs <b>${esc(d.other.username)}</b></button>`).join('')}
+      ${requests.map(f => `<button class="alert" data-act="tab" data-tab="duels">👋 <b>${esc(f.other.username)}</b> wants to be friends</button>`).join('')}
+      ${toJudge ? `<button class="alert" data-act="tab" data-tab="judge">⚖️ <b>${toJudge}</b> clip${toJudge > 1 ? 's' : ''} waiting for your vote</button>` : ''}
+      ${!myTurn.length && !requests.length && !toJudge ? '<div class="hint" style="margin-top:6px">All caught up. Go ride.</div>' : ''}
+    </section>`;
+}
+
 // ---------- views ----------
 const views = {
   auth(){
@@ -888,7 +1028,9 @@ const views = {
   feed(){
     // Other people's clips only show here once verified, so judging stays anonymous.
     const clips = S.clips.filter(c => c.status === 'verified' || c.user_id === myId());
-    return `${rankHero()}${wxCard()}${totdCard()}
+    // Big screens show rank, conditions and the Trick of the Day in the right-hand rail instead
+    const top = WIDE.matches ? '' : hudTiles() + totdStrip();
+    return `${top}
       <div class="stack">${clips.length ? clips.map(clipCard).join('')
         : `<div class="card empty"><strong>No clips yet</strong>Verified tricks show up here. Be the first.</div>`}</div>`;
   },
@@ -1404,7 +1546,7 @@ const KEEP = ['board-resort', 'friend-q'];  // keep what's typed/picked across r
 function render(force = false){
   const signedIn = !!(S.session && S.me);
   $('tabbar').hidden = !signedIn; $('me-chip').hidden = !signedIn;
-  if (!signedIn){ $('view').innerHTML = views.auth(); return; }
+  if (!signedIn){ $('view').innerHTML = views.auth(); $('rail').innerHTML = ''; return; }
   const r = rankInfo(S.me.points, TRICK_TIERS);
   $('me-chip').innerHTML = `${badgeSVG(r.tier.key, 26)}<b>${S.me.points}</b>`;
   const judgeCount = judgeQueue().length;
@@ -1418,11 +1560,12 @@ function render(force = false){
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}${badge ? `<span class="badge">${badge}</span>` : ''}</button>`;
   }).join('');
   // Don't rebuild screens that are mid-use: the reel, the camera, or the post form
-  if (!force && ((S.tab === 'judge' && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))) return;
+  if (!force && ((S.tab === 'judge' && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))){ renderRail(); return; }
   const keep = {}; KEEP.forEach(id => { const el = $(id); if (el) keep[id] = el.value; });
   $('view').innerHTML = views[S.tab]();
   for (const [id, v] of Object.entries(keep)){ const el = $(id); if (el) el.value = v; }
   syncPost();
+  renderRail();
   if (S.tab === 'judge') watchReel();
   if (S.tab === 'record' && (S.rec.mode === 'live' || S.rec.mode === 'recording')) attachStream();
 }
@@ -1460,7 +1603,7 @@ async function refresh(force = false){
   try {
     await loadAll();
     await loadWeather();
-    if (S.tab === 'ranks') await loadBoard();
+    if (S.tab === 'ranks' || WIDE.matches) await loadBoard();   // the rail shows a mini friends board
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
     if (S.tab === 'duels' && S.duelId) await loadDuelMoves(S.duelId);
     if (S.tab === 'book' && S.book) await loadBook(S.book.id, S.book.name);
