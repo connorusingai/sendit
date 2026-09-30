@@ -883,6 +883,7 @@ function clipCard(c){
           <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
         </div>
         ${mine && c.status === 'pending' ? `<button class="linkish" data-act="delete" data-id="${c.id}">Delete</button>` : ''}
+        ${mine && c.status === 'verified' ? `<button class="icon-btn" data-act="share-card" data-id="${c.id}" aria-label="Share this trick">↗ Share</button>` : ''}
       </div>
     </div>
     ${open ? commentsPanel(c.id) : ''}
@@ -1004,6 +1005,67 @@ function renderRail(){
       ${toJudge ? `<button class="alert" data-act="tab" data-tab="judge">⚖️ <b>${toJudge}</b> clip${toJudge > 1 ? 's' : ''} waiting for your vote</button>` : ''}
       ${!myTurn.length && !requests.length && !toJudge ? '<div class="hint" style="margin-top:6px">All caught up. Go ride.</div>' : ''}
     </section>`;
+}
+
+
+// ---------- share card: a poster of your verified trick, sized for stories (1080 x 1350) ----------
+function svgImage(svg){
+  return new Promise((ok, fail) => {
+    const img = new Image();
+    img.onload = () => ok(img); img.onerror = fail;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+  });
+}
+async function shareCard(clipId){
+  const c = S.clips.find(x => x.id === clipId) || (S.profile && S.profile.clips.find(x => x.id === clipId));
+  if (!c) return;
+  const t = trickById(c.trick_id), r = rankInfo(S.me.points, TRICK_TIERS), W = 1080, H = 1350;
+  try { await document.fonts.ready; } catch (e) {}
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  // night-park background with the HUD grid
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0B1422'); bg.addColorStop(1, '#06080C');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W * .8, 0, 0, W * .8, 0, 900); glow.addColorStop(0, 'rgba(255,107,26,.35)'); glow.addColorStop(1, 'rgba(255,107,26,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(92,225,255,.06)'; g.lineWidth = 2;
+  for (let x = 0; x < W; x += 60){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 60){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const font = (size, weight = 900, style = 'italic', fam = '"Big Shoulders Display", Impact, sans-serif') => `${style} ${weight} ${size}px ${fam}`;
+  // logo
+  g.textBaseline = 'alphabetic';
+  g.font = font(84); g.fillStyle = '#EEF3F8'; g.fillText('SEND', 70, 140);
+  const sw = g.measureText('SEND').width; g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.8)'; g.shadowBlur = 30; g.fillText('IT', 70 + sw, 140); g.shadowBlur = 0;
+  // verified pill
+  g.fillStyle = 'rgba(59,224,138,.15)'; g.strokeStyle = '#3BE08A'; g.lineWidth = 3;
+  g.beginPath(); g.roundRect(W - 390, 82, 320, 76, 38); g.fill(); g.stroke();
+  g.font = font(40, 800, 'normal', 'Figtree, system-ui, sans-serif'); g.fillStyle = '#3BE08A'; g.fillText('✓ VERIFIED', W - 360, 134);
+  // badge
+  const badge = await svgImage(badgeSVG(r.tier.key, 420, r.div, {}));
+  g.shadowColor = BADGE[r.tier.key][1]; g.shadowBlur = 60; g.drawImage(badge, (W - 420) / 2, 220, 420, 462); g.shadowBlur = 0;
+  // trick name, points, details
+  g.textAlign = 'center';
+  let size = 170; g.font = font(size);
+  while (g.measureText(t.name.toUpperCase()).width > W - 120 && size > 80){ size -= 8; g.font = font(size); }
+  g.fillStyle = '#EEF3F8'; g.fillText(t.name.toUpperCase(), W / 2, 850);
+  g.font = font(120); g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.7)'; g.shadowBlur = 40;
+  g.fillText(`+${c.points_awarded || 0} PTS`, W / 2, 990); g.shadowBlur = 0;
+  g.font = font(42, 600, 'normal', 'Figtree, system-ui, sans-serif'); g.fillStyle = '#8595A9';
+  g.fillText([c.grab !== 'No grab' ? c.grab : null, t.category, c.resort].filter(Boolean).join('  ·  '), W / 2, 1060);
+  // who
+  g.font = font(64); g.fillStyle = '#EEF3F8'; g.fillText(`@${S.me.username}`, W / 2, 1180);
+  g.font = font(44, 800); g.fillStyle = BADGE[r.tier.key][0]; g.fillText(r.label.toUpperCase(), W / 2, 1236);
+  g.font = font(30, 500, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF';
+  g.fillText('connorusingai.github.io/sendit', W / 2, 1310);
+  const blob = await new Promise(ok => cv.toBlob(ok, 'image/png'));
+  const file = new File([blob], `sendit-${t.name.replace(/\W+/g, '-').toLowerCase()}.png`, {type: 'image/png'});
+  if (navigator.canShare && navigator.canShare({files: [file]})){
+    try { await navigator.share({files: [file], title: `${t.name} on Sendit`, text: `Landed a ${t.name}. Verified on Sendit.`}); } catch (e) {}
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('Share card saved. Post it anywhere!');
 }
 
 // ---------- views ----------
@@ -1856,6 +1918,7 @@ document.addEventListener('click', async e => {
     case 'skip': return nextReel(id);
     // feed
     case 'delete': return deleteClip(id);
+    case 'share-card': return shareCard(id);
     case 'like': return toggleLike(id);
     case 'comments': return toggleComments(id);
     case 'delcomment': return deleteComment(id, b.dataset.clip);
