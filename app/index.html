@@ -1236,7 +1236,9 @@ async function openCamera(){
   try {
     stopStream();
     R.stream = await navigator.mediaDevices.getUserMedia({
-      video: {facingMode: {ideal: R.facing}, width: {ideal: 1280}, height: {ideal: 720}}, audio: false});
+      // 60 fps when the phone allows it: twice the frames means the trick AI loses the rider less.
+      // Phones that can't do 60 quietly fall back to 30.
+      video: {facingMode: {ideal: R.facing}, width: {ideal: 1280}, height: {ideal: 720}, frameRate: {ideal: 60}}, audio: false});
     R.mode = 'live'; render(true);
   } catch (err){
     toast(err.name === 'NotAllowedError' ? 'Camera blocked. Allow camera access in your browser settings.' : 'Camera error: ' + err.message, 5000);
