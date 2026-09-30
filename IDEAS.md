@@ -1,9 +1,9 @@
 # Ideas
 
-A running list to pick from. Nothing here is built yet. Roughly in order of how much I think each one helps.
+A running list to pick from. ✅ = built. Roughly in order of how much I think each one helps.
 
 ## Make it better for riders
-1. **Session mode.** One tap when you get on the lift: the app groups everything you record that day
+1. ✅ *(first version: a Today strip + shareable recap card)* **Session mode.** One tap when you get on the lift: the app groups everything you record that day
    into a "session" with a recap card at the end (tricks landed, new ones in your Trick Book, points,
    your best clip). Shareable, which also brings friends in.
 2. **Park map check-in.** Tag which feature you hit (Eldora's jump line, a specific rail). Then:
@@ -30,5 +30,5 @@ A running list to pick from. Nothing here is built yet. Roughly in order of how 
     rotation to combine with video.
 
 ## Growth
-11. **Share a verified clip** to Instagram/TikTok with a Sendit rank frame on it.
+11. ✅ *(share cards)* **Share a verified clip** to Instagram/TikTok with a Sendit rank frame on it.
 12. **Resort partnerships later:** a mountain's own leaderboard and Trick of the Day.
