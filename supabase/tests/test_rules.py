@@ -180,6 +180,30 @@ def main():
           (one("select rating from public.profiles where id = %s", p1), one("select rating from public.profiles where id = %s", p2)),
           (1016, 984))
 
+    print("\n-- Crews --")
+    k1, k2, k3 = user("cap", points=300), user("mate", points=100), user("rival", points=50)
+    crew = as_user(k1, "select public.create_crew('CU Freeride', 'cuf')")[0][0]
+    code = as_user(k1, "select code from public.my_crew()")[0][0]
+    check("creator is in the crew, tag uppercased", as_user(k1, "select tag from public.my_crew()")[0][0], "CUF")
+    check("invite codes are hidden from outsiders", blocked(k3, "select code from public.crews"), True)
+    check("outsiders can still see crew names", as_user(k3, "select name from public.crews")[0][0], "CU Freeride")
+    check("can't join directly (must use a code)",
+          blocked(k2, "insert into public.crew_members (user_id, crew_id) values (auth.uid(), %s)", crew), True)
+    check("wrong code is refused", blocked(k2, "select public.join_crew('ZZZZZZ')"), True)
+    as_user(k2, "select public.join_crew(%s)", code.lower())
+    check("joining with the code works (any case)", one("select count(*) from public.crew_members where crew_id = %s", crew), 2)
+    check("names are unique (ignoring case)", blocked(k3, "select public.create_crew('cu freeride', 'CU')"), True)
+    check("one crew at a time", blocked(k2, "select public.create_crew('Second Crew', 'SC')"), True)
+    as_user(k3, "select public.create_crew('Eldo Rats', 'ELDO')")
+    board = as_user(k3, "select name, members, score from public.crew_board('all')")
+    check("crew board: members' points add up", board, [("CU Freeride", 2, 400), ("Eldo Rats", 1, 50)])
+    check("only the owner can kick", blocked(k3, "select public.kick_from_crew(%s)", k2), True)
+    as_user(k1, "select public.leave_crew()")
+    check("owner leaves: crew passes to the next member",
+          str(one("select owner from public.crews where id = %s", crew)), k2)
+    as_user(k2, "select public.leave_crew()")
+    check("last one out deletes the crew", one("select count(*) from public.crews where id = %s", crew), 0)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)

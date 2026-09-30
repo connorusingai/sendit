@@ -9,7 +9,7 @@ A running list to pick from. ✅ = built. Roughly in order of how much I think e
 2. **Park map check-in.** Tag which feature you hit (Eldora's jump line, a specific rail). Then:
    leaderboards per feature ("king of the big jump"), and clips are easier to judge because judges
    know what the feature looks like.
-3. **Crews.** A group of friends (like the CU ski club) with a crew leaderboard and crew-vs-crew duels.
+3. ✅ *(crews + crew leaderboard; crew-vs-crew duels still to come)* **Crews.** A group of friends (like the CU ski club) with a crew leaderboard and crew-vs-crew duels.
    A social app lives or dies on a tight first group.
 4. **Weekly challenge**, alongside the Trick of the Day: "land 3 different grabs this week" or
    "a switch trick on any rail", with a badge.

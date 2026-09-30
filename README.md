@@ -19,6 +19,7 @@ tricks earn points that rank you up from Bronze to Legend. Challenge friends to 
 - **Points that can't be farmed:** each trick pays once, a new grab on it pays a little, repeats pay nothing
 - **Game-style ranks** on an upward curve, with divisions, badges, and a Trick Book checklist with tips
 - **Game of S.K.I. duels** with friends, scored by chess-style ELO
+- **Crews:** team up with friends or a ski club, join with a 6-letter invite code, and climb the crew leaderboard together
 - **Trick of the Day** (2x points), live mountain conditions, achievements, a friends leaderboard
 - **Works on the mountain:** clips wait on the phone with no signal and upload when it comes back
 

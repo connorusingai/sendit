@@ -424,6 +424,25 @@ h2{font-size:30px;margin:4px 0 2px}
 .rail .totd-card{margin:0}
 .rail .wx{margin:0}
 .mini-board{list-style:none;margin:6px 0 0;padding:0}
+.crew-card{padding:14px}
+.crew-head{display:flex;align-items:center;gap:12px}
+.crew-tag{display:inline-grid;place-items:center;min-width:54px;height:54px;padding:0 8px;border-radius:12px;border:1px solid var(--ice);
+  background:var(--ice-soft);color:var(--ice);font-family:var(--display);font-weight:900;font-style:italic;font-size:24px;letter-spacing:.5px;
+  box-shadow:0 0 18px rgba(92,225,255,.25)}
+.crew-tag.sm{min-width:36px;height:24px;font-size:14px;border-radius:7px;padding:0 5px;box-shadow:none}
+.crew-name{font-family:var(--display);font-weight:900;font-style:italic;font-size:24px;text-transform:uppercase;line-height:1;
+  display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crew-code{display:flex;align-items:center;justify-content:space-between;margin:12px 0 4px;padding:8px 12px;border-radius:10px;
+  border:1px dashed var(--line);background:var(--surface-2)}
+.crew-code b{font-size:18px;letter-spacing:.25em;color:var(--ink)}
+.crew-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.crew-foot .linkish{align-self:center}
+.crew-new{margin-top:12px}
+.crew-new summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:700}
+.crew-create{display:grid;grid-template-columns:1fr 76px auto;gap:8px;margin-top:10px}
+.crew-create input{min-width:0}
+#crew-code,#crew-tag{text-transform:uppercase;letter-spacing:.12em}
+.mini-board.crews li{grid-template-columns:20px auto 1fr auto}
 .mini-board li{display:grid;grid-template-columns:20px 26px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);cursor:pointer;font-size:13.5px}
 .mini-board li:first-child{border-top:0}
 .mini-board li.you b{color:var(--accent)}
@@ -525,6 +544,7 @@ const S = {
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
   board: {scope: 'friends', period: 'all', resort: '', rows: []},
+  crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
   sport: store.get('sport', 'ski'),
   authMode: 'signin', busy: false, postPreset: null, splashDone: false,
@@ -784,7 +804,20 @@ async function loadAll(){
     return {...f, incoming, other: incoming ? f.req : f.addr};
   });
   S.duels = mustOk(duels).map(d => ({...d, other: d.challenger === myId() ? d.op : d.ch}));
+  await loadCrew();
   noticeResults(before);
+}
+// Your crew and its members. If 010_crews.sql isn't installed yet, crews just stay hidden.
+async function loadCrew(){
+  const r = await db.rpc('my_crew');
+  if (r.error){ S.crew = {ready: false, mine: null, members: []}; return; }
+  const mine = (r.data || [])[0] || null;
+  let members = [];
+  if (mine){
+    members = mustOk(await db.from('crew_members').select(`user_id, p:profiles!crew_members_user_id_fkey(${PROFILE_BITS})`).eq('crew_id', mine.id))
+      .map(m => m.p).filter(Boolean).sort((a, b) => b.points - a.points);
+  }
+  S.crew = {ready: true, mine, members};
 }
 // Every trick someone has been verified on, and which grabs they've done it with: their Trick Book.
 // Returns a Map of trick id -> Set of grabs.
@@ -798,6 +831,7 @@ async function loadBook(id, name){
   S.book = {id, name, landed: await landedTricks(id), sport: (S.book && S.book.id === id && S.book.sport) || S.sport};
 }
 async function loadBoard(){
+  if (S.board.scope === 'crews'){ S.board.rows = mustOk(await db.rpc('crew_board', {p_period: S.board.period})); return; }
   const ids = S.board.scope === 'friends' ? [myId(), ...acceptedFriends().map(f => f.other.id)] : null;
   S.board.rows = mustOk(await db.rpc('leaderboard', {p_period: S.board.period, p_resort: S.board.resort || null, p_ids: ids}));
 }
@@ -987,6 +1021,9 @@ function totdStrip(){
 
 function miniBoard(){
   const rows = (S.board.rows || []).slice(0, 6);
+  if (S.board.scope === 'crews') return rows.length ? `<ol class="mini-board crews">${rows.map((c, i) => `<li class="${S.crew.mine && c.id === S.crew.mine.id ? 'you' : ''}" data-act="tab" data-tab="ranks">
+    <span class="mono hint">${i + 1}</span><span class="crew-tag sm">${esc(c.tag)}</span><b>${esc(c.name)}</b><span class="mono">${c.score}</span></li>`).join('')}</ol>`
+    : '<div class="hint" style="margin-top:6px">No crews yet.</div>';
   if (!rows.length) return '<div class="hint" style="margin-top:6px">Add friends in Duels to see them here.</div>';
   return `<ol class="mini-board">${rows.map((u, i) => `<li class="${u.id === myId() ? 'you' : ''}" data-act="profile" data-id="${u.id}">
     <span class="mono hint">${i + 1}</span>${badgeSVG(trickTierOf(u.points).key, 22)}<b>${esc(u.username)}</b><span class="mono">${u.score}</span></li>`).join('')}</ol>`;
@@ -999,7 +1036,7 @@ function renderRail(){
   const requests = S.friends.filter(f => f.status === 'pending' && f.incoming);
   const toJudge = judgeQueue().length;
   rail.innerHTML = `${rankHero()}${wxCard()}${totdCard()}
-    <section class="card frame"><div class="row"><div class="label">Friends board</div>
+    <section class="card frame"><div class="row"><div class="label">${{crews: "Crew board", global: "Leaderboard"}[S.board.scope] || "Friends board"}</div>
       <button class="linkish" data-act="tab" data-tab="ranks">See all</button></div>${miniBoard()}</section>
     <section class="card"><div class="label">Needs you</div>
       ${myTurn.map(d => `<button class="alert" data-act="open-duel" data-id="${d.id}"><span class="your-turn">Your turn</span> vs <b>${esc(d.other.username)}</b></button>`).join('')}
@@ -1242,6 +1279,7 @@ const views = {
           ${d.turn === myId() ? '<span class="your-turn">Your turn</span>' : '<span class="hint">Their turn</span>'}</button>`;
       }).join('') : `<div class="empty"><strong>No duels yet</strong>Challenge a friend below.</div>`}</div>
 
+    ${crewCard()}
     <h3>Friends</h3>
     <button class="btn small" style="margin-bottom:10px" data-act="invite">📨 Invite friends to Sendit</button>
     <form class="inline-form" id="friend-search">
@@ -1251,7 +1289,7 @@ const views = {
         : '<div class="empty" style="padding:16px">Nobody by that name yet.</div>'}</div>` : ''}
     ${incoming.length ? `<div class="label" style="margin:16px 0 8px">Requests</div>
       <div class="card">${incoming.map(f => friendRow(f.other, 'incoming')).join('')}</div>` : ''}
-    <div class="label" style="margin:16px 0 8px">Your crew · ${friends.length}</div>
+    <div class="label" style="margin:16px 0 8px">Your friends · ${friends.length}</div>
     <div class="card">${friends.length ? friends.map(f => friendRow(f.other, 'friend')).join('')
       : '<div class="empty" style="padding:18px">Search for your friends above to add them.</div>'}</div>
     ${sent.length ? `<p class="hint" style="margin-top:8px">Waiting on: ${sent.map(f => esc(f.other.username)).join(', ')}</p>` : ''}
@@ -1284,19 +1322,20 @@ const views = {
     <div class="filters">
       <div class="seg" role="group" aria-label="Who">
         <button class="${b.scope === 'friends' ? 'on' : ''}" data-act="scope" data-k="friends">Friends</button>
-        <button class="${b.scope === 'global' ? 'on' : ''}" data-act="scope" data-k="global">Everyone</button></div>
+        <button class="${b.scope === 'global' ? 'on' : ''}" data-act="scope" data-k="global">Everyone</button>${S.crew.ready ? `
+        <button class="${b.scope === 'crews' ? 'on' : ''}" data-act="scope" data-k="crews">Crews</button>` : ''}</div>
       <div class="seg" role="group" aria-label="Time period">
         <button class="${b.period === 'all' ? 'on' : ''}" data-act="period" data-k="all">All time</button>
         <button class="${b.period === 'week' ? 'on' : ''}" data-act="period" data-k="week">Week</button></div>
-      <select id="board-resort" aria-label="Home mountain">
-        <option value="">All mountains</option>${RESORTS.map(r => `<option ${b.resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
+      ${b.scope === 'crews' ? '' : `<select id="board-resort" aria-label="Home mountain">
+        <option value="">All mountains</option>${RESORTS.map(r => `<option ${b.resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select>`}
     </div>
-    <div class="card">${b.rows.length ? `<ol class="board">${b.rows.map((u, i) => `
+    ${b.scope === 'crews' ? crewBoard() : `<div class="card">${b.rows.length ? `<ol class="board">${b.rows.map((u, i) => `
       <li class="${u.id === me.id ? 'you' : ''}" data-act="profile" data-id="${u.id}"><span class="n">${i + 1}</span>
         ${badgeSVG(trickTierOf(u.points).key, 34)}
         <div><b>${esc(u.username)}</b><div class="hint">${esc(rankInfo(u.points, TRICK_TIERS).label)}${u.home_resort ? ' · ' + esc(u.home_resort) : ''}</div></div>
         <span class="score">${u.score} <small class="hint">pts</small></span></li>`).join('')}</ol>`
-      : `<div class="empty"><strong>Nobody yet</strong>${b.scope === 'friends' ? 'Add friends in the Duels tab.' : 'Be the first on the board.'}</div>`}</div>
+      : `<div class="empty"><strong>Nobody yet</strong>${b.scope === 'friends' ? 'Add friends in the Duels tab.' : 'Be the first on the board.'}</div>`}</div>`}
     <section class="card form" style="margin-top:20px">
       <div class="label">Your profile</div>
       <div class="hint">Signed in as <b>${esc(me.username)}</b> · ${esc(S.session.user.email)}</div>
@@ -1380,6 +1419,42 @@ const views = {
       : `<div class="card empty"><strong>No clips yet</strong>${mine ? 'Record your first trick.' : 'Nothing verified yet.'}</div>`}`;
   },
 };
+
+function crewBoard(){
+  const rows = S.board.rows, mine = S.crew.mine;
+  return `<div class="card">${rows.length ? `<ol class="board">${rows.map((c, i) => `
+    <li class="${mine && c.id === mine.id ? 'you' : ''}" data-act="tab" data-tab="duels"><span class="n">${i + 1}</span>
+      <span class="crew-tag sm">${esc(c.tag)}</span>
+      <div><b>${esc(c.name)}</b><div class="hint">${c.members} rider${c.members === 1 ? '' : 's'}</div></div>
+      <span class="score">${c.score} <small class="hint">pts</small></span></li>`).join('')}</ol>`
+    : `<div class="empty"><strong>No crews yet</strong>Start one in the Duels tab.</div>`}</div>`;
+}
+function crewCard(){
+  const C = S.crew;
+  if (!C.ready) return '';
+  if (!C.mine) return `<h3>Crew</h3><div class="card crew-card">
+    <p class="hint" style="margin:0 0 12px">Team up with your friends or ski club. Everyone's points add up on the crew leaderboard.</p>
+    <form class="inline-form" id="crew-join">
+      <input id="crew-code" placeholder="Invite code" maxlength="6" autocomplete="off" autocapitalize="characters" aria-label="Crew invite code" value="${esc(S.crewPrefill || '')}">
+      <button class="btn small primary" type="submit">Join</button></form>
+    <details class="crew-new"><summary>Or start your own crew</summary>
+      <form class="crew-create" id="crew-create">
+        <input id="crew-name" placeholder="Crew name" maxlength="24" autocomplete="off" aria-label="Crew name">
+        <input id="crew-tag" placeholder="TAG" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Crew tag, 2 to 4 letters">
+        <button class="btn small" type="submit">Create</button></form>
+      <p class="hint" style="margin:8px 0 0">The tag is 2–4 letters or numbers, shown next to your crew's name.</p></details></div>`;
+  const total = C.members.reduce((n, p) => n + p.points, 0);
+  return `<h3>Crew</h3><div class="card crew-card frame">
+    <div class="crew-head"><span class="crew-tag">${esc(C.mine.tag)}</span>
+      <div style="flex:1;min-width:0"><b class="crew-name">${esc(C.mine.name)}</b>
+        <div class="hint">${C.members.length} rider${C.members.length === 1 ? '' : 's'} · <span class="mono">${total}</span> pts</div></div>
+      <button class="btn small primary" data-act="crew-invite">Invite ↗</button></div>
+    <div class="crew-code"><span class="label">Invite code</span><b class="mono">${esc(C.mine.code)}</b></div>
+    <ol class="mini-board">${C.members.map((p, i) => `<li class="${p.id === myId() ? 'you' : ''}" data-act="profile" data-id="${p.id}">
+      <span class="mono hint">${i + 1}</span>${badgeSVG(trickTierOf(p.points).key, 22)}<b>${esc(p.username)}${p.id === C.mine.owner ? ' <span class="hint" title="Crew owner">★</span>' : ''}</b><span class="mono">${p.points}</span></li>`).join('')}</ol>
+    <div class="crew-foot"><button class="btn small" data-act="crew-board">Crew leaderboard</button>
+      <button class="linkish" data-act="crew-leave">Leave crew</button></div></div>`;
+}
 
 function friendRow(p, kind){
   const f = S.friends.find(x => x.other && x.other.id === p.id);
@@ -1686,7 +1761,7 @@ const TABS = [
   ['ranks','Ranks','<path d="M4 20h16M7 20V11M12 20V5M17 20v-6"/>'],
 ];
 const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
-const KEEP = ['board-resort', 'friend-q'];  // keep what's typed/picked across redraws
+const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
 
 function render(force = false){
   const signedIn = !!(S.session && S.me);
@@ -2013,6 +2088,22 @@ document.addEventListener('click', async e => {
       S.tab = 'book'; S.book = null; render(true); window.scrollTo(0, 0);
       try { await loadBook(id, b.dataset.name); } catch (err){ toast(err.message); }
       return render(true);
+    case 'crew-invite': {
+      const c = S.crew.mine; if (!c) return;
+      const url = `${location.origin}${location.pathname}?crew=${c.code}`, text = `Join my crew ${c.name} on Sendit. Code: ${c.code}`;
+      if (navigator.share){ try { await navigator.share({title: `${c.name} on Sendit`, text, url}); } catch (e) {} return; }
+      try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Crew invite copied. Paste it to your friends.'); }
+      catch (e) { toast(`Code: ${c.code}`, 6000); }
+      return;
+    }
+    case 'crew-leave': {
+      const c = S.crew.mine; if (!c) return;
+      const alone = S.crew.members.length <= 1;
+      if (!confirm(alone ? `Leave ${c.name}? You're the last one in it, so the crew will be deleted.` : `Leave ${c.name}?`)) return;
+      const r = await db.rpc('leave_crew'); if (r.error){ toast(r.error.message); return; }
+      await loadCrew(); toast(`You left ${c.name}.`); return render(true);
+    }
+    case 'crew-board': S.board.scope = 'crews'; return openTab('ranks');
     case 'invite': {
       const url = location.origin + location.pathname, text = `Come duel me on Sendit. I'm ${S.me.username}.`;
       if (navigator.share){ try { await navigator.share({title: 'Sendit', text, url}); } catch (e) {} return; }
@@ -2086,6 +2177,25 @@ document.addEventListener('submit', async e => {
   if (f.id === 'post-form' && !S.busy) submitPost();
   else if (f.id === 'auth-form' && !S.busy) submitAuth();
   else if (f.classList.contains('comment-form')) sendComment(f.dataset.clip, f.querySelector('input'));
+  else if (f.id === 'crew-join' && !S.busy){
+    const code = $('crew-code').value.trim().toUpperCase();
+    if (!/^[A-Z0-9]{6}$/.test(code)){ toast('Invite codes are 6 letters and numbers.'); return; }
+    S.busy = true;
+    const r = await db.rpc('join_crew', {p_code: code});
+    S.busy = false;
+    if (r.error){ toast(r.error.message); return; }
+    S.crewPrefill = null; await loadCrew(); toast(`Welcome to ${S.crew.mine ? S.crew.mine.name : 'the crew'}!`); render(true);
+  }
+  else if (f.id === 'crew-create' && !S.busy){
+    const name = $('crew-name').value.trim(), tag = $('crew-tag').value.trim().toUpperCase();
+    if (name.length < 3){ toast('Crew names need at least 3 characters.'); return; }
+    if (!/^[A-Z0-9]{2,4}$/.test(tag)){ toast('The tag is 2–4 letters or numbers, like CUF.'); return; }
+    S.busy = true;
+    const r = await db.rpc('create_crew', {p_name: name, p_tag: tag});
+    S.busy = false;
+    if (r.error){ toast(r.error.message); return; }
+    await loadCrew(); toast(`${name} is live. Send your invite code to your friends.`); render(true);
+  }
   else if (f.id === 'friend-search'){
     const q = $('friend-q').value.trim(); S.search.q = q;
     if (q.length < 2){ toast('Type at least 2 letters'); return; }
@@ -2109,6 +2219,23 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
   }
 }
 
+// ---------- crew invite links (?crew=CODE): remember the code through sign-up ----------
+{
+  const code = new URLSearchParams(location.search).get('crew');
+  if (code && /^[A-Za-z0-9]{6}$/.test(code)){
+    store.set('pending-crew', code.toUpperCase());
+    history.replaceState(null, '', location.pathname);
+  }
+}
+function offerPendingCrew(){
+  const code = store.get('pending-crew', '');
+  if (!code || !S.crew.ready) return;
+  store.set('pending-crew', '');
+  if (S.crew.mine) return;
+  S.crewPrefill = code; S.tab = 'duels'; render(true);
+  toast('You were invited to a crew. Tap Join.', 5000);
+}
+
 // ---------- start ----------
 // Supabase warns against awaiting its own calls inside this callback, so hand off with setTimeout.
 db.auth.onAuthStateChange((event, session) => {
@@ -2116,7 +2243,7 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'feed'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'feed'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); } }
+    if (was !== now){ S.tab = 'feed'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); offerPendingCrew(); } }
   }, 0);
 });
 </script>
