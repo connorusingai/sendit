@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sendit">
-<title>Sendit</title>
+<meta name="apple-mobile-web-app-title" content="Stomped">
+<title>Stomped</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -478,7 +478,7 @@ h2{font-size:30px;margin:4px 0 2px}
 <div class="shell">
 <div class="app">
   <header class="top">
-    <div class="brand">Send<span>it</span></div>
+    <div class="brand">Stomp<span>ed</span></div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="pill wait" id="outbox-chip" data-act="flush" hidden></button>
       <button class="me-chip" data-act="tab" data-tab="ranks" id="me-chip" aria-label="Your rank" hidden></button>
@@ -1091,8 +1091,8 @@ async function sessionCard(){
   for (let x = 0; x < W; x += 60){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
   for (let y = 0; y < H; y += 60){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   const font = (size, weight = 900, style = 'italic', fam = '"Big Shoulders Display", Impact, sans-serif') => `${style} ${weight} ${size}px ${fam}`;
-  g.font = font(84); g.fillStyle = '#EEF3F8'; g.fillText('SEND', 70, 140);
-  const sw = g.measureText('SEND').width; g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.8)'; g.shadowBlur = 30; g.fillText('IT', 70 + sw, 140); g.shadowBlur = 0;
+  g.font = font(84); g.fillStyle = '#EEF3F8'; g.fillText('STOMP', 70, 140);
+  const sw = g.measureText('STOMP').width; g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.8)'; g.shadowBlur = 30; g.fillText('ED', 70 + sw, 140); g.shadowBlur = 0;
   g.font = font(34, 600, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF'; g.textAlign = 'right';
   g.fillText(new Date().toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}).toUpperCase(), W - 70, 132);
   g.textAlign = 'left';
@@ -1123,11 +1123,11 @@ async function sessionCard(){
   g.font = font(60); g.fillStyle = '#EEF3F8'; g.fillText(`@${S.me.username}`, 200, H - 120);
   g.font = font(40, 800); g.fillStyle = BADGE[r.tier.key][0]; g.fillText(r.label.toUpperCase(), 200, H - 72);
   g.textAlign = 'right'; g.font = font(28, 500, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF';
-  g.fillText('connorusingai.github.io/sendit', W - 70, H - 72);
+  g.fillText('@stompedapp', W - 70, H - 72);
   const blob = await new Promise(ok => cv.toBlob(ok, 'image/png'));
-  const file = new File([blob], `sendit-session-${dayKey(new Date().toISOString())}.png`, {type: 'image/png'});
+  const file = new File([blob], `stomped-session-${dayKey(new Date().toISOString())}.png`, {type: 'image/png'});
   if (navigator.canShare && navigator.canShare({files: [file]})){
-    try { await navigator.share({files: [file], title: 'My Sendit session', text: `${s.verified} tricks verified today on Sendit.`}); } catch (e) {}
+    try { await navigator.share({files: [file], title: 'My Stomped session', text: `${s.verified} tricks verified today on Stomped.`}); } catch (e) {}
     return;
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
@@ -1153,8 +1153,8 @@ async function shareCard(clipId){
   const font = (size, weight = 900, style = 'italic', fam = '"Big Shoulders Display", Impact, sans-serif') => `${style} ${weight} ${size}px ${fam}`;
   // logo
   g.textBaseline = 'alphabetic';
-  g.font = font(84); g.fillStyle = '#EEF3F8'; g.fillText('SEND', 70, 140);
-  const sw = g.measureText('SEND').width; g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.8)'; g.shadowBlur = 30; g.fillText('IT', 70 + sw, 140); g.shadowBlur = 0;
+  g.font = font(84); g.fillStyle = '#EEF3F8'; g.fillText('STOMP', 70, 140);
+  const sw = g.measureText('STOMP').width; g.fillStyle = '#FF6B1A'; g.shadowColor = 'rgba(255,107,26,.8)'; g.shadowBlur = 30; g.fillText('ED', 70 + sw, 140); g.shadowBlur = 0;
   // verified pill
   g.fillStyle = 'rgba(59,224,138,.15)'; g.strokeStyle = '#3BE08A'; g.lineWidth = 3;
   g.beginPath(); g.roundRect(W - 390, 82, 320, 76, 38); g.fill(); g.stroke();
@@ -1175,11 +1175,11 @@ async function shareCard(clipId){
   g.font = font(64); g.fillStyle = '#EEF3F8'; g.fillText(`@${S.me.username}`, W / 2, 1180);
   g.font = font(44, 800); g.fillStyle = BADGE[r.tier.key][0]; g.fillText(r.label.toUpperCase(), W / 2, 1236);
   g.font = font(30, 500, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF';
-  g.fillText('connorusingai.github.io/sendit', W / 2, 1310);
+  g.fillText('@stompedapp', W / 2, 1310);
   const blob = await new Promise(ok => cv.toBlob(ok, 'image/png'));
-  const file = new File([blob], `sendit-${t.name.replace(/\W+/g, '-').toLowerCase()}.png`, {type: 'image/png'});
+  const file = new File([blob], `stomped-${t.name.replace(/\W+/g, '-').toLowerCase()}.png`, {type: 'image/png'});
   if (navigator.canShare && navigator.canShare({files: [file]})){
-    try { await navigator.share({files: [file], title: `${t.name} on Sendit`, text: `Landed a ${t.name}. Verified on Sendit.`}); } catch (e) {}
+    try { await navigator.share({files: [file], title: `${t.name} on Stomped`, text: `Landed a ${t.name}. Verified on Stomped.`}); } catch (e) {}
     return;
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
@@ -1191,7 +1191,7 @@ async function shareCard(clipId){
 const views = {
   auth(){
     const up = S.authMode === 'signup';
-    return `<h2>${up ? 'Join Sendit' : 'Drop in'}</h2>
+    return `<h2>${up ? 'Join Stomped' : 'Drop in'}</h2>
       <p class="sub">${up ? 'Film a trick, get it verified by other riders, and rank up from Bronze to Legend.'
                           : 'Sign in to record, judge, duel and climb the leaderboard.'}</p>
       <form class="card form" id="auth-form">
@@ -1239,7 +1239,7 @@ const views = {
     let body;
     if (!canRecord) body = `<div class="cam"><div class="cam-empty"><div>
         <strong class="rank-word t-silver" style="font-size:28px">Camera not available</strong>
-        <p>This browser can't record here. The camera needs the app to be opened over a secure (https) link. That comes when Sendit goes online.</p></div></div></div>`;
+        <p>This browser can't record here. The camera needs the app to be opened over a secure (https) link. That comes when Stomped goes online.</p></div></div></div>`;
     else if (R.mode === 'review') body = `<div class="cam"><video src="${R.url}" controls playsinline loop autoplay muted></video></div>
       ${ctx ? duelReviewForm(ctx) : postForm()}`;
     else if (R.mode === 'live' || R.mode === 'recording') body = `<div class="cam">
@@ -1281,7 +1281,7 @@ const views = {
 
     ${crewCard()}
     <h3>Friends</h3>
-    <button class="btn small" style="margin-bottom:10px" data-act="invite">📨 Invite friends to Sendit</button>
+    <button class="btn small" style="margin-bottom:10px" data-act="invite">📨 Invite friends to Stomped</button>
     <form class="inline-form" id="friend-search">
       <input id="friend-q" placeholder="Find riders by username" value="${esc(S.search.q)}" autocomplete="off" aria-label="Search usernames">
       <button class="btn small" type="submit">Search</button></form>
@@ -2090,8 +2090,8 @@ document.addEventListener('click', async e => {
       return render(true);
     case 'crew-invite': {
       const c = S.crew.mine; if (!c) return;
-      const url = `${location.origin}${location.pathname}?crew=${c.code}`, text = `Join my crew ${c.name} on Sendit. Code: ${c.code}`;
-      if (navigator.share){ try { await navigator.share({title: `${c.name} on Sendit`, text, url}); } catch (e) {} return; }
+      const url = `${location.origin}${location.pathname}?crew=${c.code}`, text = `Join my crew ${c.name} on Stomped. Code: ${c.code}`;
+      if (navigator.share){ try { await navigator.share({title: `${c.name} on Stomped`, text, url}); } catch (e) {} return; }
       try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Crew invite copied. Paste it to your friends.'); }
       catch (e) { toast(`Code: ${c.code}`, 6000); }
       return;
@@ -2105,8 +2105,8 @@ document.addEventListener('click', async e => {
     }
     case 'crew-board': S.board.scope = 'crews'; return openTab('ranks');
     case 'invite': {
-      const url = location.origin + location.pathname, text = `Come duel me on Sendit. I'm ${S.me.username}.`;
-      if (navigator.share){ try { await navigator.share({title: 'Sendit', text, url}); } catch (e) {} return; }
+      const url = location.origin + location.pathname, text = `Come duel me on Stomped. I'm ${S.me.username}.`;
+      if (navigator.share){ try { await navigator.share({title: 'Stomped', text, url}); } catch (e) {} return; }
       try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Invite link copied. Paste it to your friends.'); }
       catch (e) { toast(url, 6000); }
       return;

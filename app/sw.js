@@ -1,4 +1,4 @@
-// Sendit service worker: keeps a copy of the app on the phone so it opens with no signal.
+// Stomped service worker: keeps a copy of the app on the phone so it opens with no signal.
 //
 // - The app page itself: try the network first (so updates arrive), fall back to the saved copy.
 // - Code libraries and fonts from CDNs: use the saved copy (they never change at a given version).
