@@ -9,7 +9,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stomped">
-<title>Stomped</title>
+<title>Stomped · the trick app for skiers & snowboarders</title>
+<meta name="description" content="Film a trick in the app. Other riders judge it, anonymously. Verified tricks earn points and move you up from Bronze to Legend.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stomped">
+<meta property="og:title" content="Stomped · Land it. Prove it.">
+<meta property="og:description" content="The trick app for skiers & snowboarders. Film it, riders verify it, rank up from Bronze to Legend.">
+<meta property="og:image" content="https://connorusingai.github.io/sendit/app/icons/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -130,7 +138,7 @@ h3{font-family:var(--display);font-weight:900;font-size:22px;text-transform:uppe
   font-size:36px;line-height:.95;text-transform:uppercase;color:#0A1524}
 .poster .play{position:absolute;right:12px;top:12px;font-size:11px;font-weight:700;letter-spacing:.06em;
   background:rgba(0,0,0,.6);color:#fff;border-radius:6px;padding:4px 7px;text-transform:uppercase}
-video.clip{display:block;width:100%;aspect-ratio:16/10;background:#000;object-fit:cover}
+video.clip{display:block;width:100%;aspect-ratio:4/5;max-height:70vh;background:#000;object-fit:contain}
 .card-foot{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
 .trick{font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase;line-height:1;font-style:italic}
 .trick small{font-family:var(--body);font-style:normal;font-weight:500;font-size:12.5px;color:var(--muted);text-transform:none}
@@ -447,17 +455,100 @@ h2{font-size:30px;margin:4px 0 2px}
 .mini-board li:first-child{border-top:0}
 .mini-board li.you b{color:var(--accent)}
 .alert{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+[hidden]{display:none!important}   /* some chips set display, which beat the hidden attribute */
+
+/* ---------- landing page (signed out) ---------- */
+.lhero{padding:26px 0 8px}
+.eyebrow{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ice)}
+.lhero h1{font-family:var(--display);font-weight:900;font-style:italic;text-transform:uppercase;font-size:clamp(58px,17vw,104px);
+  line-height:.86;margin:12px 0 14px;letter-spacing:.5px;transform:skewX(-6deg)}
+.lhero h1 span{color:var(--accent);text-shadow:0 0 30px rgba(255,107,26,.55)}
+.lede{color:#B9C5D3;font-size:16.5px;line-height:1.5;margin:0 0 20px;max-width:34em}
+.cta{display:grid;gap:10px}
+.cta .btn{padding:15px 18px;font-size:15px}
+.lladder{display:flex;justify-content:space-between;gap:4px;margin:26px 0 6px;padding:14px 10px;border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(180deg,rgba(24,32,46,.7),rgba(14,19,28,.7))}
+.lladder div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.lladder .badge-svg{width:44px;height:auto}
+.lladder span{font-family:var(--display);font-weight:900;font-style:italic;font-size:13px;text-transform:uppercase;letter-spacing:.3px}
+.sec{margin:34px 0 12px!important}
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.feat{display:flex;flex-direction:column;gap:4px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.feat i{font-style:normal;font-size:22px}
+.feat b{font-size:14.5px}
+.feat span{color:var(--muted);font-size:12.5px;line-height:1.4}
+.foot{margin:34px 0 0;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.04em}
+@media (min-width:700px){
+  .cta{grid-template-columns:auto auto;justify-content:start}
+  .feats{grid-template-columns:repeat(3,1fr)}
+  .lladder .badge-svg{width:62px}
+  .lladder span{font-size:16px}
+}
+
+/* ---------- feel like an app, not a web page ---------- */
+html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-font-smoothing:antialiased}
+input,textarea,.comment p{-webkit-user-select:text;user-select:text}
+input,select,textarea{font-size:16px}   /* under 16px, iPhone zooms the whole page when you tap a box */
+button,[data-act],select{touch-action:manipulation}
+.top{background:rgba(6,8,12,.72);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);
+  margin-inline:-16px;padding-inline:16px}
+.player{position:relative;cursor:pointer;background:#000}
+.pl-play{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);
+  pointer-events:none;transition:opacity .2s,transform .2s}
+.pl-play svg{width:28px;height:28px;fill:#fff;margin-left:4px}
+.player.playing .pl-play{opacity:0;transform:scale(.7)}
+.pl-mute{position:absolute;right:10px;bottom:10px;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;
+  background:rgba(0,0,0,.55);cursor:pointer}
+.pl-mute svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn.ghost{background:none;border-color:var(--line);color:var(--muted);width:100%}
+@media (prefers-reduced-motion:no-preference){
+  button,.btn{transition:transform .12s ease,filter .12s ease}
+  button:active,.btn:active{transform:scale(.95)}
+  .tabs button:active{transform:scale(.88)}
+  #view.swap{animation:swap .24s cubic-bezier(.2,.8,.2,1)}
+  @keyframes swap{from{opacity:0;transform:translateX(14px)}}
+}
+
+.feed-bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin:2px 0 12px}
+.feed-bar .seg button{padding:7px 10px}
+
+/* first-run help: how it works (sign-in), start-here checklist (feed), landed rule (judge) */
+.how{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:how}
+.how li{counter-increment:how;display:grid;grid-template-columns:34px 1fr;column-gap:12px;align-items:center;padding:12px 14px;
+  border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.how li::before{content:counter(how);grid-row:span 2;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);font-family:var(--display);font-weight:900;font-style:italic;font-size:18px}
+.how li span{color:var(--muted);font-size:13.5px}
+.start{padding:14px}
+.start-step{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 0;background:none;border:0;
+  border-top:1px solid var(--line);cursor:pointer}
+.start-step b{display:block}
+.start-step .tick{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);
+  color:var(--accent-ink);font-weight:900;font-size:13px}
+.start-step.ok .tick{background:var(--good);border-color:var(--good)}
+.start-step.ok b{color:var(--muted);text-decoration:line-through}
+.rule{margin-top:14px;padding:12px 14px}
+.rule summary{cursor:pointer;font-weight:700;color:var(--ice)}
+.rule ul{margin:10px 0 0;padding-left:18px;display:grid;gap:6px;font-size:13.5px;color:var(--muted)}
+.rule b{color:var(--ink)}
 
 /* ---------- laptop & desktop: sidebar nav | feed | HUD rail ---------- */
 @media (min-width:1000px){
   .shell{margin-left:228px;display:grid;grid-template-columns:minmax(0,640px) 350px;gap:26px;justify-content:center;padding:0 28px}
   .app{max-width:none;margin:0;padding-inline:0;padding-block:0 40px}
   .rail{display:flex;flex-direction:column;gap:12px;position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto;padding:14px 2px 24px;scrollbar-width:thin}
-  .top{background:none}
+  .top{background:none;margin-inline:0;padding-inline:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+  /* signed out: no sidebar or rail, so center one wide column and show the logo */
+  body.signed-out .shell{margin-left:0;grid-template-columns:minmax(0,880px)}
+  body.signed-out .rail{display:none}
+  body.signed-out .brand{visibility:visible}
+  body.signed-out #auth-form,body.signed-out #auth-top,body.signed-out #auth-top + .sub{max-width:480px}
   .tabs{top:0;bottom:0;right:auto;width:228px;border-top:0;border-right:1px solid rgba(92,225,255,.14);padding:84px 14px 20px;
     background:linear-gradient(180deg,rgba(10,14,22,.92),rgba(6,8,12,.95))}
-  .tabs::before{content:"SEND";position:absolute;top:24px;left:24px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;letter-spacing:.5px;transform:skewX(-6deg);color:var(--ink)}
-  .tabs::after{content:"IT";position:absolute;top:24px;left:96px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7);transform:skewX(-6deg)}
+  .tabs::before{content:"STOMP";position:absolute;top:24px;left:24px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;letter-spacing:.5px;transform:skewX(-6deg);color:var(--ink)}
+  .tabs::after{content:"ED";position:absolute;top:24px;left:114px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7);transform:skewX(-6deg)}
   .tabs nav{display:flex;flex-direction:column;align-items:stretch;gap:6px;max-width:none}
   .tabs button{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:10px;font-size:13px}
   .tabs button:hover{background:rgba(92,225,255,.06)}
@@ -543,6 +634,7 @@ const S = {
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
+  feed: {scope: store.get('feed-scope', 'everyone'), sort: store.get('feed-sort', 'hot'), limit: 30, rows: [], more: false, loaded: false},
   board: {scope: 'friends', period: 'all', resort: '', rows: []},
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
@@ -852,6 +944,43 @@ async function loadDuelMoves(duelId){
   S.duelMoves[duelId] = mustOk(await db.from('duel_moves').select('*, clips(video_path)').eq('duel_id', duelId).order('id'));
 }
 const acceptedFriends = () => S.friends.filter(f => f.status === 'accepted');
+const findClip = id => S.clips.find(x => x.id === id) || S.feed.rows.find(x => x.id === id)
+  || (S.profile && S.profile.clips.find(x => x.id === id));
+
+// ---------- the feed ----------
+// Verified clips from the chosen circle (friends, your mountain, or everyone), then put in order.
+// "New" is newest first. "Hot" takes a pool of recent clips and ranks it: newer is better, and friends, your
+// mountain, bigger tricks, likes and comments push a clip up. A small shuffle that changes once a day keeps it
+// from feeling frozen, without clips jumping around every time the screen redraws.
+const FEED_PAGE = 30, HOT_POOL = 3;   // Hot ranks 3 pages' worth of recent clips and shows the best page
+async function loadFeed(){
+  const F = S.feed, friends = acceptedFriends().map(f => f.other.id);
+  F.loaded = true;
+  if ((F.scope === 'friends' && !friends.length) || (F.scope === 'mountain' && !S.me.home_resort)){ F.rows = []; F.more = false; return; }
+  const want = F.sort === 'hot' ? F.limit * HOT_POOL : F.limit;
+  let q = db.from('clips').select(CLIP_SELECT).eq('status', 'verified');
+  if (F.scope === 'friends') q = q.in('user_id', [myId(), ...friends]);
+  if (F.scope === 'mountain') q = q.eq('resort', S.me.home_resort);
+  const rows = mustOk(await q.order('created_at', {ascending: false}).range(0, want));  // asks for one extra to see if more exist
+  F.more = rows.length > want;
+  const known = new Map(S.clips.map(c => [c.id, c]));   // reuse the same objects, so a like shows everywhere at once
+  let list = rows.slice(0, want).map(r => known.get(r.id) || r);
+  if (F.sort === 'hot'){ list = rankHot(list, friends); if (list.length > F.limit) F.more = true; list = list.slice(0, F.limit); }
+  F.rows = list;
+}
+const seeded = s => { let h = 2166136261; for (const ch of s){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+function rankHot(list, friends){
+  const close = new Set([myId(), ...friends]), day = dayKey(new Date().toISOString()), now = Date.now();
+  const score = c => {
+    const hours = Math.max(0, (now - Date.parse(c.verified_at || c.created_at)) / 36e5);
+    let s = 1 + Math.log2(1 + count(c.likes)) + .5 * Math.log2(1 + count(c.comments)) + trickById(c.trick_id).pts / 40;
+    if (close.has(c.user_id)) s *= 1.6;
+    if (S.me.home_resort && c.resort === S.me.home_resort) s *= 1.25;
+    s *= .85 + .3 * seeded(c.id + day + myId());
+    return s / Math.pow(hours + 2, .8);   // older clips sink, but a great one can stay up for a day or two
+  };
+  return list.map(c => [score(c), c]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+}
 const activeDuelWith = id => S.duels.find(d => d.status === 'active' && d.other && d.other.id === id);
 
 // Toast when one of my clips gets decided while the app is open.
@@ -885,13 +1014,38 @@ function trickSelect(id, sport, selected){
     return `<optgroup label="${cat}">${list.map(t => `<option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)} (${t.pts})</option>`).join('')}</optgroup>`;
   }).join('')}</select>`;
 }
+// App-style video: tap to play or pause, plays by itself when it scrolls into view, small sound button.
+// No browser controls bar, so it looks like an app instead of a web page.
+const SPEAKER = '<path d="M4 9h4l5-4v14l-5-4H4z"/>';
+const player = (src, auto = true) => `<div class="player" data-act="play">
+  <video class="clip" src="${esc(src)}" playsinline muted loop preload="metadata" ${auto ? 'data-auto' : ''}></video>
+  <span class="pl-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+  <button class="pl-mute" data-act="mute" aria-label="Turn sound on"><svg viewBox="0 0 24 24">${SPEAKER}<path d="M17 9l5 6M22 9l-5 6"/></svg></button></div>`;
+let playerObserver;
+function watchPlayers(){
+  if (playerObserver) playerObserver.disconnect();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const vids = document.querySelectorAll('#view video[data-auto]'); if (!vids.length) return;
+  playerObserver = new IntersectionObserver(es => es.forEach(e => {
+    if (e.intersectionRatio >= .6) e.target.play().catch(() => {}); else e.target.pause();
+  }), {threshold: [0, .6]});
+  vids.forEach(v => playerObserver.observe(v));
+}
+// Fit each clip's frame to the video itself (between 4:5 tall and 16:9 wide), so there are no black bars.
+document.addEventListener('loadedmetadata', e => {
+  const v = e.target; if (!(v.classList && v.classList.contains('clip')) || !v.videoWidth) return;
+  v.style.aspectRatio = String(Math.min(16 / 9, Math.max(4 / 5, v.videoWidth / v.videoHeight)));
+  v.style.objectFit = 'cover';
+}, true);
+for (const [ev, on] of [['play', true], ['pause', false]])
+  document.addEventListener(ev, e => { const p = e.target.closest && e.target.closest('.player'); if (p) p.classList.toggle('playing', on); }, true);
 const lettersHtml = (n, small) => `<div class="letters ${small ? 'small' : ''}">${['S','K','I'].map((l, i) => `<b class="${i < n ? 'hit' : ''}">${l}</b>`).join('')}</div>`;
 
 function clipCard(c){
   const t = trickById(c.trick_id), sp = SPORTS[sportOf(t)], mine = c.user_id === myId();
   const who = c.profiles ? c.profiles.username : 'Rider';
   const media = c.video_path
-    ? `<video class="clip" src="${esc(videoUrl(c.video_path))}" controls playsinline muted preload="metadata"></video>`
+    ? player(videoUrl(c.video_path))
     : `<div class="poster" role="img" aria-label="${esc(t.name)}"><span class="play">No video</span><div class="tname">${esc(t.name)}</div></div>`;
   const status = c.status === 'verified' ? `<span class="pill ok">Verified</span>`
     : c.status === 'rejected' ? `<span class="pill no">Not verified</span>` : `<span class="pill wait">Judging</span>`;
@@ -909,7 +1063,7 @@ function clipCard(c){
     ${media}
     <div class="card-foot">
       <div class="row"><div class="trick">${esc(t.name)} <small>· ${esc(c.grab)} · ${esc(t.category)}</small></div>
-        <div class="pts">${shown}</div></div>
+        <div class="pts">${shown}${c.status === 'pending' ? '<small class="hint"> if verified</small>' : ''}</div></div>
       <div class="row" style="justify-content:flex-start;gap:6px">
         <span class="pill sport">${sp.icon} ${sp.label}</span>
         ${c.totd ? '<span class="pill totd">🔥 Trick of the Day · 2×</span>' : ''}</div>
@@ -1136,7 +1290,7 @@ async function sessionCard(){
 }
 
 async function shareCard(clipId){
-  const c = S.clips.find(x => x.id === clipId) || (S.profile && S.profile.clips.find(x => x.id === clipId));
+  const c = findClip(clipId);
   if (!c) return;
   const t = trickById(c.trick_id), r = rankInfo(S.me.points, TRICK_TIERS), W = 1080, H = 1350;
   try { await document.fonts.ready; } catch (e) {}
@@ -1188,12 +1342,73 @@ async function shareCard(clipId){
 }
 
 // ---------- views ----------
+// First moves for a new rider, ticked off as they go. Disappears once they're all done or the rider is past Bronze.
+function startHere(){
+  const steps = [
+    ['Pick your home mountain', 'Snow report and local leaderboard', 'ranks', !!S.me.home_resort],
+    ['Film your first trick', 'Even a 180 counts. Trick of the Day pays double', 'record', S.clips.some(c => c.user_id === myId())],
+    ['Judge a clip', 'Vote on other riders and theirs get verified', 'judge', S.myVotes.size > 0],
+    ['Add a friend', 'Then challenge them to a game of S.K.I.', 'duels', acceptedFriends().length > 0],
+  ];
+  const done = steps.filter(s => s[3]).length;
+  if (done === steps.length || S.me.points >= 100) return '';
+  return `<section class="card start">
+    <div class="row"><div class="label">Start here</div><span class="hint mono">${done}/${steps.length}</span></div>
+    ${steps.map(([title, why, tab, ok]) => `<button class="start-step ${ok ? 'ok' : ''}" data-act="tab" data-tab="${tab}">
+      <span class="tick">${ok ? '✓' : ''}</span><span><b>${title}</b><span class="hint">${why}</span></span></button>`).join('')}
+  </section>`;
+}
+function emptyFeed(){
+  const F = S.feed, go = (tab, label) => `<button class="btn primary" data-act="tab" data-tab="${tab}" style="margin-top:14px">${label}</button>`;
+  if (F.scope === 'friends' && !acceptedFriends().length)
+    return `<div class="card empty"><strong>No friends yet</strong>Add riders you know and their verified tricks show up here.${go('duels', 'Find friends')}</div>`;
+  if (F.scope === 'mountain' && !S.me.home_resort)
+    return `<div class="card empty"><strong>Pick your mountain</strong>Then this shows verified tricks from riders there.${go('ranks', 'Set home mountain')}</div>`;
+  return `<div class="card empty"><strong>Nothing here yet</strong>Verified tricks show up here. Be the first.${go('record', 'Record a trick')}</div>`;
+}
+// Same rule for everyone, so votes (and the training data behind the trick AI) mean the same thing.
+const landedRule = () => `<details class="card rule"><summary>What counts as landed?</summary><ul>
+  <li><b>Landed:</b> they land on their feet and ride away in control.</li>
+  <li><b>Landed:</b> the spin matches the trick named. A 360 is one full turn.</li>
+  <li><b>Nope, fell:</b> they fall, sit down, or put a hand down to stop falling.</li>
+  <li><b>Nope, wrong trick:</b> the spin is short or it's a different trick.</li>
+  <li><b>Nope, can't see:</b> the landing is cut off or too blurry to tell.</li></ul></details>`;
+
 const views = {
   auth(){
+    // Signed out = the landing page: what Stomped is, why it matters, then the form.
     const up = S.authMode === 'signup';
-    return `<h2>${up ? 'Join Stomped' : 'Drop in'}</h2>
-      <p class="sub">${up ? 'Film a trick, get it verified by other riders, and rank up from Bronze to Legend.'
-                          : 'Sign in to record, judge, duel and climb the leaderboard.'}</p>
+    const ladder = TRICK_TIERS.slice().reverse();
+    return `<section class="lhero">
+        <div class="eyebrow">The trick app for skiers & snowboarders</div>
+        <h1>Land it.<br><span>Prove it.</span></h1>
+        <p class="lede">Film a trick in the app. Other riders judge it, anonymously. Every verified trick earns points
+          and moves you up the ranks, from Bronze to Legend.</p>
+        <div class="cta">
+          <button class="btn primary" data-act="join" data-mode="signup">Get started, it's free</button>
+          <button class="btn ghost" data-act="join" data-mode="signin">Sign in</button></div>
+      </section>
+      <div class="lladder" aria-label="The six ranks">${ladder.map(t => `<div>${badgeSVG(t.key, 54)}<span class="t-${t.key}">${t.name}</span></div>`).join('')}</div>
+
+      <div class="label sec">How it works</div>
+      <ol class="how">
+        <li><b>Film it</b><span>Record in the app, up to 20 seconds. No uploads, so no old or borrowed clips.</span></li>
+        <li><b>Riders vote</b><span>Other riders judge it, landed or not. Higher ranks get a bigger vote.</span></li>
+        <li><b>Rank up</b><span>Verified tricks earn points. A new trick pays in full; repeats don't, so nobody farms.</span></li>
+      </ol>
+
+      <div class="label sec">Built for the whole mountain</div>
+      <div class="feats">
+        <div class="feat"><i>🔥</i><b>Trick of the Day</b><span>One trick pays double for 24 hours. A daily reason to ride the park.</span></div>
+        <div class="feat"><i>🏔️</i><b>Home-mountain boards</b><span>Rank against riders at your mountain, this week or all time, with a live snow report.</span></div>
+        <div class="feat"><i>⚔️</i><b>Duels</b><span>A game of S.K.I. with friends: land the trick or take a letter.</span></div>
+        <div class="feat"><i>🛡️</i><b>Crews</b><span>Teams, clubs and park crews add up their points on one board.</span></div>
+        <div class="feat"><i>✅</i><b>Verified by riders</b><span>No judges or staff needed. Votes stay anonymous, so it's fair.</span></div>
+        <div class="feat"><i>📲</i><b>Works on any phone</b><span>Install it from the browser. Clips save offline and post when you're back in signal.</span></div>
+      </div>
+
+      <h2 id="auth-top" class="sec">${up ? 'Join Stomped' : 'Drop in'}</h2>
+      <p class="sub">${up ? 'Pick a username. Your email stays private.' : 'Sign in to record, judge, duel and climb the leaderboard.'}</p>
       <form class="card form" id="auth-form">
         ${up ? `<div class="field"><label class="label" for="auth-user">Username</label>
           <input id="auth-user" autocomplete="username" required minlength="3" maxlength="24"></div>` : ''}
@@ -1203,31 +1418,46 @@ const views = {
           <input id="auth-pass" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" required minlength="8">
           ${up ? '<span class="hint">At least 8 characters.</span>' : ''}</div>
         <button class="btn primary" type="submit">${up ? 'Create account' : 'Sign in'}</button>
-        <button class="linkish" type="button" data-act="authmode">${up ? 'Already have an account? Sign in' : 'New here? Create an account'}</button>
-      </form>`;
+        <button class="btn ghost" type="button" data-act="authmode">${up ? 'I already have an account' : 'Create an account'}</button>
+      </form>
+      <footer class="foot">Stomped · made in Colorado for riders everywhere</footer>`;
   },
 
   feed(){
     // Other people's clips only show here once verified, so judging stays anonymous.
-    const clips = S.clips.filter(c => c.status === 'verified' || c.user_id === myId());
+    // Your own clips that are still being judged sit on top so you can watch them get decided.
+    const F = S.feed, waiting = S.clips.filter(c => c.user_id === myId() && c.status === 'pending');
     // Big screens show rank, conditions and the Trick of the Day in the right-hand rail instead
     const top = WIDE.matches ? sessionStrip() : hudTiles() + totdStrip() + sessionStrip();
-    return `${top}
-      <div class="stack">${clips.length ? clips.map(clipCard).join('')
-        : `<div class="card empty"><strong>No clips yet</strong>Verified tricks show up here. Be the first.</div>`}</div>`;
+    const seg = (act, k, label, on) => `<button class="${on ? 'on' : ''}" data-act="${act}" data-k="${k}">${label}</button>`;
+    const bar = `<div class="feed-bar">
+      <div class="seg" role="group" aria-label="Whose clips">${seg('feed-scope', 'friends', 'Friends', F.scope === 'friends')}${
+        seg('feed-scope', 'mountain', 'My mountain', F.scope === 'mountain')}${seg('feed-scope', 'everyone', 'Everyone', F.scope === 'everyone')}</div>
+      <div class="seg" role="group" aria-label="Order">${seg('feed-sort', 'hot', '🔥 Hot', F.sort === 'hot')}${seg('feed-sort', 'new', 'New', F.sort === 'new')}</div></div>`;
+    const body = !F.loaded ? '<p class="sub">Loading…</p>'
+      : F.rows.length ? F.rows.map(clipCard).join('') + (F.more
+        ? '<button class="btn ghost" data-act="feed-more">Load more</button>'
+        : `<p class="hint" style="text-align:center">You're all caught up${F.scope === 'everyone' ? '' : `. <button class="linkish" data-act="feed-scope" data-k="everyone" style="align-self:auto">See everyone</button>`}</p>`)
+      : emptyFeed();
+    return `${top}${bar}<div class="stack">${startHere()}${waiting.map(clipCard).join('')}${body}</div>`;
   },
 
   judge(){
     const J = S.judge;
     if (!J.list.length) return `<h2>Judge</h2>
-      <div class="card empty"><strong>All caught up</strong>No clips need your vote right now. Nice.</div>`;
+      <div class="card empty"><strong>All caught up</strong>No clips need your vote right now. Nice.
+        <div class="row" style="justify-content:center;gap:8px;margin-top:14px">
+          <button class="btn primary" data-act="tab" data-tab="record">Record a trick</button>
+          <button class="btn" data-act="tab" data-tab="duels">Invite friends</button></div></div>
+      ${landedRule()}`;
     const w = trickTierOf(S.me.points);
     return `<div class="reel" id="reel">${J.list.map(reelItem).join('')}
       <div class="reel-end"><div><div class="rank-word t-gold" style="font-size:44px">All caught up</div>
         <p class="sub" style="margin-top:10px">That's every clip waiting on you. Go ride.</p>
         <button class="btn primary" data-act="tab" data-tab="feed">Back to the feed</button></div></div>
     </div>
-    <p class="hint" style="text-align:center;margin-top:8px">Swipe up for the next clip · your vote counts ×${w.w} · riders stay anonymous</p>`;
+    <p class="hint" style="text-align:center;margin-top:8px">Swipe up for the next clip · your vote counts ×${w.w} · riders stay anonymous</p>
+    ${landedRule()}`;
   },
 
   record(){
@@ -1510,7 +1740,7 @@ function duelDetail(){
   } else {
     const setMove = [...moves].reverse().find(m => m.kind === 'set' && m.landed);
     turn = `<div class="what">Match the ${esc(trickById(d.trick_id).name)}</div>
-      ${setMove && setMove.clips && setMove.clips.video_path ? `<video class="clip" style="border-radius:12px" src="${esc(videoUrl(setMove.clips.video_path))}" controls playsinline muted preload="metadata"></video>` : ''}
+      ${setMove && setMove.clips && setMove.clips.video_path ? `<div style="border-radius:12px;overflow:hidden">${player(videoUrl(setMove.clips.video_path))}</div>` : ''}
       <div class="btns"><button class="btn bad" data-act="duel-miss">I missed</button>
         <button class="btn primary" data-act="duel-record" data-kind="match">🎥 Record my match</button></div>`;
   }
@@ -1522,7 +1752,7 @@ function duelDetail(){
       <div class="mid">VS</div>
       <div class="side r"><b>${esc(other.username)}</b>${lettersHtml(theirL)}<span class="hint">${other.rating} rating</span></div>
     </div>
-    ${watching && watching.clips ? `<video class="clip" src="${esc(videoUrl(watching.clips.video_path))}" controls autoplay playsinline muted></video>` : ''}
+    ${watching && watching.clips ? player(videoUrl(watching.clips.video_path)) : ''}
     <ul class="log">${log.length ? log.slice(-8).map((l, i, a) => `<li class="${i === a.length - 1 ? 'hot' : ''}">${l}</li>`).join('')
       : `<li class="hot">${iAmCh ? 'You' : esc(other.username)} started the duel and sets first.</li>`}</ul>
     <div class="turn">${turn}</div>
@@ -1766,6 +1996,7 @@ const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];
 function render(force = false){
   const signedIn = !!(S.session && S.me);
   $('tabbar').hidden = !signedIn; $('me-chip').hidden = !signedIn;
+  document.body.classList.toggle('signed-out', !signedIn);
   if (!signedIn){ $('view').innerHTML = views.auth(); $('rail').innerHTML = ''; return; }
   const r = rankInfo(S.me.points, TRICK_TIERS);
   $('me-chip').innerHTML = `${badgeSVG(r.tier.key, 26)}<b>${S.me.points}</b>`;
@@ -1783,9 +2014,13 @@ function render(force = false){
   if (!force && ((S.tab === 'judge' && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))){ renderRail(); return; }
   const keep = {}; KEEP.forEach(id => { const el = $(id); if (el) keep[id] = el.value; });
   $('view').innerHTML = views[S.tab]();
+  if (S.shownTab !== S.tab){  // a quick slide-in when you switch screens, like a native app
+    const v = $('view'); v.classList.remove('swap'); void v.offsetWidth; v.classList.add('swap'); S.shownTab = S.tab;
+  }
   for (const [id, v] of Object.entries(keep)){ const el = $(id); if (el) el.value = v; }
   syncPost();
   renderRail();
+  watchPlayers();
   if (S.tab === 'judge') watchReel();
   if (S.tab === 'record' && (S.rec.mode === 'live' || S.rec.mode === 'recording')) attachStream();
 }
@@ -1822,6 +2057,7 @@ function closeSplash(){
 async function refresh(force = false){
   try {
     await loadAll();
+    await loadFeed();
     await loadWeather();
     if (S.tab === 'ranks' || WIDE.matches) await loadBoard();   // the rail shows a mini friends board
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
@@ -1864,7 +2100,7 @@ async function vote(clipId, landed, reason){
 }
 
 async function toggleLike(id){
-  const c = S.clips.find(x => x.id === id) || (S.profile && S.profile.clips.find(x => x.id === id));
+  const c = findClip(id);
   const liked = S.myLikes.has(id);
   // Update the screen right away, then tell the database
   if (liked) S.myLikes.delete(id); else S.myLikes.add(id);
@@ -1889,7 +2125,7 @@ async function sendComment(clipId, input){
   const r = await db.from('comments').insert({clip_id: clipId, body});
   if (r.error){ toast('Comment failed: ' + r.error.message); input.disabled = false; return; }
   await loadComments(clipId);
-  const c = S.clips.find(x => x.id === clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
+  const c = findClip(clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
   render(true);
   const again = $('comment-' + clipId); if (again) again.focus();
 }
@@ -1897,7 +2133,7 @@ async function deleteComment(id, clipId){
   const r = await db.from('comments').delete().eq('id', id);
   if (r.error){ toast('Delete failed: ' + r.error.message); return; }
   await loadComments(clipId);
-  const c = S.clips.find(x => x.id === clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
+  const c = findClip(clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
   render(true);
 }
 
@@ -1911,7 +2147,7 @@ async function openProfile(id){
 }
 
 async function deleteClip(id){
-  const c = S.clips.find(x => x.id === id); if (!c) return;
+  const c = findClip(id); if (!c) return;
   if (!confirm('Delete this clip? This cannot be undone.')) return;
   const r = await db.from('clips').delete().eq('id', id);
   if (r.error){ toast('Delete failed: ' + r.error.message); return; }
@@ -2064,7 +2300,21 @@ document.addEventListener('click', async e => {
   switch (act){
     case 'tab': return openTab(b.dataset.tab);
     case 'authmode': S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; return render(true);
+    case 'join': {
+      S.authMode = b.dataset.mode; render(true);
+      $('auth-top').scrollIntoView({behavior: 'smooth', block: 'start'});
+      setTimeout(() => { const f = $('auth-user') || $('auth-email'); if (f) f.focus({preventScroll: true}); }, 450);
+      return;
+    }
     case 'close-splash': return closeSplash();
+    case 'play': { const v = b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
+    case 'mute': {
+      const v = b.closest('.player').querySelector('video'); v.muted = !v.muted;
+      b.setAttribute('aria-label', v.muted ? 'Turn sound on' : 'Turn sound off');
+      b.innerHTML = `<svg viewBox="0 0 24 24">${SPEAKER}${v.muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>'}</svg>`;
+      if (!v.muted && v.paused) v.play().catch(() => {});
+      return;
+    }
     case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
     case 'close-modal': $('overlay').innerHTML = ''; return;
     case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
@@ -2122,6 +2372,16 @@ document.addEventListener('click', async e => {
       return;
     }
     // ranks
+    case 'feed-scope': case 'feed-sort': {
+      const k = act === 'feed-scope' ? 'scope' : 'sort';
+      S.feed[k] = b.dataset.k; store.set('feed-' + k, b.dataset.k); S.feed.limit = FEED_PAGE; S.feed.loaded = false; render(true);
+      try { await loadFeed(); } catch (err){ toast(err.message); }
+      return render(true);
+    }
+    case 'feed-more':
+      S.feed.limit += FEED_PAGE; b.disabled = true; b.textContent = 'Loading…';
+      try { await loadFeed(); } catch (err){ toast(err.message); }
+      return render(true);
     case 'scope': S.board.scope = b.dataset.k; try { await loadBoard(); } catch (err){ toast(err.message); } return render(true);
     case 'period': S.board.period = b.dataset.k; try { await loadBoard(); } catch (err){ toast(err.message); } return render(true);
     case 'signout': resetRecorder(); return db.auth.signOut();

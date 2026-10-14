@@ -1,4 +1,4 @@
-# Sendit
+# Stomped
 
 A social app for skiers and snowboarders. Film a trick in the app, other riders verify it, and verified
 tricks earn points that rank you up from Bronze to Legend. Challenge friends to Game of S.K.I. duels.
@@ -6,7 +6,7 @@ tricks earn points that rank you up from Bronze to Legend. Challenge friends to 
 **Live: https://connorusingai.github.io/sendit/** · installable to your phone's home screen, works with no signal
 
 <p>
-  <img src="docs/screens/desktop.png" alt="Sendit on a laptop: sidebar, feed, and a HUD with rank, conditions and Trick of the Day" width="100%">
+  <img src="docs/screens/desktop.png" alt="Stomped on a laptop: sidebar, feed, and a HUD with rank, conditions and Trick of the Day" width="100%">
 </p>
 <p>
   <img src="docs/screens/rank-reveal.png" alt="The rank reveal when you open the app" width="32%">
@@ -30,7 +30,7 @@ tricks earn points that rank you up from Bronze to Legend. Challenge friends to 
   security and SQL functions, so the app can't be used to cheat. See [`supabase/`](supabase/).
 - The database rules have their own test suite that runs on a throwaway Postgres:
   [`supabase/tests/test_rules.py`](supabase/tests/test_rules.py)
-- A separate project, **Sendit AI**, is learning to verify tricks from video (spin, axis, airtime, landed).
+- A separate project, **Stomped AI**, is learning to verify tricks from video (spin, axis, airtime, landed).
 
 ## The core loop
 
@@ -49,7 +49,7 @@ Keep the skier's side this simple. All the checking happens in the background.
 | Real accounts + shared database | ✅ Supabase. Schema in [`supabase/`](supabase/), rules tested by [`supabase/tests/test_rules.py`](supabase/tests/test_rules.py) |
 | Live app | ✅ **https://connorusingai.github.io/sendit/** (the real app, [`app/index.html`](app/index.html)) |
 | Mobile app | ⬜ Not started |
-| AI verification | 🔨 Separate project, Sendit AI (private for now) |
+| AI verification | 🔨 Separate project, Stomped AI (private for now) |
 
 To run the real app locally, double-click `app/run.bat`. To run the old prototype, open `prototype/index.html`.
 
@@ -57,7 +57,7 @@ To run the real app locally, double-click `app/run.bat`. To run the old prototyp
 
 1. **Prototype** (done): test whether the idea feels fun.
 2. **Real backend**: sign-in, video uploads, shared leaderboard, so friends can use it together.
-3. **Plug in the AI**: clips that `sendit-ai` is confident about get verified instantly, and only unsure ones go to people.
+3. **Plug in the AI, quietly first**: the trick AI guesses every clip in the background while riders vote, and is only shown to riders once it agrees with them about 95% of the time.
 4. **Launch small**: CU ski club and the Eldora park crew first, not everyone.
 
 See [FEATURES.md](FEATURES.md) for every feature and the reasoning behind it.
