@@ -477,7 +477,12 @@ h2{font-size:30px;margin:4px 0 2px}
 .feat i{font-style:normal;font-size:22px}
 .feat b{font-size:14.5px}
 .feat span{color:var(--muted);font-size:12.5px;line-height:1.4}
-.foot{margin:34px 0 0;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.04em}
+.foot{margin:34px 0 0;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.04em;line-height:2}
+.foot a{color:var(--muted)}
+#auth-top{scroll-margin-top:84px}
+.agree{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted);line-height:1.4}
+.agree input{width:20px;height:20px;flex:none;margin:0;accent-color:var(--accent)}
+.agree a{color:var(--ink)}
 @media (min-width:700px){
   .cta{grid-template-columns:auto auto;justify-content:start}
   .feats{grid-template-columns:repeat(3,1fr)}
@@ -511,6 +516,12 @@ button,[data-act],select{touch-action:manipulation}
   @keyframes swap{from{opacity:0;transform:translateX(14px)}}
 }
 
+.clip-menu{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:10px;margin-top:10px;border-top:1px solid var(--line)}
+.clip-menu .hint{width:100%}
+.legal{margin-top:12px;font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.legal a{color:var(--muted)}
+.danger{margin-top:12px;padding:14px;border-color:var(--bad);display:grid;gap:8px}
+.danger p{margin:0}
 .feed-bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin:2px 0 12px}
 .feed-bar .seg button{padding:7px 10px}
 
@@ -887,7 +898,7 @@ async function loadAll(){
   const before = S.me;
   S.landed = landed;
   S.me = mustOk(me);
-  S.clips = mustOk(clips);
+  S.clips = mustOk(clips).filter(c => !c.hidden);   // removed or reported clips (011) stay out of sight, yours too
   S.myVotes = new Set(mustOk(votes).map(v => v.clip_id));
   S.myLikes = new Set(mustOk(likes).map(l => l.clip_id));
   S.totd = mustOk(totd);
@@ -933,12 +944,12 @@ async function loadProfile(id){
     db.from('clips').select(CLIP_SELECT).eq('user_id', id).order('created_at', {ascending: false}).limit(60),
     landedTricks(id),
   ]);
-  const all = mustOk(clips);
+  const all = mustOk(clips).filter(c => !c.hidden);
   S.profile = {id, data: mustOk(p), landed, clips: id === myId() ? all : all.filter(c => c.status === 'verified')};
 }
 async function loadComments(clipId){
-  S.comments[clipId] = mustOk(await db.from('comments').select('id, body, created_at, user_id, profiles(username)')
-    .eq('clip_id', clipId).order('created_at'));
+  S.comments[clipId] = mustOk(await db.from('comments').select('*, profiles(username)')
+    .eq('clip_id', clipId).order('created_at')).filter(m => !m.hidden);
 }
 async function loadDuelMoves(duelId){
   S.duelMoves[duelId] = mustOk(await db.from('duel_moves').select('*, clips(video_path)').eq('duel_id', duelId).order('id'));
@@ -964,7 +975,7 @@ async function loadFeed(){
   const rows = mustOk(await q.order('created_at', {ascending: false}).range(0, want));  // asks for one extra to see if more exist
   F.more = rows.length > want;
   const known = new Map(S.clips.map(c => [c.id, c]));   // reuse the same objects, so a like shows everywhere at once
-  let list = rows.slice(0, want).map(r => known.get(r.id) || r);
+  let list = rows.slice(0, want).filter(r => !r.hidden).map(r => known.get(r.id) || r);
   if (F.sort === 'hot'){ list = rankHot(list, friends); if (list.length > F.limit) F.more = true; list = list.slice(0, F.limit); }
   F.rows = list;
 }
@@ -1073,11 +1084,24 @@ function clipCard(c){
           <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
         </div>
         ${mine && c.status === 'pending' ? `<button class="linkish" data-act="delete" data-id="${c.id}">Delete</button>` : ''}
-        ${mine && c.status === 'verified' ? `<button class="icon-btn" data-act="share-card" data-id="${c.id}" aria-label="Share this trick">↗ Share</button>` : ''}
+        <div class="social">
+          ${mine && c.status === 'verified' ? `<button class="icon-btn" data-act="share-card" data-id="${c.id}" aria-label="Share this trick">↗ Share</button>` : ''}
+          ${mine && c.status === 'pending' ? '' : `<button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-expanded="${S.menuFor === c.id}" aria-label="More options">⋯</button>`}</div>
       </div>
+      ${S.menuFor === c.id ? clipMenu(c, mine) : ''}
     </div>
     ${open ? commentsPanel(c.id) : ''}
   </article>`;
+}
+
+// The ⋯ menu under a clip: report someone else's clip, or remove your own.
+function clipMenu(c, mine){
+  if (mine) return `<div class="clip-menu"><button class="btn small bad" data-act="remove-clip" data-id="${c.id}">Remove this clip</button>
+    <span class="hint">The video is deleted for good. Your points stay.</span></div>`;
+  return `<div class="clip-menu"><span class="hint">Report this clip</span>
+    ${[['inappropriate', 'Inappropriate'], ['spam', 'Spam'], ['fake', 'Fake or not their clip'], ['other', 'Something else']].map(([k, label]) =>
+      `<button class="btn small" data-act="report" data-id="${c.id}" data-k="${k}">${label}</button>`).join('')}
+    <span class="hint">Three reports hide it for everyone.</span></div>`;
 }
 
 function commentsPanel(clipId){
@@ -1086,7 +1110,8 @@ function commentsPanel(clipId){
     : !list.length ? '<div class="hint">No comments yet. Say something nice.</div>'
     : list.map(m => `<div class="comment"><div><b>${esc(m.profiles ? m.profiles.username : 'Rider')}</b>${esc(m.body)}
         <span class="hint"> · ${ago(m.created_at)}</span></div>
-        ${m.user_id === myId() ? `<button class="x" data-act="delcomment" data-id="${m.id}" data-clip="${clipId}" aria-label="Delete comment">×</button>` : ''}</div>`).join('');
+        ${m.user_id === myId() ? `<button class="x" data-act="delcomment" data-id="${m.id}" data-clip="${clipId}" aria-label="Delete comment">×</button>`
+          : `<button class="x" data-act="report-comment" data-id="${m.id}" data-clip="${clipId}" aria-label="Report comment" title="Report">⚑</button>`}</div>`).join('');
   return `<div class="comments">${body}
     <form class="inline-form comment-form" data-clip="${clipId}">
       <input id="comment-${clipId}" maxlength="280" placeholder="Add a comment" autocomplete="off" aria-label="Comment">
@@ -1417,10 +1442,13 @@ const views = {
         <div class="field"><label class="label" for="auth-pass">Password</label>
           <input id="auth-pass" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" required minlength="8">
           ${up ? '<span class="hint">At least 8 characters.</span>' : ''}</div>
+        ${up ? `<label class="agree"><input type="checkbox" id="auth-agree" required>
+          <span>I'm 13 or older and agree to the <a href="terms.html" target="_blank">Terms</a> and <a href="privacy.html" target="_blank">Privacy</a>.</span></label>` : ''}
         <button class="btn primary" type="submit">${up ? 'Create account' : 'Sign in'}</button>
         <button class="btn ghost" type="button" data-act="authmode">${up ? 'I already have an account' : 'Create an account'}</button>
       </form>
-      <footer class="foot">Stomped · made in Colorado for riders everywhere</footer>`;
+      <footer class="foot">Stomped · made in Colorado for riders everywhere<br>
+        <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>`;
   },
 
   feed(){
@@ -1574,6 +1602,12 @@ const views = {
           `<option ${me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="btns"><button class="btn" data-act="profile" data-id="${me.id}">View my page</button>
         <button class="btn" data-act="signout">Sign out</button></div>
+      <div class="legal"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> ·
+        <button class="linkish" data-act="delete-account" style="align-self:auto">Delete my account</button></div>
+      ${S.confirmDelete ? `<div class="card danger"><b>Delete your account?</b>
+        <p class="hint">Your profile, clips, videos, votes, comments, friends and duels are deleted for good. This can't be undone.</p>
+        <div class="btns"><button class="btn" data-act="delete-account">Keep my account</button>
+          <button class="btn bad" data-act="delete-account-yes">Delete everything</button></div></div>` : ''}
     </section>`;
   },
 
@@ -1842,7 +1876,9 @@ function startRecording(){
   const R = S.rec, mime = pickMime();
   if (!R.stream) return;
   R.chunks = [];
-  R.recorder = new MediaRecorder(R.stream, mime ? {mimeType: mime, videoBitsPerSecond: 1800000} : undefined);
+  // 1.5 Mbit/s keeps a 20 s clip near 4 MB (the free database holds about 1 GB of video) and is still sharp at 720p.
+  // Set the bitrate even when no type matched, or some phones pick 5+ Mbit/s on their own.
+  R.recorder = new MediaRecorder(R.stream, {videoBitsPerSecond: 1500000, ...(mime ? {mimeType: mime} : {})});
   R.recorder.ondataavailable = e => { if (e.data && e.data.size) R.chunks.push(e.data); };
   R.recorder.onstop = () => {
     const type = (R.recorder.mimeType || mime || 'video/webm').split(';')[0];
@@ -1852,7 +1888,7 @@ function startRecording(){
     clearInterval(R.tick); clearTimeout(R.stopTimer);
     stopStream(); R.mode = 'review'; render(true);
   };
-  R.recorder.start(250);
+  R.recorder.start();   // one piece at the end: Safari has written broken MP4s when asked for small timed pieces
   R.startedAt = Date.now(); R.mode = 'recording';
   // Update just the button and timer, so the live preview keeps running
   const shutter = document.querySelector('.shutter'); shutter.classList.add('stop'); shutter.dataset.act = 'rec-stop';
@@ -2137,6 +2173,45 @@ async function deleteComment(id, clipId){
   render(true);
 }
 
+// ---------- reports, removing your clips, deleting your account (supabase/011_beta.sql) ----------
+const notInstalled = err => /reports|hide_my_clip|delete_my_account/.test(err.message || '') && /exist|find|schema cache/.test(err.message || '');
+async function report(target, reason, clipId){
+  S.menuFor = null;
+  const r = await db.from('reports').insert({...target, reason});
+  if (r.error){
+    toast(r.error.code === '23505' ? 'You already reported this.' : notInstalled(r.error) ? "Reporting isn't switched on yet." : 'Report failed: ' + r.error.message);
+    return render(true);
+  }
+  // Out of your sight right away, whatever anyone else decides
+  if (target.clip_id){ S.clips = S.clips.filter(c => c.id !== target.clip_id); S.feed.rows = S.feed.rows.filter(c => c.id !== target.clip_id); }
+  if (target.comment_id && S.comments[clipId]) S.comments[clipId] = S.comments[clipId].filter(m => m.id !== target.comment_id);
+  toast('Thanks, reported. You won\'t see it again.');
+  render(true);
+}
+async function removeClip(id){
+  if (!confirm('Remove this clip? The video is deleted for good. Your points stay.')) return;
+  const r = await db.rpc('hide_my_clip', {p_clip: id});
+  if (r.error){ toast(notInstalled(r.error) ? "Removing verified clips isn't switched on yet." : 'Remove failed: ' + r.error.message); return; }
+  if (r.data) await db.storage.from('clips').remove([r.data]);
+  S.menuFor = null; toast('Clip removed');
+  await refresh(true);
+}
+async function deleteAccount(b){
+  b.disabled = true; b.textContent = 'Deleting…';
+  try {
+    // Videos live in file storage, outside the tables, so delete them first
+    const files = mustOk(await db.storage.from('clips').list(myId(), {limit: 1000}));
+    if (files.length) mustOk(await db.storage.from('clips').remove(files.map(f => `${myId()}/${f.name}`)));
+    mustOk(await db.rpc('delete_my_account'));
+    S.confirmDelete = false;
+    toast('Your account is deleted.', 5000);
+    await db.auth.signOut();
+  } catch (err){
+    b.disabled = false; b.textContent = 'Delete everything';
+    toast(notInstalled(err) ? "Account deletion isn't switched on yet." : 'Delete failed: ' + err.message, 5000);
+  }
+}
+
 async function openProfile(id){
   if (S.tab !== 'profile') S.prevTab = S.tab;
   if (S.tab === 'record') resetRecorder();
@@ -2372,6 +2447,12 @@ document.addEventListener('click', async e => {
       return;
     }
     // ranks
+    case 'clip-menu': S.menuFor = S.menuFor === id ? null : id; return render(true);
+    case 'report': return report({clip_id: id}, b.dataset.k);
+    case 'report-comment': return report({comment_id: id}, 'inappropriate', b.dataset.clip);
+    case 'remove-clip': return removeClip(id);
+    case 'delete-account': S.confirmDelete = !S.confirmDelete; return render(true);
+    case 'delete-account-yes': return deleteAccount(b);
     case 'feed-scope': case 'feed-sort': {
       const k = act === 'feed-scope' ? 'scope' : 'sort';
       S.feed[k] = b.dataset.k; store.set('feed-' + k, b.dataset.k); S.feed.limit = FEED_PAGE; S.feed.loaded = false; render(true);

@@ -123,9 +123,10 @@ def main():
     d = user("drew")
     check("5 'not landed' votes -> rejected, 0 pts", judge(post(d, plain), landed=False), ("rejected", None))
     clip = post(d, plain)
-    check("4 votes is not enough weight to decide", judge(clip, who=voters[:4])[0], "pending")
+    check("2 Bronze votes is not enough weight to decide (needs 3)", judge(clip, who=voters[:2])[0], "pending")
     legend = user("legend", points=1500)
-    check("a Legend vote (x2.25) tips it over 5", judge(clip, who=[legend])[0], "verified")
+    check("a Legend vote (x2.25) tips it over 3", judge(clip, who=[legend])[0], "verified")
+    check("3 Bronze votes decide a clip", judge(post(d, "180"), who=voters[:3])[0], "verified")
 
     print("\n-- Security (acting as a signed-in rider) --")
     def as_user(uid, sql, *a):
@@ -203,6 +204,47 @@ def main():
           str(one("select owner from public.crews where id = %s", crew)), k2)
     as_user(k2, "select public.leave_crew()")
     check("last one out deletes the crew", one("select count(*) from public.crews where id = %s", crew), 0)
+
+    print("\n-- Reports, hiding, and deleting your stuff (011) --")
+    poster, r1, r2, r3 = user("poster"), user("rep1"), user("rep2"), user("rep3")
+    bad = post(poster, "180")
+    as_user(r1, "insert into public.reports (clip_id, reason) values (%s, 'inappropriate')", bad)
+    check("can't report the same clip twice", blocked(r1, "insert into public.reports (clip_id, reason) values (%s, 'spam')", bad), True)
+    check("can't report for someone else",
+          blocked(r1, "insert into public.reports (reporter, clip_id, reason) values (%s, %s, 'spam')", r2, bad), True)
+    as_user(r2, "insert into public.reports (clip_id, reason) values (%s, 'spam')", bad)
+    check("2 reports: still visible", len(as_user(r3, "select id from public.clips where id = %s", bad)), 1)
+    as_user(r3, "insert into public.reports (clip_id, reason) values (%s, 'fake')", bad)
+    check("3 reports: hidden from other riders", len(as_user(r1, "select id from public.clips where id = %s", bad)), 0)
+    check("...but the poster still sees it", len(as_user(poster, "select id from public.clips where id = %s", bad)), 1)
+    check("can't unhide it yourself", blocked(poster, "update public.clips set hidden = false where id = %s", bad), True)
+    com = as_user(r1, "insert into public.comments (clip_id, body) values (%s, 'rude') returning id", own)[0][0]
+    for who in (r2, r3, poster):
+        as_user(who, "insert into public.reports (comment_id, reason) values (%s, 'inappropriate')", com)
+    check("3 reports hide a comment", len(as_user(e, "select id from public.comments where id = %s", com)), 0)
+    check("a report must name exactly one thing",
+          blocked(r1, "insert into public.reports (clip_id, comment_id, reason) values (%s, %s, 'spam')", own, com), True)
+    mine = post(poster, "360")
+    judge(mine)
+    check("can't remove someone else's clip", blocked(r1, "select public.hide_my_clip(%s)", mine), True)
+    pts = one("select points from public.profiles where id = %s", poster)
+    as_user(poster, "select public.hide_my_clip(%s)", mine)
+    check("removing your verified clip hides it", len(as_user(r1, "select id from public.clips where id = %s", mine)), 0)
+    check("...keeps your points", one("select points from public.profiles where id = %s", poster), pts)
+    check("...and re-posting the trick pays 0 (no farming)", land(poster, "360"), 0 if totd != "360" else 20)
+    def anon_blocked(sql):
+        try:
+            with conn.transaction():
+                q("set local role anon"); q(sql)
+            return False
+        except psycopg.Error:
+            return True
+    check("signed-out visitors can't call delete_my_account", anon_blocked("select public.delete_my_account()"), True)
+    as_user(p1, "select public.delete_my_account()")   # p1 won a duel above: the winner link must not block it
+    check("delete my account: login gone", one("select count(*) from auth.users where id = %s", p1), 0)
+    check("...profile gone", one("select count(*) from public.profiles where id = %s", p1), 0)
+    check("...their duels gone", one("select count(*) from public.duels where challenger = %s or opponent = %s", p1, p1), 0)
+    check("...the other rider's account is untouched", one("select count(*) from public.profiles where id = %s", p2), 1)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
