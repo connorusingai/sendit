@@ -158,8 +158,14 @@ video.clip{display:block;width:100%;aspect-ratio:4/5;max-height:70vh;background:
 .icon-btn:hover{border-color:var(--muted)}
 .icon-btn.lit{color:var(--accent);border-color:rgba(255,107,26,.6);background:var(--accent-soft)}
 .icon-btn.lit svg{fill:var(--accent)}
-@media (prefers-reduced-motion:no-preference){ .icon-btn.pop svg{animation:pop .35s ease-out} }
+.icon-btn{transition:color .15s,border-color .15s,background-color .15s}
+.icon-btn:active{transform:scale(.94)}
+@media (prefers-reduced-motion:no-preference){
+  .icon-btn.pop svg{animation:pop .35s ease-out}
+  .comments.opening,.comment.new{animation:drop .22s ease-out}
+}
 @keyframes pop{40%{transform:scale(1.45) rotate(-8deg)}}
+@keyframes drop{from{opacity:0;transform:translateY(-6px)}}
 .comments{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,.18)}
 .comment{display:flex;gap:8px;font-size:13.5px;align-items:baseline}
 .comment b{font-weight:700;margin-right:4px}
@@ -494,6 +500,8 @@ h2{font-size:30px;margin:4px 0 2px}
 html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-font-smoothing:antialiased}
 input,textarea,.comment p{-webkit-user-select:text;user-select:text}
+.fb{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.fb textarea{width:100%;resize:vertical;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
 input,select,textarea{font-size:16px}   /* under 16px, iPhone zooms the whole page when you tap a box */
 button,[data-act],select{touch-action:manipulation}
 .top{background:rgba(6,8,12,.72);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);
@@ -533,6 +541,8 @@ button,[data-act],select{touch-action:manipulation}
   background:var(--accent-soft);color:var(--accent);font-family:var(--display);font-weight:900;font-style:italic;font-size:18px}
 .how li span{color:var(--muted);font-size:13.5px}
 .start{padding:14px}
+/* The control a "Pick your ..." link jumped to: glow for a moment so the eye finds it */
+.flash{box-shadow:0 0 0 3px var(--accent),0 0 22px rgba(255,107,26,.55);transition:box-shadow .4s}
 .start-step{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 0;background:none;border:0;
   border-top:1px solid var(--line);cursor:pointer}
 .start-step b{display:block}
@@ -720,7 +730,7 @@ async function loadWeather(){
   } catch (e) { /* no signal on the hill: just skip the card */ }
 }
 function wxCard(){
-  if (!S.me.home_resort) return `<button class="card wx" data-act="tab" data-tab="ranks" style="width:100%;text-align:left;cursor:pointer">
+  if (!S.me.home_resort) return `<button class="card wx" data-act="tab" data-tab="ranks" data-focus="home-resort" style="width:100%;text-align:left;cursor:pointer">
     <div><div class="label">Mountain conditions</div><div class="hint">Set your home mountain on the Ranks tab to see snow and weather here.</div></div>
     <span style="font-size:26px">🏔️</span></button>`;
   const W = S.wx; if (!W || W.resort !== S.me.home_resort) return '';
@@ -835,48 +845,97 @@ function rankInfo(value, table){
 
 // Chunky game-style badge: a shield with a mountain, and more gear each tier up.
 // Stars under the shield show the division (1-3).
+// ---------- rank badges (v5, 2026-10-20): angular layered emblem, ski-tip blades that grow per tier ----------
 const BADGE = {
   bronze: ['#F6B98A','#C8743C','#6E3410'], silver: ['#FFFFFF','#B9C4CF','#5E6A78'],
   gold:   ['#FFF0A0','#F2B91E','#8C5A00'], plat:   ['#E8FFFB','#5FE0CF','#177066'],
-  diamond:['#E6F4FF','#62A8FF','#2436C4'], legend: ['#FFD6A6','#FF6B1A','#9E1170'],
+  diamond:['#E6F4FF','#62A8FF','#2436C4'], legend: ['#FFE9B0','#FF5A1F','#C4123E'],
 };
 const ORDER = ['bronze','silver','gold','plat','diamond','legend'];
-function star(cx, cy, r){
+function star(cx, cy, r, inner = .45, n = 5){
   let d = '';
-  for (let i = 0; i < 10; i++){
-    const a = (-90 + i * 36) * Math.PI / 180, rr = i % 2 ? r * .45 : r;
+  for (let i = 0; i < n * 2; i++){
+    const a = (-90 + i * 180 / n) * Math.PI / 180, rr = i % 2 ? r * inner : r;
     d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(1) + ' ' + (cy + rr * Math.sin(a)).toFixed(1);
   }
   return d + 'Z';
 }
+const bMirror = pts => pts.map(([x, y]) => [120 - x, y]);
+const bPoly = pts => 'M' + pts.map(p => p.join(' ')).join(' L') + ' Z';
+const bScale = (pts, k, cx = 60, cy = 58) => pts.map(([x, y]) => [+(cx + (x - cx) * k).toFixed(1), +(cy + (y - cy) * k).toFixed(1)]);
+const B_EMBLEM = [[60, 10], [94, 22], [98, 60], [60, 106], [22, 60], [26, 22]];
+
 function badgeSVG(key, size = 64, div = 0, {glow = false, float = false} = {}){
-  const [hi, mid, lo] = BADGE[key], lvl = ORDER.indexOf(key), g = 'bg-' + key, O = '#0A0D14';
+  const [hi, mid, lo] = BADGE[key], lvl = ORDER.indexOf(key), O = '#0A0D14';
+  const id = 'b5' + key, metal = id + 'm', dark = id + 'd';
+  const pair = (pts, fill, sw = 4) => `<path d="${bPoly(pts)}" fill="${fill}" stroke="${O}" stroke-width="${sw}" stroke-linejoin="round"/>
+    <path d="${bPoly(bMirror(pts))}" fill="${fill}" stroke="${O}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+  // Two-tone blade: light outer half, dark inner half, so it looks carved
+  const blade = (pts, cut) => pair(pts, `url(#${metal})`) + `<path d="${bPoly(cut)}" fill="${lo}" opacity=".55"/><path d="${bPoly(bMirror(cut))}" fill="${lo}" opacity=".55"/>`;
+
   let back = '', front = '';
-  if (lvl >= 5) back += `<path d="M26 50 C20 34 28 22 32 4 C38 18 41 22 46 10 C50 20 54 22 60 0 C66 22 70 20 74 10 C79 22 82 18 88 4 C92 22 100 34 94 50 Z" fill="#FFB02E" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M36 46 C34 36 38 28 40 20 C44 28 50 30 52 22 C56 30 64 30 68 22 C70 30 76 28 80 20 C82 28 86 36 84 46 Z" fill="#FF6B1A"/>`;
-  if (lvl >= 3) back += `<g stroke="${O}" stroke-width="4"><rect x="55" y="6" width="10" height="112" rx="5" fill="${hi}" transform="rotate(40 60 62)"/>
-      <rect x="55" y="6" width="10" height="112" rx="5" fill="${hi}" transform="rotate(-40 60 62)"/></g>`;
-  if (lvl >= 2) back += `<g fill="${mid}" stroke="${O}" stroke-width="4" stroke-linejoin="round">
-      <path d="M30 36 C14 32 4 46 8 66 C14 60 20 58 30 60 Z"/><path d="M90 36 C106 32 116 46 112 66 C106 60 100 58 90 60 Z"/></g>`;
-  if (lvl === 4) front += `<path d="M60 2 L72 13 L60 27 L48 13 Z" fill="#A8ECFF" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M60 6 L66 13 L60 13 Z" fill="#fff"/>`;
-  if (lvl === 5) front += `<path d="M42 26 L40 8 L50 16 L60 3 L70 16 L80 8 L78 26 Z" fill="#FFD23F" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
-      <circle cx="60" cy="18" r="3.5" fill="#FF5470" stroke="${O}" stroke-width="2"/>`;
+  if (lvl === 5) back += `<g opacity=".9">${Array.from({length: 16}, (_, i) => {
+      const a = (i * 22.5 + 11.25) * Math.PI / 180, r1 = 30, r2 = i % 2 ? 66 : 76, w = .09;
+      const P = (r, t) => `${(60 + r * Math.cos(t)).toFixed(1)} ${(56 + r * Math.sin(t)).toFixed(1)}`;
+      return `<path d="M${P(r1, a - w)} L${P(r2, a)} L${P(r1, a + w)} Z" fill="url(#${id}ray)"/>`; }).join('')}</g>`;
+  if (lvl === 0) back += pair([[24, 24], [14, 18], [18, 34]], `url(#${metal})`, 3.5);
+  // ski-tip blades, growing with the tier
+  if (lvl >= 1) back += blade([[30, 30], [8, 8], [12, 30], [26, 46]], [[30, 30], [12, 30], [26, 46]]);
+  if (lvl >= 2) back += `<path d="${bPoly([[46, 16], [60, -4], [74, 16], [60, 12]])}" fill="url(#${metal})" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="${bPoly([[60, -4], [74, 16], [60, 12]])}" fill="${lo}" opacity=".5"/>`;
+  if (lvl >= 3) back += blade([[26, 58], [0, 52], [8, 70], [32, 78]], [[26, 58], [8, 70], [32, 78]]);
+  if (lvl >= 2) back += blade([[26, 36], [-2, 24], [4, 46], [24, 56]], [[26, 36], [4, 46], [24, 56]]);
+  // Diamond only: chunky ice crystals growing out of the bottom corners
+  const cry = lvl === 5 ? `url(#${id}fire)` : `url(#${id}ice)`;
+  if (lvl >= 4) back += pair([[34, 86], [14, 112], [30, 108], [42, 96]], cry, 3.5)
+    + pair([[24, 70], [2, 86], [14, 90], [30, 80]], cry, 3.5)
+    + `<g fill="#fff" opacity=".8"><path d="M18 108 L30 92 L24 104 Z"/><path d="M102 108 L90 92 L96 104 Z"/></g>`;
+  if (lvl === 5) back += pair([[34, 20], [18, -8], [44, 6], [52, 14]], `url(#${id}fire)`, 4);
+
+  // nested frames: outer rim, inner rim, face (two-tone)
+  const outer = B_EMBLEM, rim2 = bScale(B_EMBLEM, .84), face = bScale(B_EMBLEM, .72);
+  const half = face.filter(([x]) => x >= 60).concat([[60, face[3][1]]]);
+  const rightHalf = [[60, face[0][1]], ...face.slice(1, 4)];
+  // sharp geometric mountain with a snowcap; crystal glint behind it from Platinum up
+  const mtn = `<g transform="translate(60 56) scale(.78) translate(-60 -62)">${lvl >= 3 ? `<path d="${bPoly([[60, 30], [74, 52], [60, 64], [46, 52]])}" fill="${hi}" opacity=".35"/>` : ''}
+    <path d="${bPoly([[34, 84], [50, 58], [57, 66], [68, 44], [86, 84]])}" fill="${hi}" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="${bPoly([[68, 44], [86, 84], [68, 84], [64, 62]])}" fill="${mid}"/>
+    <path d="${bPoly([[68, 44], [74, 56], [69, 54], [65, 58], [63, 54]])}" fill="#fff"/>
+    <path d="${bPoly([[34, 84], [50, 58], [57, 66], [68, 44], [86, 84]])}" fill="none" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/></g>`;
+  if (lvl >= 4) front += `<g fill="#fff">${[[104, 14, 6], [12, 20, 4.5], [110, 92, 4]].map(([x, y, r]) => `<path d="${star(x, y, r, .25, 4)}"/>`).join('')}</g>`;
+  if (lvl === 5) front += `<path d="M40 22 L35 -2 L50 8 L60 -8 L70 8 L85 -2 L80 22 Z" fill="url(#${id}gold)" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M42 16 L78 16" stroke="${O}" stroke-width="2"/>
+    <circle cx="60" cy="8" r="3.6" fill="#62A8FF" stroke="${O}" stroke-width="1.8"/>
+    <circle cx="47" cy="12" r="2.4" fill="#FF5470" stroke="${O}" stroke-width="1.5"/><circle cx="73" cy="12" r="2.4" fill="#FF5470" stroke="${O}" stroke-width="1.5"/>`;
+
   const stars = [];
   for (let i = 0; i < div; i++) stars.push(star(60 + (i - (div - 1) / 2) * 25, 119, 12));
-  const h = Math.round(size * 132 / 120);
-  return `<svg class="badge-svg ${glow ? 'glow-' + key : ''} ${float ? 'float' : ''}" viewBox="0 0 120 132" width="${size}" height="${h}" aria-hidden="true">
-    <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${hi}"/><stop offset=".55" stop-color="${mid}"/><stop offset="1" stop-color="${lo}"/></linearGradient></defs>
+  // Drawn on a 120-wide grid; the box adds 16 units of room on every side for blades, rays and crowns.
+  // Small badges (feed rows) keep their old box so rows don't shift; the emblem just gets a touch smaller.
+  const k = size >= 40 ? size / 120 : size / 152, w = Math.round(152 * k), h = Math.round(164 * k);
+  return `<svg class="badge-svg ${glow ? 'glow-' + key : ''} ${float ? 'float' : ''}" viewBox="-16 -16 152 164" width="${w}" height="${h}" aria-hidden="true">
+    <defs>
+      <linearGradient id="${metal}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${hi}"/><stop offset=".5" stop-color="${mid}"/><stop offset="1" stop-color="${lo}"/></linearGradient>
+      <linearGradient id="${dark}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lo}"/><stop offset="1" stop-color="#0A0D14"/></linearGradient>
+      <radialGradient id="${id}ray" gradientUnits="userSpaceOnUse" cx="60" cy="56" r="76"><stop offset=".35" stop-color="#FFE38A"/><stop offset="1" stop-color="#FFB02E" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}ice" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".4" stop-color="#A8ECFF"/><stop offset="1" stop-color="#3D7BFF"/></linearGradient>
+      <linearGradient id="${id}gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6B0"/><stop offset="1" stop-color="#E89B00"/></linearGradient>
+      <linearGradient id="${id}fire" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#7A0A2E"/><stop offset=".5" stop-color="#FF3D2E"/><stop offset="1" stop-color="#FFB02E"/></linearGradient>
+    </defs>
     ${back}
-    <path d="M60 14 L94 26 V58 C94 82 80 99 60 108 C40 99 26 82 26 58 V26 Z" fill="url(#${g})" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
-    <path d="M60 21 L88 31 V50 C74 44 46 45 32 54 V31 Z" fill="#fff" opacity=".3"/>
-    <path d="M36 86 L52 60 L59 69 L69 52 L85 86 Z" fill="${lo}" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M69 52 L75 63 L71 61 L67 65 L64 61 Z" fill="#fff"/><path d="M52 60 L56 67 L52 66 L49 64 Z" fill="#fff"/>
+    <path d="${bPoly(outer)}" fill="url(#${metal})" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="${bPoly(rightHalf.length ? [[60, outer[0][1]], ...outer.slice(1, 4)] : [])}" fill="${lo}" opacity=".45"/>
+    ${lvl === 5 ? `<path d="${bPoly(bScale(B_EMBLEM, .93))}" fill="none" stroke="#FFD23F" stroke-width="2.5" stroke-linejoin="round"/>` : ''}
+    <path d="${bPoly(rim2)}" fill="${O}" />
+    <path d="${bPoly(face)}" fill="url(#${dark})" stroke="${hi}" stroke-width="1.5" stroke-opacity=".5" stroke-linejoin="round"/>
+    <path d="${bPoly(rightHalf)}" fill="#000" opacity=".25"/>
+    ${mtn}
     ${front}
     ${stars.map(d => `<path d="${d}" fill="#FFD23F" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`).join('')}
   </svg>`;
 }
+// Where to draw a badge image on a canvas so its emblem lands where a size×(size·1.1) box would
+const badgeRect = (x, y, size) => { const k = size / 120; return [x - 16 * k, y - 16 * k, 152 * k, 164 * k]; };
 const rankWord = (info, size) => `<span class="rank-word t-${info.tier.key}" style="font-size:${size}px">${esc(info.label)}</span>`;
 const miniBadge = points => badgeSVG(trickTierOf(points).key, 22);
 
@@ -1174,9 +1233,9 @@ function hudTiles(){
     <div class="label">Trick rank</div>
     <div class="row1">${badgeSVG(r.tier.key, 44, r.div, {glow: true})}${rankWord(r, 26)}</div>
     <div class="bar"><i style="width:${Math.max(4, r.pct)}%"></i></div>
-    <div class="readout">${r.nextLabel ? `${r.toNext} PTS → ${esc(r.nextLabel).toUpperCase()}` : 'TOP RANK'}</div></button>`;
+    <div class="readout">${r.nextLabel ? `${r.toNext} PTS TO ${esc(r.nextLabel).toUpperCase()}` : 'TOP RANK'}</div></button>`;
   let wx;
-  if (!S.me.home_resort) wx = `<button class="card htile" data-act="tab" data-tab="ranks"><div class="label">Conditions</div>
+  if (!S.me.home_resort) wx = `<button class="card htile" data-act="tab" data-tab="ranks" data-focus="home-resort"><div class="label">Conditions</div>
     <div style="font-size:26px">🏔️</div><div class="hint">Set your home mountain on Ranks</div></button>`;
   else if (!S.wx || S.wx.resort !== S.me.home_resort) wx = `<div class="card htile"><div class="label">${esc(S.me.home_resort)}</div><div class="hint">Loading conditions…</div></div>`;
   else {
@@ -1298,7 +1357,7 @@ async function sessionCard(){
   });
   // who
   const badge = await svgImage(badgeSVG(r.tier.key, 110, r.div, {}));
-  g.drawImage(badge, 70, H - 190, 110, 121);
+  g.drawImage(badge, ...badgeRect(70, H - 190, 110));
   g.font = font(60); g.fillStyle = '#EEF3F8'; g.fillText(`@${S.me.username}`, 200, H - 120);
   g.font = font(40, 800); g.fillStyle = BADGE[r.tier.key][0]; g.fillText(r.label.toUpperCase(), 200, H - 72);
   g.textAlign = 'right'; g.font = font(28, 500, 'normal', '"JetBrains Mono", monospace'); g.fillStyle = '#5CE1FF';
@@ -1340,7 +1399,7 @@ async function shareCard(clipId){
   g.font = font(40, 800, 'normal', 'Figtree, system-ui, sans-serif'); g.fillStyle = '#3BE08A'; g.fillText('✓ VERIFIED', W - 360, 134);
   // badge
   const badge = await svgImage(badgeSVG(r.tier.key, 420, r.div, {}));
-  g.shadowColor = BADGE[r.tier.key][1]; g.shadowBlur = 60; g.drawImage(badge, (W - 420) / 2, 220, 420, 462); g.shadowBlur = 0;
+  g.shadowColor = BADGE[r.tier.key][1]; g.shadowBlur = 60; g.drawImage(badge, ...badgeRect((W - 420) / 2, 220, 420)); g.shadowBlur = 0;
   // trick name, points, details
   g.textAlign = 'center';
   let size = 170; g.font = font(size);
@@ -1370,7 +1429,7 @@ async function shareCard(clipId){
 // First moves for a new rider, ticked off as they go. Disappears once they're all done or the rider is past Bronze.
 function startHere(){
   const steps = [
-    ['Pick your home mountain', 'Snow report and local leaderboard', 'ranks', !!S.me.home_resort],
+    ['Pick your home mountain', 'Snow report and local leaderboard', 'ranks', !!S.me.home_resort, 'home-resort'],
     ['Film your first trick', 'Even a 180 counts. Trick of the Day pays double', 'record', S.clips.some(c => c.user_id === myId())],
     ['Judge a clip', 'Vote on other riders and theirs get verified', 'judge', S.myVotes.size > 0],
     ['Add a friend', 'Then challenge them to a game of S.K.I.', 'duels', acceptedFriends().length > 0],
@@ -1379,7 +1438,7 @@ function startHere(){
   if (done === steps.length || S.me.points >= 100) return '';
   return `<section class="card start">
     <div class="row"><div class="label">Start here</div><span class="hint mono">${done}/${steps.length}</span></div>
-    ${steps.map(([title, why, tab, ok]) => `<button class="start-step ${ok ? 'ok' : ''}" data-act="tab" data-tab="${tab}">
+    ${steps.map(([title, why, tab, ok, focus]) => `<button class="start-step ${ok ? 'ok' : ''}" data-act="tab" data-tab="${tab}"${focus ? ` data-focus="${focus}"` : ''}>
       <span class="tick">${ok ? '✓' : ''}</span><span><b>${title}</b><span class="hint">${why}</span></span></button>`).join('')}
   </section>`;
 }
@@ -1388,7 +1447,7 @@ function emptyFeed(){
   if (F.scope === 'friends' && !acceptedFriends().length)
     return `<div class="card empty"><strong>No friends yet</strong>Add riders you know and their verified tricks show up here.${go('duels', 'Find friends')}</div>`;
   if (F.scope === 'mountain' && !S.me.home_resort)
-    return `<div class="card empty"><strong>Pick your mountain</strong>Then this shows verified tricks from riders there.${go('ranks', 'Set home mountain')}</div>`;
+    return `<div class="card empty"><strong>Pick your mountain</strong>Then this shows verified tricks from riders there.${go('ranks', 'Set home mountain').replace('data-tab', 'data-focus="home-resort" data-tab')}</div>`;
   return `<div class="card empty"><strong>Nothing here yet</strong>Verified tricks show up here. Be the first.${go('record', 'Record a trick')}</div>`;
 }
 // Same rule for everyone, so votes (and the training data behind the trick AI) mean the same thing.
@@ -1601,7 +1660,16 @@ const views = {
         <select id="home-resort"><option value="">Not set</option>${RESORTS.map(r =>
           `<option ${me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="btns"><button class="btn" data-act="profile" data-id="${me.id}">View my page</button>
+        <button class="btn" data-act="feedback">Send feedback</button>
         <button class="btn" data-act="signout">Sign out</button></div>
+      ${S.feedbackOpen ? `<div class="card fb"><b>What's on your mind?</b>
+        <div class="field"><label class="label" for="fb-kind">Type</label>
+          <select id="fb-kind"><option value="bug">Something broke</option><option value="confusing">Something's confusing</option>
+            <option value="idea">I have an idea</option><option value="love">I love this part</option></select></div>
+        <div class="field"><label class="label" for="fb-body">Tell us</label>
+          <textarea id="fb-body" rows="3" maxlength="1000" placeholder="e.g. The camera froze after I tapped record"></textarea></div>
+        <div class="btns"><button class="btn" data-act="feedback">Cancel</button>
+          <button class="btn primary" data-act="feedback-send">Send</button></div></div>` : ''}
       <div class="legal"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> ·
         <button class="linkish" data-act="delete-account" style="align-self:auto">Delete my account</button></div>
       ${S.confirmDelete ? `<div class="card danger"><b>Delete your account?</b>
@@ -1916,7 +1984,8 @@ function postForm(){
     </div>
     <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick"></select></div>
     <div class="field"><label class="label" for="post-resort">Resort</label>
-      <select id="post-resort">${RESORTS.map(r => `<option ${S.me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <select id="post-resort" required>${S.me.home_resort ? '' : '<option value="" selected disabled>Where did you ride?</option>'}${
+        RESORTS.map(r => `<option ${S.me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
     <div class="preview"><div><div class="label">Worth</div><span class="hint" id="post-why">A grab adds 20%</span></div>
       <div><span class="big" id="post-pts">0</span> <span class="label">pts</span></div></div>
     <div class="btns"><button class="btn" type="button" data-act="retake">Retake</button>
@@ -2103,13 +2172,19 @@ async function refresh(force = false){
   render(force);
 }
 
-async function openTab(tab){
+async function openTab(tab, focusId){
   if (S.tab === 'record' && tab !== 'record') resetRecorder();
   if (tab === 'judge') S.judge = {list: judgeQueue(), voted: {}, reasonFor: null, count: 0, breakShown: false};
   if (tab === 'duels') S.duelId = null;
   S.tab = tab; S.openComments = null; $('view').innerHTML = '';
   if (tab === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
   render(true); window.scrollTo(0, 0);
+  // Links like "Pick your home mountain" land right on the control, not at the top of a long page
+  const el = focusId && $(focusId);
+  if (el){
+    el.scrollIntoView({behavior: 'smooth', block: 'center'});
+    el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2400);
+  }
 }
 
 // Check for new clips, duel moves and results every 20 s, unless you're busy.
@@ -2141,19 +2216,47 @@ async function toggleLike(id){
   // Update the screen right away, then tell the database
   if (liked) S.myLikes.delete(id); else S.myLikes.add(id);
   if (c){ c.likes = [{count: Math.max(0, count(c.likes) + (liked ? -1 : 1))}]; }
-  render(true);
-  if (!liked){ const b = document.querySelector(`[data-act="like"][data-id="${id}"]`); if (b) b.classList.add('pop'); }
+  patchClip(id);
+  if (!liked) document.querySelectorAll(`[data-act="like"][data-id="${id}"]`).forEach(b => {
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');   // restart the pop even on a quick second tap
+  });
   const r = liked ? await db.from('likes').delete().eq('clip_id', id).eq('user_id', myId())
                   : await db.from('likes').insert({clip_id: id});
   if (r.error){ toast('Could not save: ' + r.error.message); await refresh(true); }
 }
 
+// Update one clip's fire + comment buttons and its comment box in place. render() rebuilds the whole page,
+// every video included, and that reload is what made tapping fire or comments feel laggy.
+function patchClip(id, {keepText = true} = {}){
+  const c = findClip(id), liked = S.myLikes.has(id), open = S.openComments === id;
+  document.querySelectorAll(`[data-act="like"][data-id="${id}"]`).forEach(b => {
+    b.classList.toggle('lit', liked); b.setAttribute('aria-pressed', liked);
+    b.innerHTML = ICON.fire + (c ? count(c.likes) : 0);
+  });
+  document.querySelectorAll(`[data-act="comments"][data-id="${id}"]`).forEach(b => {
+    b.classList.toggle('lit', open); b.setAttribute('aria-expanded', open);
+    b.innerHTML = ICON.chat + (c ? count(c.comments) : 0);
+  });
+  document.querySelectorAll(`article[id="clip-${id}"]`).forEach(card => {
+    const old = card.querySelector(':scope > .comments');
+    if (!open){ if (old) old.remove(); return; }
+    const tmp = document.createElement('div'); tmp.innerHTML = commentsPanel(id);
+    const panel = tmp.firstElementChild, typed = old && old.querySelector('input');
+    if (keepText && typed && typed.value) panel.querySelector('input').value = typed.value;
+    if (old) old.replaceWith(panel); else { panel.classList.add('opening'); card.appendChild(panel); }
+  });
+}
+
 async function toggleComments(id){
-  if (S.openComments === id){ S.openComments = null; render(true); return; }
-  S.openComments = id; render(true);
+  const prev = S.openComments;
+  S.openComments = prev === id ? null : id;
+  if (prev && prev !== id) patchClip(prev);
+  patchClip(id);
+  if (S.openComments !== id) return;
   try { await loadComments(id); } catch (err){ toast(err.message); }
-  render(true);
-  const input = $('comment-' + id); if (input) input.focus();
+  if (S.openComments !== id) return;   // closed again while loading
+  patchClip(id);
+  const input = $('comment-' + id); if (input) input.focus({preventScroll: true});
 }
 async function sendComment(clipId, input){
   const body = input.value.trim(); if (!body) return;
@@ -2162,15 +2265,17 @@ async function sendComment(clipId, input){
   if (r.error){ toast('Comment failed: ' + r.error.message); input.disabled = false; return; }
   await loadComments(clipId);
   const c = findClip(clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
-  render(true);
-  const again = $('comment-' + clipId); if (again) again.focus();
+  patchClip(clipId, {keepText: false});
+  const last = document.querySelector(`article[id="clip-${clipId}"] .comments .comment:last-of-type`);
+  if (last) last.classList.add('new');
+  const again = $('comment-' + clipId); if (again) again.focus({preventScroll: true});
 }
 async function deleteComment(id, clipId){
   const r = await db.from('comments').delete().eq('id', id);
   if (r.error){ toast('Delete failed: ' + r.error.message); return; }
   await loadComments(clipId);
   const c = findClip(clipId); if (c) c.comments = [{count: S.comments[clipId].length}];
-  render(true);
+  patchClip(clipId);
 }
 
 // ---------- reports, removing your clips, deleting your account (supabase/011_beta.sql) ----------
@@ -2210,6 +2315,24 @@ async function deleteAccount(b){
     b.disabled = false; b.textContent = 'Delete everything';
     toast(notInstalled(err) ? "Account deletion isn't switched on yet." : 'Delete failed: ' + err.message, 5000);
   }
+}
+
+// ---------- feedback for the friend test and beta (supabase/012_feedback.sql) ----------
+async function sendFeedback(b){
+  const body = (document.getElementById('fb-body')?.value || '').trim();
+  if (!body){ toast('Write a line first.'); return; }
+  b.disabled = true; b.textContent = 'Sending…';
+  const r = await db.from('feedback').insert({kind: document.getElementById('fb-kind').value, body, page: S.prevTab || S.tab});
+  b.disabled = false; b.textContent = 'Send';
+  if (r.error){
+    const m = r.error.message || '';
+    toast(/limit reached/.test(m) ? "That's 20 today. Thanks, that's plenty!"
+      : /feedback/.test(m) && /exist|find|schema cache/.test(m) ? "Feedback isn't switched on yet." : 'Send failed: ' + m);
+    return;
+  }
+  S.feedbackOpen = false;
+  toast('Thanks! Connor reads every one.');
+  render(true);
 }
 
 async function openProfile(id){
@@ -2373,7 +2496,7 @@ document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const act = b.dataset.act, id = b.dataset.id;
   switch (act){
-    case 'tab': return openTab(b.dataset.tab);
+    case 'tab': return openTab(b.dataset.tab, b.dataset.focus);
     case 'authmode': S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; return render(true);
     case 'join': {
       S.authMode = b.dataset.mode; render(true);
@@ -2451,6 +2574,8 @@ document.addEventListener('click', async e => {
     case 'report': return report({clip_id: id}, b.dataset.k);
     case 'report-comment': return report({comment_id: id}, 'inappropriate', b.dataset.clip);
     case 'remove-clip': return removeClip(id);
+    case 'feedback': S.feedbackOpen = !S.feedbackOpen; return render(true);
+    case 'feedback-send': return sendFeedback(b);
     case 'delete-account': S.confirmDelete = !S.confirmDelete; return render(true);
     case 'delete-account-yes': return deleteAccount(b);
     case 'feed-scope': case 'feed-sort': {

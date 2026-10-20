@@ -123,10 +123,13 @@ def main():
     d = user("drew")
     check("5 'not landed' votes -> rejected, 0 pts", judge(post(d, plain), landed=False), ("rejected", None))
     clip = post(d, plain)
-    check("2 Bronze votes is not enough weight to decide (needs 3)", judge(clip, who=voters[:2])[0], "pending")
+    check("1 Bronze vote is not enough weight to decide (needs 2)", judge(clip, who=voters[:1])[0], "pending")
     legend = user("legend", points=1500)
-    check("a Legend vote (x2.25) tips it over 3", judge(clip, who=[legend])[0], "verified")
-    check("3 Bronze votes decide a clip", judge(post(d, "180"), who=voters[:3])[0], "verified")
+    check("a Legend vote (x2.25) tips it over 2", judge(clip, who=[legend])[0], "verified")
+    check("2 Bronze votes decide a clip (a 3-person friend test works)", judge(post(d, "180"), who=voters[:2])[0], "verified")
+    split = post(d, "360")
+    judge(split, who=voters[:1])
+    check("...but 1 yes + 1 no isn't 70% landed, so it's rejected", judge(split, landed=False, who=voters[1:2])[0], "rejected")
 
     print("\n-- Security (acting as a signed-in rider) --")
     def as_user(uid, sql, *a):
@@ -245,6 +248,24 @@ def main():
     check("...profile gone", one("select count(*) from public.profiles where id = %s", p1), 0)
     check("...their duels gone", one("select count(*) from public.duels where challenger = %s or opponent = %s", p1, p1), 0)
     check("...the other rider's account is untouched", one("select count(*) from public.profiles where id = %s", p2), 1)
+
+    print("\n-- Feedback (012) --")
+    f1, f2 = user("tester1"), user("tester2")
+    as_user(f1, "insert into public.feedback (kind, body, page) values ('bug', 'camera froze', 'record')")
+    check("a rider can send feedback", one("select count(*) from public.feedback where user_id = %s", f1), 1)
+    check("...and read their own back", len(as_user(f1, "select id from public.feedback")), 1)
+    check("other riders can't read it", len(as_user(f2, "select id from public.feedback")), 0)
+    check("can't send feedback as someone else",
+          blocked(f1, "insert into public.feedback (user_id, kind, body) values (%s, 'idea', 'x')", f2), True)
+    check("empty feedback is refused", blocked(f1, "insert into public.feedback (kind, body) values ('idea', '   ')"), True)
+    check("unknown kind is refused", blocked(f1, "insert into public.feedback (kind, body) values ('rant', 'x')"), True)
+    check("can't edit feedback after sending", blocked(f1, "update public.feedback set body = 'changed'"), True)
+    check("signed-out visitors can't send feedback",
+          anon_blocked("insert into public.feedback (kind, body) values ('idea', 'x')"), True)
+    for i in range(19):
+        as_user(f1, "insert into public.feedback (kind, body) values ('idea', %s)", f"idea {i}")
+    check("21st message in a day is refused (limit 20)",
+          blocked(f1, "insert into public.feedback (kind, body) values ('idea', 'one too many')"), True)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
