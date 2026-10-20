@@ -300,8 +300,30 @@ select:focus,input:focus{border-color:var(--ice)}
 .reel-reasons{position:absolute;inset:auto 12px 18px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
   background:rgba(6,8,12,.9);padding:12px;border-radius:16px;border:1px solid var(--line)}
 .reel-reasons .label{grid-column:1 / -1}
-.reel-done{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);pointer-events:none;
-  font-family:var(--display);font-weight:900;font-style:italic;font-size:44px;text-transform:uppercase}
+.reel-done{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);pointer-events:none;overflow:hidden}
+.reel-done > *{grid-area:1 / 1}
+.reel-done .stamp{font-family:var(--display);font-weight:900;font-style:italic;font-size:58px;text-transform:uppercase;line-height:1;
+  padding:6px 18px;border:5px solid currentColor;border-radius:14px;transform:rotate(-8deg);text-shadow:0 3px 0 #0A0D14;
+  box-shadow:0 0 0 3px #0A0D14,inset 0 0 0 3px #0A0D14,0 0 40px currentColor}
+.reel-done.yes{color:var(--good)}
+.reel-done.no{color:var(--bad)}
+.reel-done .ring{width:120px;height:120px;border-radius:50%;border:6px solid var(--good);opacity:0}
+.reel-done .snow i{position:absolute;left:50%;top:50%;width:var(--s);height:var(--s);margin:calc(var(--s) / -2);border-radius:50%;background:#fff;opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .reel-done{animation:fade-in .15s ease-out}
+  .reel-done.yes .stamp{animation:stamp .45s cubic-bezier(.2,1.8,.4,1) both}
+  .reel-done.yes .ring{animation:shock .6s .12s ease-out both}
+  .reel-done.yes .snow i{animation:burst .75s .1s cubic-bezier(.1,.7,.3,1) both}
+  .reel-item:has(.reel-done.yes) video{animation:jolt .3s .1s ease-out}
+  .reel-done.no .stamp{animation:stamp-no .5s ease-out both}
+}
+@keyframes fade-in{from{opacity:0}}
+@keyframes stamp{from{transform:rotate(-20deg) scale(2.6);opacity:0}60%{opacity:1}to{transform:rotate(-8deg) scale(1)}}
+@keyframes shock{from{transform:scale(.3);opacity:.9}to{transform:scale(3.2);opacity:0}}
+@keyframes burst{0%{transform:rotate(var(--a)) translateX(0);opacity:1}100%{transform:rotate(var(--a)) translateX(var(--d)) translateY(20px);opacity:0}}
+@keyframes jolt{30%{transform:translateY(6px) scale(1.02)}}
+@keyframes stamp-no{from{transform:rotate(-8deg) scale(1.4);opacity:0}30%{opacity:1;transform:rotate(-8deg) translateX(-14px)}
+  50%{transform:rotate(-8deg) translateX(12px)}70%{transform:rotate(-8deg) translateX(-8px)}to{transform:rotate(-8deg)}}
 .reel-end{height:100%;scroll-snap-align:start;display:grid;place-items:center;text-align:center;padding:24px}
 .reel-top{position:absolute;top:10px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;text-shadow:0 1px 6px #000}
 .modal{position:fixed;inset:0;z-index:40;background:rgba(4,6,10,.8);display:grid;place-items:center;padding:24px}
@@ -1867,7 +1889,7 @@ function reelItem(c){
   const J = S.judge, t = trickById(c.trick_id), sp = SPORTS[sportOf(t)];
   const voted = c.id in J.voted;
   let actions;
-  if (voted) actions = `<div class="reel-done" style="color:var(--${J.voted[c.id] ? 'good' : 'bad'})">${J.voted[c.id] ? '✓ Landed' : '✕ Not landed'}</div>`;
+  if (voted) actions = voteStamp(J.voted[c.id]);
   else if (J.reasonFor === c.id) actions = `<div class="reel-reasons"><div class="label">What went wrong?</div>
       ${REASONS.map(([k, l]) => `<button class="btn bad small" data-act="vote" data-id="${c.id}" data-y="0" data-reason="${k}">${l}</button>`).join('')}
       <button class="linkish" data-act="noreason" style="grid-column:1 / -1">Cancel</button></div>`;
@@ -1882,6 +1904,14 @@ function reelItem(c){
       <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · 🔥 Trick of the Day' : ''}</div></div>`}
     ${actions}
   </section>`;
+}
+// What you see the moment you vote: a STOMPED! stamp with a shockwave and a burst of snow, or a shaking BAILED
+function voteStamp(landed){
+  const snow = landed ? Array.from({length: 14}, (_, i) =>
+    `<i style="--a:${i * 360 / 14 + (i % 2) * 9}deg;--d:${90 + (i % 3) * 40}px;--s:${4 + (i % 4) * 2}px"></i>`).join('') : '';
+  return `<div class="reel-done ${landed ? 'yes' : 'no'}" role="status">
+    ${landed ? `<span class="ring"></span><span class="snow">${snow}</span>` : ''}
+    <span class="stamp">${landed ? 'Stomped!' : 'Bailed'}</span></div>`;
 }
 function refreshReelItem(id){
   const el = id && $('reel-' + id), c = S.judge.list.find(x => x.id === id);
@@ -2200,12 +2230,15 @@ setInterval(() => {
 // ---------- actions ----------
 async function vote(clipId, landed, reason){
   const J = S.judge;
-  const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
-  if (r.error){ toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
-  J.voted[clipId] = landed; J.reasonFor = null; J.count++;
-  S.myVotes.add(clipId);
+  // Celebrate first, save second: the stamp shows on the tap, not after the database answers
+  J.voted[clipId] = landed; J.reasonFor = null;
   refreshReelItem(clipId);
-  setTimeout(() => nextReel(clipId), 450);
+  if (navigator.vibrate) navigator.vibrate(landed ? [15, 50, 25] : 60);   // Android buzz; iPhones ignore it
+  const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
+  if (r.error){ delete J.voted[clipId]; toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
+  J.count++;
+  S.myVotes.add(clipId);
+  setTimeout(() => nextReel(clipId), 1000);   // long enough to see the stamp land
   maybeBreak();
   loadAll().then(() => render()).catch(() => {});  // update badges quietly
 }
