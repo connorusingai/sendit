@@ -288,9 +288,41 @@ select:focus,input:focus{border-color:var(--ice)}
 .reel::-webkit-scrollbar{display:none}
 .reel-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
 .reel-item video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
-.reel-info{position:absolute;left:14px;right:90px;bottom:18px;text-shadow:0 1px 8px #000}
+.reel-info{position:absolute;left:14px;right:14px;bottom:118px;text-shadow:0 1px 8px #000}
 .reel-info .trick{font-size:30px}
-.reel-actions{position:absolute;right:12px;bottom:18px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.reel-actions{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:flex-end;gap:28px}
+.reel-actions > div{display:flex;flex-direction:column;align-items:center;gap:14px}
+.judge-reel .reel-item{touch-action:pan-y;will-change:transform}
+.swipe-hint{position:absolute;top:22%;z-index:2;padding:6px 14px;border:4px solid currentColor;border-radius:12px;pointer-events:none;
+  font-family:var(--display);font-weight:900;font-style:italic;font-size:40px;text-transform:uppercase;text-shadow:0 2px 0 #0A0D14}
+.swipe-hint.yes{left:18px;color:var(--good);transform:rotate(-12deg);opacity:var(--yes,0)}
+.swipe-hint.no{right:18px;color:var(--bad);transform:rotate(12deg);opacity:var(--no,0)}
+/* ---------- full-screen feed ---------- */
+.feedwrap{position:relative}
+.feed-bar.float{position:absolute;top:10px;left:0;right:0;z-index:5;justify-content:center;flex-wrap:nowrap;gap:6px;margin:0;pointer-events:none}
+.feed-bar.float .seg{pointer-events:auto;background:rgba(10,13,20,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.feed-bar.float .seg button{padding:6px 8px;font-size:12px}
+.reel.feedreel{height:calc(100dvh - 150px - env(safe-area-inset-bottom,0px))}
+.feed-item video{object-fit:contain}
+.feed-item::after{content:'';position:absolute;left:0;right:0;bottom:0;height:45%;pointer-events:none;background:linear-gradient(transparent,rgba(0,0,0,.8))}
+.feed-item .poster{height:100%;display:grid;place-items:center}
+.fi-side{position:absolute;right:8px;bottom:22px;z-index:2;display:flex;flex-direction:column;align-items:center;gap:16px}
+.fi-side .icon-btn{flex-direction:column;gap:3px;background:none;border:0;padding:0;color:#fff;font-size:12px;text-shadow:0 1px 4px #000}
+.fi-side .icon-btn svg{width:32px;height:32px;stroke-width:1.8;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8))}
+.fi-side .icon-btn.lit{background:none;color:var(--accent)}
+.fi-side .avatar{width:46px;height:46px;border:2px solid #fff;font-size:14px}
+.fi-info{position:absolute;left:14px;right:78px;bottom:20px;z-index:2;display:grid;gap:5px;text-shadow:0 1px 6px #000}
+.fi-info .who{display:flex;align-items:center;gap:6px;font-weight:800}
+.fi-info .trick{font-family:var(--display);font-weight:900;font-style:italic;font-size:32px;text-transform:uppercase;line-height:1}
+.fi-info .meta{font-size:13px;color:#dfe6ef}
+.fi-info .row{justify-content:flex-start;gap:8px}
+.fi-info .pts{font-family:var(--mono);color:var(--accent)}
+.fi-info .pts small{color:#dfe6ef;font-weight:600}
+.feed-item > .comments{position:absolute;left:0;right:0;bottom:0;z-index:6;max-height:62%;overflow:auto;background:rgba(12,15,22,.97);
+  border-radius:16px 16px 0 0;border-top:1px solid var(--line)}
+.feed-item > .clip-menu{position:absolute;right:66px;bottom:80px;z-index:6;display:grid;gap:6px;max-width:250px;padding:12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.reel-item.intro{overflow-y:auto;padding:60px 16px 16px;background:var(--bg);display:grid;align-content:start;gap:12px}
 .round{width:62px;height:62px;border-radius:50%;border:3px solid #0A0D14;cursor:pointer;font-size:26px;font-weight:900;
   display:grid;place-items:center;box-shadow:0 4px 0 rgba(0,0,0,.5)}
 .round.yes{background:var(--good);color:#04160C}
@@ -753,7 +785,7 @@ async function loadWeather(){
 }
 function wxCard(){
   if (!S.me.home_resort) return `<button class="card wx" data-act="tab" data-tab="ranks" data-focus="home-resort" style="width:100%;text-align:left;cursor:pointer">
-    <div><div class="label">Mountain conditions</div><div class="hint">Set your home mountain on the Ranks tab to see snow and weather here.</div></div>
+    <div><div class="label">Mountain conditions</div><div class="hint">Tap to set your home mountain and see snow and weather here.</div></div>
     <span style="font-size:26px">🏔️</span></button>`;
   const W = S.wx; if (!W || W.resort !== S.me.home_resort) return '';
   const d = W.daily, fresh = (d.snowfall_sum[0] || 0) + (d.snowfall_sum[1] || 0);  // yesterday + today
@@ -1097,6 +1129,10 @@ const ICON = {
   fire: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z"/></svg>',
   chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
   cam:  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>',
+  share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l7 7-7 7M21 11H10a6 6 0 0 0-6 6v2"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  more:  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  mute:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
 };
 const sportSwitch = (current, act) => `<div class="sport-switch" role="group" aria-label="Ski or snowboard">${
   Object.entries(SPORTS).map(([k, s]) => `<button type="button" class="${current === k ? 'on' : ''}" data-act="${act}" data-k="${k}" aria-pressed="${current === k}">${s.icon} ${s.label}</button>`).join('')}</div>`;
@@ -1123,6 +1159,11 @@ function watchPlayers(){
   }), {threshold: [0, .6]});
   vids.forEach(v => playerObserver.observe(v));
 }
+// Full-screen reels: tall phone clips fill the screen; wide clips show whole instead of being cropped
+document.addEventListener('loadedmetadata', e => {
+  const v = e.target; if (!(v.classList && v.classList.contains('fit')) || !v.videoWidth) return;
+  v.style.objectFit = v.videoHeight >= v.videoWidth ? 'cover' : 'contain';
+}, true);
 // Fit each clip's frame to the video itself (between 4:5 tall and 16:9 wide), so there are no black bars.
 document.addEventListener('loadedmetadata', e => {
   const v = e.target; if (!(v.classList && v.classList.contains('clip')) || !v.videoWidth) return;
@@ -1133,16 +1174,50 @@ for (const [ev, on] of [['play', true], ['pause', false]])
   document.addEventListener(ev, e => { const p = e.target.closest && e.target.closest('.player'); if (p) p.classList.toggle('playing', on); }, true);
 const lettersHtml = (n, small) => `<div class="letters ${small ? 'small' : ''}">${['S','K','I'].map((l, i) => `<b class="${i < n ? 'hit' : ''}">${l}</b>`).join('')}</div>`;
 
+// The "Verified / Judging / Not verified" pill and the points shown on a clip
+function clipStatus(c){
+  const mine = c.user_id === myId();
+  const status = c.status === 'verified' ? `<span class="pill ok">Verified</span>`
+    : c.status === 'rejected' ? `<span class="pill no">Not verified</span>` : `<span class="pill wait">Judging</span>`;
+  const shown = c.status === 'verified' ? (c.points_awarded ? '+' + c.points_awarded : 'repeat')
+    : c.status === 'rejected' ? '+0' : '+' + (mine ? payout(c.trick_id, c.grab).pts : basePoints(c.trick_id, c.grab) * (c.totd ? 2 : 1));
+  return {status, shown};
+}
+// One full-screen clip in the Feed: video behind, buttons down the right, who + what bottom-left
+function feedItem(c){
+  const t = trickById(c.trick_id), sp = SPORTS[sportOf(t)], mine = c.user_id === myId();
+  const who = c.profiles ? c.profiles.username : 'Rider', {status, shown} = clipStatus(c);
+  const liked = S.myLikes.has(c.id), open = S.openComments === c.id;
+  return `<article class="reel-item feed-item" id="clip-${c.id}" data-id="${c.id}">
+    ${c.video_path ? `<video class="fit" data-act="play" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>`
+      : `<div class="poster"><div class="tname">${esc(t.name)}</div></div>`}
+    <div class="fi-side">
+      <button class="avatar linkname ${mine ? 'you' : ''}" ${mine ? '' : avStyle(who)} data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
+      <button class="icon-btn ${liked ? 'lit' : ''}" data-act="like" data-id="${c.id}" aria-pressed="${liked}" aria-label="Fire">${ICON.fire}${count(c.likes)}</button>
+      <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
+      ${mine && c.status === 'verified' ? `<button class="icon-btn" data-act="share-card" data-id="${c.id}" aria-label="Share this trick">${ICON.share}Share</button>` : ''}
+      ${mine && c.status === 'pending' ? `<button class="icon-btn" data-act="delete" data-id="${c.id}" aria-label="Delete">${ICON.trash}</button>`
+        : `<button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-label="More options">${ICON.more}</button>`}
+      <button class="icon-btn" data-act="mute" aria-label="Turn sound on">${ICON.mute}</button>
+    </div>
+    <div class="fi-info">
+      <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
+      <div class="trick">${esc(t.name)}</div>
+      <div class="meta">${sp.icon} ${esc(c.grab)} · ${esc(t.category)} · ${esc(c.resort || '')} · ${ago(c.created_at)} ago</div>
+      <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' ? '<small> if verified</small>' : ''}</b>${c.totd ? '<span class="pill totd">🔥 2×</span>' : ''}</div>
+    </div>
+    ${S.menuFor === c.id ? clipMenu(c, mine) : ''}
+    ${open ? commentsPanel(c.id) : ''}
+  </article>`;
+}
+
 function clipCard(c){
   const t = trickById(c.trick_id), sp = SPORTS[sportOf(t)], mine = c.user_id === myId();
   const who = c.profiles ? c.profiles.username : 'Rider';
   const media = c.video_path
     ? player(videoUrl(c.video_path))
     : `<div class="poster" role="img" aria-label="${esc(t.name)}"><span class="play">No video</span><div class="tname">${esc(t.name)}</div></div>`;
-  const status = c.status === 'verified' ? `<span class="pill ok">Verified</span>`
-    : c.status === 'rejected' ? `<span class="pill no">Not verified</span>` : `<span class="pill wait">Judging</span>`;
-  const shown = c.status === 'verified' ? (c.points_awarded ? '+' + c.points_awarded : 'repeat')
-    : c.status === 'rejected' ? '+0' : '+' + (mine ? payout(c.trick_id, c.grab).pts : basePoints(c.trick_id, c.grab) * (c.totd ? 2 : 1));
+  const {status, shown} = clipStatus(c);
   const liked = S.myLikes.has(c.id), open = S.openComments === c.id;
   return `<article class="card" id="clip-${c.id}">
     <div class="card-head">
@@ -1533,22 +1608,25 @@ const views = {
   },
 
   feed(){
-    // Other people's clips only show here once verified, so judging stays anonymous.
-    // Your own clips that are still being judged sit on top so you can watch them get decided.
+    // Full screen, one clip at a time, swipe up for the next (like TikTok).
+    // Other people's clips only show once verified, so judging stays anonymous; your own clips still being judged come first.
     const F = S.feed, waiting = S.clips.filter(c => c.user_id === myId() && c.status === 'pending');
-    // Big screens show rank, conditions and the Trick of the Day in the right-hand rail instead
-    const top = WIDE.matches ? sessionStrip() : hudTiles() + totdStrip() + sessionStrip();
     const seg = (act, k, label, on) => `<button class="${on ? 'on' : ''}" data-act="${act}" data-k="${k}">${label}</button>`;
-    const bar = `<div class="feed-bar">
+    const bar = `<div class="feed-bar float">
       <div class="seg" role="group" aria-label="Whose clips">${seg('feed-scope', 'friends', 'Friends', F.scope === 'friends')}${
         seg('feed-scope', 'mountain', 'My mountain', F.scope === 'mountain')}${seg('feed-scope', 'everyone', 'Everyone', F.scope === 'everyone')}</div>
       <div class="seg" role="group" aria-label="Order">${seg('feed-sort', 'hot', '🔥 Hot', F.sort === 'hot')}${seg('feed-sort', 'new', 'New', F.sort === 'new')}</div></div>`;
-    const body = !F.loaded ? '<p class="sub">Loading…</p>'
-      : F.rows.length ? F.rows.map(clipCard).join('') + (F.more
-        ? '<button class="btn ghost" data-act="feed-more">Load more</button>'
-        : `<p class="hint" style="text-align:center">You're all caught up${F.scope === 'everyone' ? '' : `. <button class="linkish" data-act="feed-scope" data-k="everyone" style="align-self:auto">See everyone</button>`}</p>`)
-      : emptyFeed();
-    return `${top}${bar}<div class="stack">${startHere()}${waiting.map(clipCard).join('')}${body}</div>`;
+    const seen = new Set(), list = [...waiting, ...F.rows].filter(c => !seen.has(c.id) && seen.add(c.id));
+    const start = startHere();
+    let end;
+    if (!F.loaded) end = '<p class="sub">Loading…</p>';
+    else if (F.more) end = '<button class="btn ghost" data-act="feed-more" style="width:auto">Load more</button>';
+    else if (list.length) end = `<p class="hint">You're all caught up.${F.scope === 'everyone' ? '' : ` <button class="linkish" data-act="feed-scope" data-k="everyone" style="align-self:auto">See everyone</button>`}</p>`;
+    else end = emptyFeed();
+    return `<div class="feedwrap">${bar}<div class="reel feedreel" id="reel">
+      ${start ? `<section class="reel-item intro">${totdStrip()}${start}</section>` : ''}
+      ${list.map(feedItem).join('')}
+      <div class="reel-end"><div>${end}</div></div></div></div>`;
   },
 
   judge(){
@@ -1560,12 +1638,12 @@ const views = {
           <button class="btn" data-act="tab" data-tab="duels">Invite friends</button></div></div>
       ${landedRule()}`;
     const w = trickTierOf(S.me.points);
-    return `<div class="reel" id="reel">${J.list.map(reelItem).join('')}
+    return `<div class="reel judge-reel" id="reel">${J.list.map(reelItem).join('')}
       <div class="reel-end"><div><div class="rank-word t-gold" style="font-size:44px">All caught up</div>
         <p class="sub" style="margin-top:10px">That's every clip waiting on you. Go ride.</p>
         <button class="btn primary" data-act="tab" data-tab="feed">Back to the feed</button></div></div>
     </div>
-    <p class="hint" style="text-align:center;margin-top:8px">Swipe up for the next clip · your vote counts ×${w.w} · riders stay anonymous</p>
+    <p class="hint" style="text-align:center;margin-top:8px">Swipe right = landed · left = bailed · up = skip · your vote counts ×${w.w}</p>
     ${landedRule()}`;
   },
 
@@ -1646,7 +1724,9 @@ const views = {
     const me = S.me, b = S.board;
     const verified = S.clips.filter(c => c.user_id === me.id && c.status === 'verified').length;
     const doneDuels = S.duels.filter(d => d.status === 'done'), wins = doneDuels.filter(d => d.winner === me.id).length;
-    return `<h2>Ranks</h2><p class="sub">Every verified trick adds points. Each tier has three divisions: fill the bar to earn the next star.</p>
+    // Rank, conditions, Trick of the Day and today's session moved here when the Feed went full screen
+    const top = WIDE.matches ? sessionStrip() : wxCard() + totdStrip() + sessionStrip();   // your rank is already the big card below
+    return `${top}<h2>Ranks</h2><p class="sub">Every verified trick adds points. Each tier has three divisions: fill the bar to earn the next star.</p>
     <div class="stack">
       ${rankCard('Trick rank', me.points, TRICK_TIERS, 'pts', `${verified} verified`)}
       ${rankCard('Duel rank', me.rating, TIERS, 'rating', `${wins}W · ${doneDuels.length - wins}L`)}
@@ -1893,12 +1973,13 @@ function reelItem(c){
   else if (J.reasonFor === c.id) actions = `<div class="reel-reasons"><div class="label">What went wrong?</div>
       ${REASONS.map(([k, l]) => `<button class="btn bad small" data-act="vote" data-id="${c.id}" data-y="0" data-reason="${k}">${l}</button>`).join('')}
       <button class="linkish" data-act="noreason" style="grid-column:1 / -1">Cancel</button></div>`;
-  else actions = `<div class="reel-actions">
-      <button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">✓</button><span class="round-label">Landed</span>
-      <button class="round no" data-act="askreason" data-id="${c.id}" aria-label="Not landed">✕</button><span class="round-label">Nope</span>
-      <button class="round skip" data-act="skip" data-id="${c.id}" aria-label="Skip">↓</button><span class="round-label">Skip</span></div>`;
+  else actions = `<div class="swipe-hint yes">Landed</div><div class="swipe-hint no">Bailed</div>
+    <div class="reel-actions">
+      <div><button class="round no" data-act="askreason" data-id="${c.id}" aria-label="Bailed">✕</button><span class="round-label">Bailed</span></div>
+      <div><button class="round skip" data-act="skip" data-id="${c.id}" aria-label="Skip">↓</button><span class="round-label">Skip</span></div>
+      <div><button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">✓</button><span class="round-label">Landed</span></div></div>`;
   return `<section class="reel-item" id="reel-${c.id}" data-id="${c.id}">
-    ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
+    ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
     <div class="reel-top"><span class="pill sport">${sp.icon} Anonymous rider</span><span class="hint">${esc(c.resort || '')} · ${ago(c.created_at)}</span></div>
     ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(t.name)}</div>
       <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · 🔥 Trick of the Day' : ''}</div></div>`}
@@ -1925,6 +2006,39 @@ function refreshReelItem(id){
 function nextReel(id){
   const el = $('reel-' + id);
   if (el && el.nextElementSibling) el.nextElementSibling.scrollIntoView({behavior: 'smooth'});
+}
+// Judge like Tinder: drag a clip right for Landed, left for Bailed. Up and down still scroll to the next clip.
+{
+  let sw = null;
+  document.addEventListener('pointerdown', e => {
+    const it = e.target.closest && e.target.closest('.judge-reel .reel-item[data-id]');
+    if (!it || e.target.closest('button') || it.dataset.id in S.judge.voted || S.judge.reasonFor) return;
+    sw = {it, x: e.clientX, y: e.clientY, dx: 0, on: false};
+  });
+  document.addEventListener('pointermove', e => {
+    if (!sw) return;
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (!sw.on){
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)){ sw = null; return; }   // that's a scroll, not a swipe
+      if (Math.abs(dx) < 12) return;
+      sw.on = true;
+    }
+    sw.dx = dx;
+    sw.it.style.transform = `translateX(${dx}px) rotate(${dx / 20}deg)`;
+    sw.it.style.setProperty('--yes', Math.max(0, Math.min(1, dx / 110)));
+    sw.it.style.setProperty('--no', Math.max(0, Math.min(1, -dx / 110)));
+  });
+  const end = () => {
+    if (!sw) return;
+    const {it, dx, on} = sw; sw = null;
+    if (!on) return;
+    it.style.transition = 'transform .22s ease-out'; it.style.transform = '';
+    it.style.setProperty('--yes', 0); it.style.setProperty('--no', 0);
+    setTimeout(() => { it.style.transition = ''; }, 240);
+    if (Math.abs(dx) > 100) vote(it.dataset.id, dx > 0, null);   // far enough = it counts
+  };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
 }
 let reelObserver;
 function watchReel(){
@@ -2146,9 +2260,11 @@ function render(force = false){
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}${badge ? `<span class="badge">${badge}</span>` : ''}</button>`;
   }).join('');
   // Don't rebuild screens that are mid-use: the reel, the camera, or the post form
-  if (!force && ((S.tab === 'judge' && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))){ renderRail(); return; }
+  if (!force && ((['judge', 'feed'].includes(S.tab) && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))){ renderRail(); return; }
   const keep = {}; KEEP.forEach(id => { const el = $(id); if (el) keep[id] = el.value; });
+  const oldReel = S.shownTab === S.tab && $('reel'), reelAt = oldReel ? oldReel.scrollTop : 0;
   $('view').innerHTML = views[S.tab]();
+  if (oldReel && $('reel')) $('reel').scrollTop = reelAt;   // e.g. after "Load more", stay on the clip you were watching
   if (S.shownTab !== S.tab){  // a quick slide-in when you switch screens, like a native app
     const v = $('view'); v.classList.remove('swap'); void v.offsetWidth; v.classList.add('swap'); S.shownTab = S.tab;
   }
@@ -2156,7 +2272,7 @@ function render(force = false){
   syncPost();
   renderRail();
   watchPlayers();
-  if (S.tab === 'judge') watchReel();
+  if (S.tab === 'judge' || S.tab === 'feed') watchReel();
   if (S.tab === 'record' && (S.rec.mode === 'live' || S.rec.mode === 'recording')) attachStream();
 }
 
@@ -2538,9 +2654,9 @@ document.addEventListener('click', async e => {
       return;
     }
     case 'close-splash': return closeSplash();
-    case 'play': { const v = b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
+    case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
     case 'mute': {
-      const v = b.closest('.player').querySelector('video'); v.muted = !v.muted;
+      const v = b.closest('.player, .feed-item').querySelector('video'); v.muted = !v.muted;
       b.setAttribute('aria-label', v.muted ? 'Turn sound on' : 'Turn sound off');
       b.innerHTML = `<svg viewBox="0 0 24 24">${SPEAKER}${v.muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>'}</svg>`;
       if (!v.muted && v.paused) v.play().catch(() => {});
@@ -2603,7 +2719,14 @@ document.addEventListener('click', async e => {
       return;
     }
     // ranks
-    case 'clip-menu': S.menuFor = S.menuFor === id ? null : id; return render(true);
+    case 'clip-menu': {
+      S.menuFor = S.menuFor === id ? null : id;
+      const item = document.querySelector(`.feed-item[id="clip-${id}"]`);
+      if (!item) return render(true);
+      document.querySelectorAll('.feed-item > .clip-menu').forEach(m => m.remove());
+      const c = findClip(id); if (S.menuFor === id && c) item.insertAdjacentHTML('beforeend', clipMenu(c, c.user_id === myId()));
+      return;
+    }
     case 'report': return report({clip_id: id}, b.dataset.k);
     case 'report-comment': return report({comment_id: id}, 'inappropriate', b.dataset.clip);
     case 'remove-clip': return removeClip(id);
