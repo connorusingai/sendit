@@ -154,8 +154,8 @@ def main():
     check("can't write to duels directly", blocked(e, "insert into public.duels (challenger, opponent) values (auth.uid(), auth.uid())"), True)
 
     print("\n-- Trick list --")
-    check("switch + rail tricks loaded (ski)", one("select count(*) from public.tricks where sport = 'ski'"), 37)
-    check("switch + rail tricks loaded (snowboard)", one("select count(*) from public.tricks where sport = 'snowboard'"), 40)
+    check("switch + rail tricks loaded (ski, 37 + 8 from 014)", one("select count(*) from public.tricks where sport = 'ski'"), 45)
+    check("switch + rail tricks loaded (snowboard, 40 + 3 from 014)", one("select count(*) from public.tricks where sport = 'snowboard'"), 43)
     check("no duplicate trick names within a sport",
           one("select count(*) from (select sport, name from public.tricks group by 1, 2 having count(*) > 1) d"), 0)
     s = user("switchy")
@@ -266,6 +266,33 @@ def main():
         as_user(f1, "insert into public.feedback (kind, body) values ('idea', %s)", f"idea {i}")
     check("21st message in a day is refused (limit 20)",
           blocked(f1, "insert into public.feedback (kind, body) values ('idea', 'one too many')"), True)
+
+    print("\n-- Rail combos (014) --")
+    check("11 new rail tricks", one("""select count(*) from public.tricks where id in ('sw5050','180on','180out','gapon',
+          'swap','backswap','sw270out','450on','sb-fsboard','sb-fslip','sb-gapon')"""), 11)
+    g = user("gus")
+    first = "270on" if totd != "270on" else "board"   # keep Trick of the Day out of the sums
+    fp = one("select pts from public.tricks where id = %s", first)
+    def combo(uid, trick, chain):
+        clip = as_user(uid, "insert into public.clips (trick_id, combo) values (%s, %s) returning id", trick, chain)[0][0]
+        return judge(clip)[1]
+    check("new combo = first trick + half the added tricks (Swap 35 + 270 Out 40)",
+          combo(g, first, ["swap", "270out"]), fp + round(75 * 0.5))
+    check("same combo again = 0", combo(g, first, ["swap", "270out"]), 0)
+    check("same first trick, new combo = just the combo bonus", combo(g, first, ["swap"]), round(35 * 0.5))
+    check("combo on a jump trick is refused", blocked(g, "insert into public.clips (trick_id, combo) values ('360', '{swap}')"), True)
+    check("jump trick inside a rail combo is refused", blocked(g, "insert into public.clips (trick_id, combo) values ('5050', '{360}')"), True)
+    check("snowboard trick in a ski combo is refused",
+          blocked(g, "insert into public.clips (trick_id, combo) values ('5050', '{sb-5050}')"), True)
+    check("more than 4 tricks is refused",
+          blocked(g, "insert into public.clips (trick_id, combo) values ('5050', '{swap,backswap,270out,180out}')"), True)
+    check("the same trick twice is refused", blocked(g, "insert into public.clips (trick_id, combo) values ('5050', '{swap,swap}')"), True)
+    check("repeating the first trick is refused", blocked(g, "insert into public.clips (trick_id, combo) values ('5050', '{5050}')"), True)
+
+    print("\n-- Motion logs (015) --")
+    check("clips bucket takes videos and motion JSON",
+          one("select allowed_mime_types from storage.buckets where id = 'clips'"),
+          ["video/mp4", "video/quicktime", "video/webm", "application/json"])
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")

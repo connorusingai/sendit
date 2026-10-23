@@ -4,10 +4,13 @@ Goal: find what breaks or confuses people **before** the CU ski club sees it. No
 Plan for about an hour, after exam week. No snow needed: film tricks on a trampoline, a curb, a jump off a step.
 
 ## Before (Connor, 10 min)
-1. Paste `supabase/012_feedback.sql` into Supabase > SQL Editor > Run (switches on the Send feedback button).
-   Then do the same with `supabase/013_small_group.sql` (2 votes verify a clip; with 3 phones, 3 was impossible).
+1. Supabase > SQL Editor: paste and Run `supabase/014_rail_combos.sql`, then `supabase/015_motion.sql`
+   (012 and 013 are already done). Then tell Claude "push it" so the live app has combos + motion logging.
 2. Open https://connorusingai.github.io/sendit/ on your own phone and post one clip, so the feed isn't empty.
-3. Pick 2 friends with different phones (ideally one iPhone, one Android).
+3. Pick 2 friends with different phones (ideally one iPhone, one Android). Text you can send:
+   > "Hey, I'm building a ski trick app and need 2 people to break it before the season. 30 min, any
+   > evening this week or next, no skiing needed. You'd film some dumb tricks in the dorm and tell me what's
+   > confusing. Down?"
 
 ## During: give them the link and say only this
 "It's an app where you film a trick and other people verify it. Try it, and tell me anything weird."
@@ -34,5 +37,6 @@ Ask each of them to try, in any order:
 3. What's one thing you'd change?
 
 ## Then
+Delete testrider1-3 before the CU ski club sees the app (in-app "Delete my account" for each).
 Drop notes into Connor HQ > Stomped > App > Bugs + feedback, or tell Claude. Claude also reads the in-app
 feedback from Supabase. Fix the top 3 problems before showing the CU ski club.

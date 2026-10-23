@@ -26,7 +26,7 @@ A running list to pick from. ✅ = built. Roughly in order of how much I think e
 9. **Film-to-label shortcut:** when you record a trick in the app, you already say what it is. Every
    verified clip in the app becomes a correctly labelled training example, for free. This beats the
    YouTube scout once real users are posting.
-10. **Phone sensors while recording** (the gyroscope spins with you): a second, independent measure of
+10. 🔨 *(app logs gyro on every clip + `sendit-ai/src/gyro.py`; not tested on a real phone yet)* **Phone sensors while recording** (the gyroscope spins with you): a second, independent measure of
     rotation to combine with video.
 
 ## Growth

@@ -638,6 +638,42 @@ button,[data-act],select{touch-action:manipulation}
   .toast{bottom:28px;left:calc(50% + 114px)}
   .reel{height:calc(100vh - 120px)}
 }
+
+/* Lodge: the home screen. Plain night background for now; nothing big in the middle, everything at the thumb. */
+.lodge{position:relative;display:flex;flex-direction:column;gap:10px;min-height:calc(100vh - 190px)}
+.lodge-panel{background:rgba(10,14,22,.72);border:1px solid rgba(255,255,255,.12);border-radius:14px;backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px -12px #000}
+.lodge-road{display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+.lodge-road .row{display:flex;align-items:center;gap:10px}
+.lodge-road .row .mono{margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
+.lodge-road .row .mono b{color:#ffcf3d}
+.lodge-road .bar{height:12px;border-radius:999px;background:#060a14;border:1px solid rgba(255,255,255,.12);overflow:hidden}
+.lodge-road .bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#c98a00,#ffcf3d);box-shadow:0 0 14px rgba(255,207,61,.6);transition:width 1.2s cubic-bezier(.2,.9,.2,1.1)}
+.lodge-gap{flex:1;min-height:120px}
+.lodge-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.lodge-chip{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;padding:8px 11px;text-align:left;cursor:pointer;color:var(--ink)}
+.lodge-chip small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.lodge-chip b{grid-column:1;font-family:var(--display);font-size:20px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lodge-chip span{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--display);font-size:22px;color:#ffcf3d}
+.lodge-drop{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:74px;border:0;border-radius:16px;cursor:pointer;color:var(--accent-ink);
+  background:linear-gradient(180deg,var(--accent-hot),var(--accent));font-family:var(--display);font-size:36px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+  box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 34px rgba(255,107,26,.5),0 10px 0 -2px rgba(0,0,0,.5);animation:lodgePulse 2.4s ease-in-out infinite}
+.lodge-drop svg{width:30px;height:30px}
+.lodge-chip,.lodge-drop{transition:transform .08s ease,filter .08s ease}
+.lodge-chip:active,.lodge-drop:active{transform:translateY(3px) scale(.97);filter:brightness(1.15)}
+@keyframes lodgePulse{50%{box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 54px rgba(255,107,26,.55),0 10px 0 -2px rgba(0,0,0,.5)}}
+
+/* Reward moment: your clip got verified */
+.reward{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(2,3,7,.72);padding-inline:16px}
+.reward-card{width:min(100%,340px);padding:22px 18px 18px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;border-color:var(--accent);box-shadow:0 0 40px rgba(255,107,26,.5);animation:rewardSlam .45s cubic-bezier(.2,1.5,.4,1)}
+.reward-card h2{margin:0;font-family:var(--display);font-weight:900;font-size:60px;line-height:1;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-hot);text-shadow:0 0 22px rgba(255,107,26,.55)}
+.reward-card p{margin:0;color:var(--muted)}
+.reward-card .pts{font-family:var(--display);font-weight:900;font-size:48px;color:#ffcf3d;font-variant-numeric:tabular-nums;text-shadow:0 0 16px rgba(255,207,61,.5)}
+.reward-card .btn{width:100%}
+#reward-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:61}
+@keyframes rewardSlam{0%{transform:scale(1.8);opacity:0}100%{transform:none;opacity:1}}
+.shake{animation:screenShake .35s}
+@keyframes screenShake{20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}}
+@media (prefers-reduced-motion:reduce){.lodge-drop,.reward-card,.shake{animation:none}}
 </style>
 
 <div id="snow" aria-hidden="true"></div>
@@ -703,8 +739,8 @@ const store = {
   set(k, v){ try { localStorage.setItem('sendit-' + k, v); } catch (e) {} },
 };
 const S = {
-  tab: 'feed', prevTab: 'feed', session: null, me: null,
-  tricks: [], clips: [], myVotes: new Set(), myLikes: new Set(), totd: null, wx: null,
+  tab: 'lodge', prevTab: 'lodge', session: null, me: null,
+  tricks: [], clips: [], postCombo: [], myVotes: new Set(), myLikes: new Set(), totd: null, wx: null,
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
@@ -744,7 +780,16 @@ const tricksFor = (sport, cat) => S.tricks.filter(t => sportOf(t) === sport && (
 const basePoints = (trickId, grab) => Math.round(trickById(trickId).pts * (grab && grab !== 'No grab' ? 1.2 : 1));
 // What a clip would pay you. Mirrors resolve_clip() in supabase/006_grab_points.sql:
 // new trick = full points; new grab on a trick you have = just the grab (20% of base); exact repeat = 0.
-function payout(trickId, grab){
+function payout(trickId, grab, combo){
+  const p = trickPayout(trickId, grab), chain = combo || [];
+  if (!chain.length) return p;
+  // Rail combo (supabase/014_rail_combos.sql): a chain you haven't landed before adds half the added tricks' points.
+  if (S.landed.combos && S.landed.combos.has(comboKey(trickId, chain)))
+    return {pts: p.pts, why: p.why + ' · You\'ve landed this exact combo, so no combo bonus.'};
+  const bonus = comboBonus(chain) * (trickId === S.totd ? 2 : 1);
+  return {pts: p.pts + bonus, why: `🔗 New combo: +${bonus} bonus. ` + p.why};
+}
+function trickPayout(trickId, grab){
   const base = trickById(trickId).pts, totd = trickId === S.totd, x = totd ? 2 : 1, grabbed = grab && grab !== 'No grab';
   const grabs = S.landed.get(trickId);
   if (!grabs) return {pts: Math.round(base * (grabbed ? 1.2 : 1) * x),
@@ -753,6 +798,12 @@ function payout(trickId, grab){
   if (totd) return {pts: base, why: 'Already landed, but it\'s the Trick of the Day: pays once today'};
   return {pts: 0, why: grabbed ? `✓ You've landed this with a ${grab}. Try a new grab for points.` : '✓ Already in your Trick Book. Add a grab for points.'};
 }
+// ---------- rail combos ----------
+const MAX_COMBO = 3;   // tricks after the first one; the database allows the same
+const comboKey = (trickId, combo) => [trickId, ...combo].join('>');
+const comboBonus = combo => Math.round(combo.reduce((s, id) => s + trickById(id).pts, 0) * .5);
+// "270 On → Swap → 270 Out" for a combo clip, the plain trick name otherwise
+const clipName = c => [c.trick_id, ...(c.combo || [])].map(id => trickById(id).name).join(' → ');
 const videoUrl = path => db.storage.from('clips').getPublicUrl(path).data.publicUrl;
 const winChance = (me, them) => Math.round(100 / (1 + Math.pow(10, (them - me) / 400)));
 // Each rider gets their own avatar colour, picked from their username.
@@ -823,6 +874,14 @@ const TIPS = {
             'Shoulders stay in line with the rail. Look at the end of the rail, not your feet.'],
   '5050': ['The best first rail: ride straight onto it with flat skis, knees soft, centred.',
            'Look at the end of the feature and ride off it before you think about turning.'],
+  '180on': ['Turn 180° as you pop so you land on the feature riding the other way. Start the turn with your shoulders.',
+            'Learn it on a wide, flat box first. Skis flat the moment they touch.'],
+  'gapon': ['Pop from the takeoff and clear the gap before the feature, then land flat with your weight centred.',
+            'Hit it straight a few times first so you know how much speed you need.'],
+  'swap': ['A swap is a small hop on the rail that turns you 180°, so you keep sliding facing the other way.',
+           'Learn it on a long, flat box. Small pop, turn with your shoulders, land flat.'],
+  'backswap': ['A swap that turns the blind way, with your back leading. Get regular swaps solid first.'],
+  '450on': ['A 270 On plus another half-turn. Get your 270 On solid before you try it.'],
   'sb-bs180': ['Backside means you turn so your back faces downhill first, which feels easiest for most riders.',
                'Pop off your tail, turn your head and shoulders, and land switch with soft knees.'],
   'sb-fs360': ['Frontside: you open your chest toward the downhill as you spin. You lose sight of the landing briefly.',
@@ -857,6 +916,7 @@ const ACHIEVEMENTS = [
   {icon: '🌀', name: 'Spin Cycle',    desc: '3 spins',               test: L => hasName(L, /\b(180|360|540|720|900|1080)\b/) >= 3},
   {icon: '🔁', name: 'Switch Hitter', desc: '3 switch tricks',       test: L => hasName(L, /Switch|Cab/) >= 3},
   {icon: '🛤️', name: 'Rail Rat',      desc: '5 rail tricks',         test: L => inCat(L, 'Rails') >= 5},
+  {icon: '🔗', name: 'Combo Kid',     desc: '3-trick rail combo',    test: L => !!L.combos && [...L.combos].some(k => k.split('>').length >= 3)},
   {icon: '🙃', name: 'Upside Down',   desc: 'Any flip',              test: L => hasName(L, /flip|Rodeo|Misty|McTwist|Flair/i) >= 1},
   {icon: '🍾', name: 'Corkscrew',     desc: 'Any cork',              test: L => hasName(L, /Cork/) >= 1},
   {icon: '🤏', name: 'Grab Bag',      desc: '4 different grabs',     test: L => new Set([...L.values()].flatMap(s => [...s]).filter(g => g !== 'No grab')).size >= 4},
@@ -1021,6 +1081,7 @@ async function loadAll(){
   });
   S.duels = mustOk(duels).map(d => ({...d, other: d.challenger === myId() ? d.op : d.ch}));
   await loadCrew();
+  loadSeenStatus();
   noticeResults(before);
 }
 // Your crew and its members. If 010_crews.sql isn't installed yet, crews just stay hidden.
@@ -1036,11 +1097,16 @@ async function loadCrew(){
   S.crew = {ready: true, mine, members};
 }
 // Every trick someone has been verified on, and which grabs they've done it with: their Trick Book.
-// Returns a Map of trick id -> Set of grabs.
+// Returns a Map of trick id -> Set of grabs, with .combos = the rail combos landed (see comboKey).
 async function landedTricks(userId){
-  const rows = mustOk(await db.from('clips').select('trick_id, grab').eq('user_id', userId).eq('status', 'verified'));
+  // '*' rather than naming combo, so this still works before 014_rail_combos.sql is run
+  const rows = mustOk(await db.from('clips').select('*').eq('user_id', userId).eq('status', 'verified'));
   const book = new Map();
-  for (const r of rows){ if (!book.has(r.trick_id)) book.set(r.trick_id, new Set()); book.get(r.trick_id).add(r.grab); }
+  book.combos = new Set();
+  for (const r of rows){
+    if (!book.has(r.trick_id)) book.set(r.trick_id, new Set()); book.get(r.trick_id).add(r.grab);
+    if (r.combo && r.combo.length) book.combos.add(comboKey(r.trick_id, r.combo));
+  }
   return book;
 }
 async function loadBook(id, name){
@@ -1113,15 +1179,53 @@ function noticeResults(before){
   if (seenStatus){
     for (const c of mine){
       if (seenStatus[c.id] !== 'pending' || c.status === 'pending') continue;
-      const name = trickById(c.trick_id).name;
+      const name = clipName(c);
       if (c.status === 'verified'){
         const a = rankInfo(before ? before.points : 0, TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
-        if (a.label !== b.label) showRankUp(b);
-        else toast(c.points_awarded ? `✅ Verified! ${name} earned +${c.points_awarded} pts` : `✅ Verified! ${name} (repeat, no new points)`, 4500);
+        showReward(c, a.label !== b.label ? b : null);
       } else toast(`The community didn't verify your ${name}`, 4500);
     }
   }
   seenStatus = Object.fromEntries(mine.map(c => [c.id, c.status]));
+  try { localStorage.setItem('seen-status-' + myId(), JSON.stringify(seenStatus)); } catch (e) {}
+}
+// So a clip verified while the app was closed still gets its moment on the next open
+function loadSeenStatus(){
+  if (seenStatus || !S.me) return;
+  try { const s = localStorage.getItem('seen-status-' + myId()); if (s) seenStatus = JSON.parse(s); } catch (e) {}
+}
+
+// The reward moment: STOMPED slams in, the screen shakes, points count up, confetti. A rank change follows it.
+function showReward(c, rankUp){
+  const pts = c.points_awarded || 0;
+  $('overlay').innerHTML = `<div class="reward" id="reward" role="dialog" aria-label="Clip verified">
+    <canvas id="reward-fx" aria-hidden="true"></canvas>
+    <div class="reward-card lodge-panel">
+      <h2>Stomped</h2>
+      <p>${esc(clipName(c))} · verified by the crew</p>
+      <div class="pts">${pts ? '+<span id="reward-n">0</span>' : 'Repeat'}</div>
+      <p class="hint">${pts ? 'points' : 'Already landed, no new points'}</p>
+      <button class="btn primary" data-act="reward-collect">Collect</button>
+    </div></div>`;
+  S.rewardRankUp = rankUp;
+  const app = document.querySelector('.shell');
+  if (app && !matchMedia('(prefers-reduced-motion: reduce)').matches){ app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake'); }
+  if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) try { navigator.vibrate([25, 40, 25]); } catch (e) {}
+  if (pts){ let n = 0; const el = $('reward-n'), step = () => { n = Math.min(pts, n + Math.ceil(pts / 28)); if (el) el.textContent = n; if (n < pts) requestAnimationFrame(step); }; step(); }
+  confetti($('reward-fx'));
+}
+function confetti(cv){
+  if (!cv || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const D = devicePixelRatio || 1, W = cv.width = innerWidth * D, H = cv.height = innerHeight * D, g = cv.getContext('2d');
+  const col = ['#FF6B1A', '#ffcf3d', '#3BE08A', '#5CE1FF', '#ffffff'];
+  let bits = Array.from({length: 130}, (_, i) => ({x: W / 2, y: H * .42, vx: (Math.random() - .5) * 20 * D, vy: (-6 - Math.random() * 15) * D,
+    s: (3 + Math.random() * 6) * D, a: Math.random() * 6, c: col[i % col.length], t: 0}));
+  const tick = () => { if (!cv.isConnected) return; g.clearRect(0, 0, W, H);
+    bits = bits.filter(b => b.t < 150);
+    bits.forEach(b => { b.t++; b.vy += .45 * D; b.x += b.vx; b.y += b.vy; b.vx *= .99; b.a += .2;
+      g.save(); g.translate(b.x, b.y); g.rotate(b.a); g.fillStyle = b.c; g.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); g.restore(); });
+    if (bits.length) requestAnimationFrame(tick); };
+  tick();
 }
 
 // ---------- shared pieces ----------
@@ -1180,7 +1284,8 @@ function clipStatus(c){
   const status = c.status === 'verified' ? `<span class="pill ok">Verified</span>`
     : c.status === 'rejected' ? `<span class="pill no">Not verified</span>` : `<span class="pill wait">Judging</span>`;
   const shown = c.status === 'verified' ? (c.points_awarded ? '+' + c.points_awarded : 'repeat')
-    : c.status === 'rejected' ? '+0' : '+' + (mine ? payout(c.trick_id, c.grab).pts : basePoints(c.trick_id, c.grab) * (c.totd ? 2 : 1));
+    : c.status === 'rejected' ? '+0' : '+' + (mine ? payout(c.trick_id, c.grab, c.combo).pts
+      : (basePoints(c.trick_id, c.grab) + comboBonus(c.combo || [])) * (c.totd ? 2 : 1));
   return {status, shown};
 }
 // One full-screen clip in the Feed: video behind, buttons down the right, who + what bottom-left
@@ -1202,7 +1307,7 @@ function feedItem(c){
     </div>
     <div class="fi-info">
       <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
-      <div class="trick">${esc(t.name)}</div>
+      <div class="trick">${esc(clipName(c))}</div>
       <div class="meta">${sp.icon} ${esc(c.grab)} · ${esc(t.category)} · ${esc(c.resort || '')} · ${ago(c.created_at)} ago</div>
       <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' ? '<small> if verified</small>' : ''}</b>${c.totd ? '<span class="pill totd">🔥 2×</span>' : ''}</div>
     </div>
@@ -1229,7 +1334,7 @@ function clipCard(c){
     </div>
     ${media}
     <div class="card-foot">
-      <div class="row"><div class="trick">${esc(t.name)} <small>· ${esc(c.grab)} · ${esc(t.category)}</small></div>
+      <div class="row"><div class="trick">${esc(clipName(c))} <small>· ${esc(c.grab)} · ${esc(t.category)}</small></div>
         <div class="pts">${shown}${c.status === 'pending' ? '<small class="hint"> if verified</small>' : ''}</div></div>
       <div class="row" style="justify-content:flex-start;gap:6px">
         <span class="pill sport">${sp.icon} ${sp.label}</span>
@@ -1555,7 +1660,28 @@ const landedRule = () => `<details class="card rule"><summary>What counts as lan
   <li><b>Nope, wrong trick:</b> the spin is short or it's a different trick.</li>
   <li><b>Nope, can't see:</b> the landing is cut off or too blurry to tell.</li></ul></details>`;
 
+// The Lodge background stays the app's plain night sky for now. Scene ideas live in prototype/ (topo-home.html,
+// game-home.html, home-sketches.html); one goes here once it's picked.
+
 const views = {
+  // Home screen: rank + trophy road on top, the scene in the middle (nothing on it), today's things and DROP IN at the thumb
+  lodge(){
+    const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length, t = S.totd && trickById(S.totd);
+    return `<section class="lodge">
+      <button class="lodge-panel lodge-road" data-act="tab" data-tab="ranks" style="color:inherit;text-align:left;cursor:pointer">
+        <div class="row">${badgeSVG(r.tier.key, 38, r.div)}${rankWord(r, 24)}
+          <span class="mono"><b>${S.me.points}</b> pts${r.nextLabel ? `<br>${r.toNext} to ${esc(r.nextLabel)}` : ''}</span></div>
+        <div class="bar"><i id="lodge-bar" data-w="${Math.max(3, r.pct)}"></i></div>
+      </button>
+      <div class="lodge-gap"></div>
+      <div class="lodge-chips">
+        ${t ? `<button class="lodge-panel lodge-chip" data-act="totdpost"><small>Trick of the day</small><b>${esc(t.name)}</b><span>2×</span></button>`
+            : `<button class="lodge-panel lodge-chip" data-act="book"><small>Trick book</small><b>Pick a trick</b><span>›</span></button>`}
+        <button class="lodge-panel lodge-chip" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b><span>${jq ? '⚖' : '✓'}</span></button>
+      </div>
+      <button class="lodge-drop" data-act="tab" data-tab="record"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="8" width="20" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M23 13l8-4v16l-8-4Z" fill="currentColor"/><circle cx="13" cy="17" r="3.5" fill="currentColor"/></svg>Drop in</button>
+    </section>`;
+  },
   auth(){
     // Signed out = the landing page: what Stomped is, why it matters, then the form.
     const up = S.authMode === 'signup';
@@ -1981,7 +2107,7 @@ function reelItem(c){
   return `<section class="reel-item" id="reel-${c.id}" data-id="${c.id}">
     ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
     <div class="reel-top"><span class="pill sport">${sp.icon} Anonymous rider</span><span class="hint">${esc(c.resort || '')} · ${ago(c.created_at)}</span></div>
-    ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(t.name)}</div>
+    ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(clipName(c))}</div>
       <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · 🔥 Trick of the Day' : ''}</div></div>`}
     ${actions}
   </section>`;
@@ -2084,10 +2210,43 @@ async function openCamera(){
 }
 function attachStream(){ const v = $('rec-live'); if (v && S.rec.stream){ v.srcObject = S.rec.stream; v.play().catch(() => {}); } }
 function stopStream(){ const R = S.rec; if (R.stream){ R.stream.getTracks().forEach(t => t.stop()); R.stream = null; } }
-function startRecording(){
+// ---------- motion log ----------
+// While recording, log the phone's spin rate (gyroscope) and acceleration, for the trick AI.
+// Filmed on a selfie stick, the phone spins with the rider, so the gyro measures the trick itself;
+// filmed by a friend, it records how the camera moved. Either way the video is unchanged, and
+// phones without sensors (or that say no) simply post without a motion file.
+const motion = {
+  rows: [], t0: 0, on: false,
+  // iPhones ask permission once, and only from a tap, so this runs on the record button.
+  async allowed(){
+    if (typeof DeviceMotionEvent === 'undefined') return false;
+    if (typeof DeviceMotionEvent.requestPermission !== 'function') return true;
+    try { return (await DeviceMotionEvent.requestPermission()) === 'granted'; } catch (e){ return false; }
+  },
+  onEvent(e){
+    const r = e.rotationRate, a = e.accelerationIncludingGravity;
+    if (!r || !a || r.alpha == null || a.x == null) return;
+    const f = v => Math.round(v * 10) / 10;
+    motion.rows.push([Math.round(performance.now() - motion.t0), f(r.alpha), f(r.beta), f(r.gamma), f(a.x), f(a.y), f(a.z)]);
+  },
+  start(){ this.rows = []; this.t0 = performance.now(); this.on = true; window.addEventListener('devicemotion', this.onEvent); },
+  // Returns the log, or null when the phone sent too little to be worth keeping.
+  stop(){
+    if (!this.on) return null;
+    this.on = false; window.removeEventListener('devicemotion', this.onEvent);
+    if (this.rows.length < 20) return null;
+    return {v: 1, cols: ['ms', 'rot_alpha', 'rot_beta', 'rot_gamma', 'acc_x', 'acc_y', 'acc_z'],
+      units: 'deg/s, m/s² (acc includes gravity)', facing: S.rec.facing,
+      orientation: (screen.orientation && screen.orientation.angle) || 0, rows: this.rows};
+  },
+};
+
+async function startRecording(){
   const R = S.rec, mime = pickMime();
+  if (!R.stream || R.starting) return;
+  R.starting = true; R.useMotion = R.useMotion != null ? R.useMotion : await motion.allowed(); R.starting = false;
   if (!R.stream) return;
-  R.chunks = [];
+  R.chunks = []; R.motion = null;
   // 1.5 Mbit/s keeps a 20 s clip near 4 MB (the free database holds about 1 GB of video) and is still sharp at 720p.
   // Set the bitrate even when no type matched, or some phones pick 5+ Mbit/s on their own.
   R.recorder = new MediaRecorder(R.stream, {videoBitsPerSecond: 1500000, ...(mime ? {mimeType: mime} : {})});
@@ -2097,10 +2256,12 @@ function startRecording(){
     R.blob = new Blob(R.chunks, {type});
     if (R.url) URL.revokeObjectURL(R.url);
     R.url = URL.createObjectURL(R.blob);
+    R.motion = motion.stop();
     clearInterval(R.tick); clearTimeout(R.stopTimer);
     stopStream(); R.mode = 'review'; render(true);
   };
   R.recorder.start();   // one piece at the end: Safari has written broken MP4s when asked for small timed pieces
+  if (R.useMotion) motion.start();
   R.startedAt = Date.now(); R.mode = 'recording';
   // Update just the button and timer, so the live preview keeps running
   const shutter = document.querySelector('.shutter'); shutter.classList.add('stop'); shutter.dataset.act = 'rec-stop';
@@ -2111,9 +2272,9 @@ function startRecording(){
 function resetRecorder(keepContext){
   const R = S.rec;
   if (R.recorder && R.recorder.state === 'recording'){ R.recorder.onstop = null; R.recorder.stop(); }
-  clearInterval(R.tick); clearTimeout(R.stopTimer); stopStream();
+  clearInterval(R.tick); clearTimeout(R.stopTimer); stopStream(); motion.stop();
   if (R.url) URL.revokeObjectURL(R.url);
-  Object.assign(R, {mode: 'idle', recorder: null, chunks: [], blob: null, url: null});
+  Object.assign(R, {mode: 'idle', recorder: null, chunks: [], blob: null, url: null, motion: null});
   if (!keepContext) R.context = null;
 }
 function postForm(){
@@ -2127,6 +2288,7 @@ function postForm(){
         <select id="post-grab">${sp.grabs.map(g => `<option>${g}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick"></select></div>
+    <div class="field" id="post-combo" hidden></div>
     <div class="field"><label class="label" for="post-resort">Resort</label>
       <select id="post-resort" required>${S.me.home_resort ? '' : '<option value="" selected disabled>Where did you ride?</option>'}${
         RESORTS.map(r => `<option ${S.me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
@@ -2153,9 +2315,26 @@ function syncPost(){
     .map(t => `<option value="${t.id}">${S.landed.has(t.id) ? '✓ ' : ''}${esc(t.name)}${t.id === S.totd ? ' 🔥' : ''}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   S.postPreset = null;
-  const p = sel.value ? payout(sel.value, $('post-grab').value) : {pts: 0, why: ''};
+  syncCombo(cat.value === 'Rails' ? sel.value : null);
+  const p = sel.value ? payout(sel.value, $('post-grab').value, S.postCombo) : {pts: 0, why: ''};
   $('post-pts').textContent = p.pts;
   $('post-why').textContent = p.why;
+}
+// Rail combos: after the first rail trick, chain up to MAX_COMBO more (270 On → Swap → 270 Out).
+function syncCombo(firstId){
+  const box = $('post-combo');
+  if (!firstId){ S.postCombo = []; box.hidden = true; box.innerHTML = ''; return; }
+  const rails = tricksFor(S.sport, 'Rails');
+  S.postCombo = S.postCombo.filter(id => id !== firstId && rails.some(t => t.id === id));
+  const left = rails.filter(t => t.id !== firstId && !S.postCombo.includes(t.id));
+  box.hidden = false;
+  box.innerHTML = `<label class="label" for="post-combo-add">Then on the same feature (combo)</label>
+    ${S.postCombo.length ? `<div class="chips" style="margin:6px 0">${S.postCombo.map((id, i) =>
+      `<button class="btn small" type="button" data-act="combo-del" data-id="${i}" aria-label="Remove ${esc(trickById(id).name)}">→ ${esc(trickById(id).name)} ✕</button>`).join('')}</div>` : ''}
+    ${S.postCombo.length < MAX_COMBO ? `<select id="post-combo-add"><option value="">${S.postCombo.length ? '+ Add another' : '+ Add the next trick (optional)'}</option>${
+      left.map(t => `<option value="${t.id}">${esc(t.name)} (${t.pts})</option>`).join('')}</select>`
+      : `<div class="hint">Max ${MAX_COMBO + 1} tricks in one combo.</div>`}
+    <div class="hint">In order, after your first trick. A new combo adds half the points of the tricks you add.</div>`;
 }
 
 // ---------- offline outbox ----------
@@ -2201,7 +2380,7 @@ async function flushOutbox(){
   try {
     for (const it of await outbox.all()){
       try {
-        const clipId = await uploadClip(it.fields, it.blob);
+        const clipId = await uploadClip(it.fields, it.blob, it.motion);
         if (it.kind === 'duel') await duelMove(it.duelId, true, it.trick, clipId);
         await outbox.remove(it.id); sent++;
       } catch (err){
@@ -2217,8 +2396,9 @@ async function flushOutbox(){
 }
 window.addEventListener('online', () => flushOutbox());
 
+const motionPath = videoPath => videoPath.replace(/\.[^./]+$/, '.motion.json');
 // Upload the recorded video and create the clip. Returns the new clip's id.
-async function uploadClip(fields, blob = S.rec.blob){
+async function uploadClip(fields, blob = S.rec.blob, mot = S.rec.motion){
   if (!blob || !blob.size) throw new Error('Nothing recorded');
   if (blob.size > MAX_MB * 1024 * 1024) throw new Error(`Video is over ${MAX_MB} MB. Record a shorter clip.`);
   const type = blob.type || 'video/webm';
@@ -2228,17 +2408,21 @@ async function uploadClip(fields, blob = S.rec.blob){
   if (up.error) throw up.error;
   const ins = await db.from('clips').insert({...fields, video_path: path}).select('id').single();
   if (ins.error){ await db.storage.from('clips').remove([path]); throw ins.error; }
+  // The motion log sits next to the video (abc.mp4 -> abc.motion.json). Best effort: storage
+  // refuses JSON until supabase/015_motion.sql has run, and the clip is already posted either way.
+  if (mot) await db.storage.from('clips').upload(motionPath(path),
+    new Blob([JSON.stringify(mot)], {type: 'application/json'}), {contentType: 'application/json'}).catch(() => {});
   return ins.data.id;
 }
 
 // ---------- render ----------
 const TABS = [
+  ['lodge','Lodge','<path d="M3 20l6-11 4 6 3-4 5 9z"/>'],
   ['feed','Feed','<path d="M4 5h16M4 12h16M4 19h10"/>'],
-  ['judge','Judge','<path d="M5 12l4 4L19 6"/>'],
   ['record','Record','<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'],
+  ['judge','Judge','<path d="M5 12l4 4L19 6"/>'],
   ['duels','Duels','<path d="M5 19L19 5M14 5h5v5M5 5l5 5M14 14l5 5"/>'],
-  ['ranks','Ranks','<path d="M4 20h16M7 20V11M12 20V5M17 20v-6"/>'],
-];
+];  // Ranks opens from the Lodge's trophy road and the rank chip up top, so Record stays in the middle
 const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
 
@@ -2270,6 +2454,7 @@ function render(force = false){
   }
   for (const [id, v] of Object.entries(keep)){ const el = $(id); if (el) el.value = v; }
   syncPost();
+  const bar = S.tab === 'lodge' && $('lodge-bar'); if (bar) requestAnimationFrame(() => { bar.style.width = bar.dataset.w + '%'; });
   renderRail();
   watchPlayers();
   if (S.tab === 'judge' || S.tab === 'feed') watchReel();
@@ -2279,6 +2464,7 @@ function render(force = false){
 function showSplash(){
   if (S.splashDone) return;
   S.splashDone = true;
+  if ($('reward')) return;   // a fresh STOMPED beats the rank splash
   const r = rankInfo(S.me.points, TRICK_TIERS);
   $('overlay').innerHTML = `<div class="splash" id="splash" data-act="close-splash" style="--splash-c:${BADGE[r.tier.key][1]}66">
     ${badgeSVG(r.tier.key, 190, r.div, {glow: true})}
@@ -2446,7 +2632,7 @@ async function removeClip(id){
   if (!confirm('Remove this clip? The video is deleted for good. Your points stay.')) return;
   const r = await db.rpc('hide_my_clip', {p_clip: id});
   if (r.error){ toast(notInstalled(r.error) ? "Removing verified clips isn't switched on yet." : 'Remove failed: ' + r.error.message); return; }
-  if (r.data) await db.storage.from('clips').remove([r.data]);
+  if (r.data) await db.storage.from('clips').remove([r.data, motionPath(r.data)]);
   S.menuFor = null; toast('Clip removed');
   await refresh(true);
 }
@@ -2498,26 +2684,27 @@ async function deleteClip(id){
   if (!confirm('Delete this clip? This cannot be undone.')) return;
   const r = await db.from('clips').delete().eq('id', id);
   if (r.error){ toast('Delete failed: ' + r.error.message); return; }
-  if (c.video_path) await db.storage.from('clips').remove([c.video_path]);
+  if (c.video_path) await db.storage.from('clips').remove([c.video_path, motionPath(c.video_path)]);
   toast('Clip deleted');
   await refresh(true);
 }
 
 async function submitPost(){
   const fields = {trick_id: $('post-trick').value, grab: $('post-grab').value, resort: $('post-resort').value};
-  const blob = S.rec.blob;
+  if (S.postCombo.length) fields.combo = [...S.postCombo];   // only sent for combos, so plain posts work without 014
+  const blob = S.rec.blob, mot = S.rec.motion;
   S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
   try {
     if (!navigator.onLine) throw new Error('offline');
     await uploadClip(fields, blob);
-    resetRecorder();
+    resetRecorder(); S.postCombo = [];
     toast('Posted. Riders are judging it now.');
     S.tab = 'feed'; await refresh(true); window.scrollTo(0, 0);
   } catch (err){
     if (looksOffline(err) && blob){
       try {
-        await queueClip({kind: 'post', fields, blob});
-        resetRecorder(); S.tab = 'feed'; render(true); window.scrollTo(0, 0);
+        await queueClip({kind: 'post', fields, blob, motion: mot});
+        resetRecorder(); S.postCombo = []; S.tab = 'feed'; render(true); window.scrollTo(0, 0);
         toast("No signal. Saved on your phone, and it uploads when you're back online.", 5000);
         return;
       } catch (e) { /* couldn't save it either: fall through to the error */ }
@@ -2574,7 +2761,7 @@ function startDuelRecording(kind){
 }
 async function sendDuelClip(){
   const ctx = S.rec.context, b = $('duel-send');
-  const fields = {trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]}, blob = S.rec.blob;
+  const fields = {trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]}, blob = S.rec.blob, mot = S.rec.motion;
   S.busy = true; b.disabled = true; b.textContent = 'Uploading…';
   try {
     if (!navigator.onLine) throw new Error('offline');
@@ -2586,7 +2773,7 @@ async function sendDuelClip(){
   } catch (err){
     if (looksOffline(err) && blob){
       try {
-        await queueClip({kind: 'duel', fields, blob, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
+        await queueClip({kind: 'duel', fields, blob, motion: mot, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
         const dId = ctx.duelId; resetRecorder(); await openDuel(dId);
         toast("No signal. Your attempt is saved and sends when you're back online.", 5000);
         return;
@@ -2654,6 +2841,7 @@ document.addEventListener('click', async e => {
       return;
     }
     case 'close-splash': return closeSplash();
+    case 'reward-collect': { $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r); return; }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
     case 'mute': {
       const v = b.closest('.player, .feed-item').querySelector('video'); v.muted = !v.muted;
@@ -2758,6 +2946,7 @@ document.addEventListener('click', async e => {
     case 'rec-start': return startRecording();
     case 'rec-stop': if (S.rec.recorder && S.rec.recorder.state === 'recording') S.rec.recorder.stop(); return;
     case 'retake': resetRecorder(true); return openCamera();
+    case 'combo-del': S.postCombo.splice(Number(id), 1); return syncPost();
     case 'rec-cancel': { const dId = S.rec.context && S.rec.context.duelId; resetRecorder(); return dId ? openDuel(dId) : render(true); }
     // friends & duels
     case 'add-friend': return addFriend(id);
@@ -2785,6 +2974,7 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', async e => {
   const id = e.target.id;
   if (['post-cat','post-trick','post-grab'].includes(id)) syncPost();
+  if (id === 'post-combo-add' && e.target.value){ S.postCombo.push(e.target.value); syncPost(); }
   if (id === 'duel-trick') S.duelTrick = e.target.value;
   if (id === 'board-resort'){ S.board.resort = e.target.value; try { await loadBoard(); } catch (err){ toast(err.message); } render(true); }
   if (id === 'home-resort'){
@@ -2864,8 +3054,8 @@ db.auth.onAuthStateChange((event, session) => {
   setTimeout(async () => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
-    if (!now){ S.me = null; seenStatus = null; S.tab = 'feed'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'feed'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); offerPendingCrew(); } }
+    if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
+    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); offerPendingCrew(); } }
   }, 0);
 });
 </script>

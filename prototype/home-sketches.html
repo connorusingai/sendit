@@ -1,0 +1,110 @@
+<title>Stomped Home Sketches</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Figtree:wght@500;600;700&display=swap">
+<style>
+/* Layout: a contact sheet of ten phone-shaped sketches, each a different home-screen world under the same app buttons. */
+:root{
+  color-scheme:dark;
+  --bg:#0a0c10; --card:#12151b; --line:#232833; --ink:#eef2f7; --muted:#8b95a6; --accent:#ff6b1a;
+  --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
+  --body:Figtree,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{margin:0;font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.02em;text-transform:uppercase}
+.sub{margin:0;color:var(--muted);font-size:14px;max-width:60ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.item{display:flex;flex-direction:column;gap:6px;min-width:0}
+.phone{position:relative;aspect-ratio:9/19.5;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#000}
+.phone canvas{position:absolute;inset:0;width:100%;height:100%}
+/* the same app buttons on every sketch, so you judge the world, not the UI */
+.ui{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:7% 6% 5%}
+.road{background:rgba(8,10,16,.66);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:5px 6px;display:flex;flex-direction:column;gap:4px}
+.road b{font-family:var(--display);font-size:11px;letter-spacing:.04em;color:#9fc7ff;text-transform:uppercase}
+.road i{display:block;height:4px;border-radius:4px;background:linear-gradient(90deg,#c98a00,#ffcf3d);width:66%}
+.bottom{display:flex;flex-direction:column;gap:5px}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.chips span{background:rgba(8,10,16,.66);border:1px solid rgba(255,255,255,.14);border-radius:6px;height:20px}
+.drop{height:28px;border-radius:7px;background:linear-gradient(180deg,#ffa45c,var(--accent));display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:.08em;color:#160700}
+.item h2{margin:0;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:baseline}
+.item h2 span{font-family:var(--display);font-size:18px;color:var(--accent)}
+.item p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.35}
+</style>
+
+<div class="wrap">
+  <h1>Pick a world</h1>
+  <p class="sub">Ten rough sketches for the Stomped home screen, each with the same buttons on top. Tell me the numbers you like, and what you like about them.</p>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const IDEAS=[
+  ['Fog lift line','Standing at the base at night, lift climbing into fog, floodlights glowing.',fogLift],
+  ['Gondola ride','Inside a gondola cabin at night, the valley and town lights below.',gondola],
+  ['Summit at dusk','Top of the peak at sunset, ridges fading into purple. Calm, no night.',summit],
+  ['Aurora peaks','Snowy peaks under green northern lights and stars.',aurora],
+  ['Topo map','Dark contour map with glowing trail lines, like a game level select.',topo],
+  ['Clean gradient','Minimal: deep color fade, one thin mountain line, a little snow. Very app-like.',minimal],
+  ['Trail map','Painted resort trail map, green/blue/black runs, a pin where you are.',trailmap],
+  ['Corduroy','Close-up of fresh groomed corduroy under a headlight. Texture, no scenery.',corduroy],
+  ['Retro neon','80s synthwave: striped sun, neon grid mountains. Loud and fun.',neon],
+  ['Headlamp bootpack','Moonlit ridge with a line of headlamps hiking up. Backcountry, hardcore.',bootpack],
+];
+let seed=1;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+function ridge(g,w,h,y,amp,c,blur,k){g.filter=blur?`blur(${blur}px)`:'none';g.fillStyle=c;g.beginPath();g.moveTo(0,h);
+  for(let x=0;x<=w;x+=w/60){const t=x/w;g.lineTo(x,y+amp*(Math.sin(t*6.3+k)*.5+Math.sin(t*13+k*2)*.25+Math.sin(t*29+k)*.1))}g.lineTo(w,h);g.fill();g.filter='none'}
+function grad(g,w,h,stops){const gr=g.createLinearGradient(0,0,0,h);stops.forEach(([o,c])=>gr.addColorStop(o,c));g.fillStyle=gr;g.fillRect(0,0,w,h)}
+function glow(g,x,y,r,c){const rg=g.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=rg;g.beginPath();g.arc(x,y,r,0,7);g.fill()}
+function snow(g,w,h,n,a){for(let i=0;i<n;i++){g.fillStyle=`rgba(255,255,255,${a*rnd()+.1})`;g.beginPath();g.arc(rnd()*w,rnd()*h,rnd()*1.6+.3,0,7);g.fill()}}
+function pines(g,w,h,y,n,c,s){g.fillStyle=c;for(let i=0;i<n;i++){const x=rnd()*w,t=(10+rnd()*14)*s;g.beginPath();g.moveTo(x,y-t);g.lineTo(x-t*.32,y);g.lineTo(x+t*.32,y);g.fill()}}
+function fogLift(g,w,h){grad(g,w,h,[[0,'#05080c'],[.45,'#2a3238'],[.55,'#9aa0a8'],[1,'#7c8592']]);
+  for(let i=0;i<5;i++){const t=i/5,x=w*(.62-.08*t),y=h*(.92-.42*t),s=1-t*.8;g.fillStyle=`rgba(20,28,34,${.9-t*.6})`;g.fillRect(x-2*s,y-h*.32*s,4*s,h*.32*s);g.fillRect(x-14*s,y-h*.32*s,28*s,2*s)}
+  g.strokeStyle='rgba(20,26,30,.7)';g.beginPath();g.moveTo(w*.48,0);g.lineTo(w*.56,h*.5);g.moveTo(w*.8,0);g.lineTo(w*.58,h*.5);g.stroke();
+  g.filter='blur(1px)';pines(g,w*.4,h,h*.78,30,'#141b1f',1.6);g.filter='none';
+  g.globalCompositeOperation='lighter';glow(g,w*.42,h*.36,h*.22,'rgba(255,236,220,.8)');glow(g,w*.78,h*.5,h*.12,'rgba(255,236,220,.6)');g.globalCompositeOperation='source-over';snow(g,w,h,70,.6)}
+function gondola(g,w,h){grad(g,w,h,[[0,'#060a16'],[.6,'#101a34'],[1,'#1a2440']]);ridge(g,w,h,h*.5,h*.08,'#0c1428',2,1);
+  for(let i=0;i<140;i++){const x=w*(.2+rnd()*.6),y=h*(.62+rnd()*.12);g.fillStyle=`rgba(255,${190+rnd()*50|0},120,${.5+rnd()*.5})`;g.fillRect(x,y,1.4,1.4)}
+  g.globalCompositeOperation='lighter';glow(g,w*.5,h*.68,w*.5,'rgba(255,170,90,.18)');g.globalCompositeOperation='source-over';
+  g.fillStyle='#0b0d12';g.fillRect(0,0,w,h*.12);g.fillRect(0,h*.86,w,h*.14);g.fillRect(0,0,w*.07,h);g.fillRect(w*.93,0,w*.07,h);g.fillRect(w*.48,h*.12,w*.04,h*.74);
+  g.strokeStyle='rgba(255,255,255,.06)';g.lineWidth=6;g.beginPath();g.moveTo(w*.1,h*.15);g.lineTo(w*.4,h*.8);g.stroke()}
+function summit(g,w,h){grad(g,w,h,[[0,'#2a1a4a'],[.35,'#a2457a'],[.55,'#ff9a5a'],[.7,'#ffd08a'],[1,'#3a2a55']]);
+  [['#7a4a7a',.58,.05],['#55356a',.64,.07],['#3a2852',.72,.08],['#241a38',.82,.06]].forEach(([c,y,a],k)=>ridge(g,w,h,h*y,h*a,c,k<2?2:0,k*1.7));
+  g.fillStyle='#eef';g.beginPath();g.moveTo(w*.3,h*.82);g.lineTo(w*.5,h*.66);g.lineTo(w*.72,h*.84);g.lineTo(w,h*.9);g.lineTo(w,h);g.lineTo(0,h);g.lineTo(0,h*.9);g.fill();
+  g.strokeStyle='#222';g.beginPath();g.moveTo(w*.5,h*.66);g.lineTo(w*.5,h*.6);g.stroke();g.fillStyle='#ff6b1a';g.fillRect(w*.5,h*.6,w*.06,h*.02)}
+function aurora(g,w,h){grad(g,w,h,[[0,'#020611'],[.6,'#071630'],[1,'#0b1d36']]);snow(g,w,h*.5,90,.8);
+  g.globalCompositeOperation='lighter';for(let b=0;b<3;b++){g.filter='blur(6px)';g.strokeStyle=b===1?'rgba(120,255,190,.35)':'rgba(60,220,170,.25)';g.lineWidth=h*.06;g.beginPath();
+    for(let x=0;x<=w;x+=w/30){const y=h*(.18+b*.06)+Math.sin(x/w*5+b)*h*.05;x?g.lineTo(x,y):g.moveTo(x,y)}g.stroke()}g.filter='none';g.globalCompositeOperation='source-over';
+  ridge(g,w,h,h*.58,h*.12,'#0e1a2c',1,2);ridge(g,w,h,h*.68,h*.1,'#dfe8f5',0,4);ridge(g,w,h,h*.78,h*.05,'#9fb0c8',0,6)}
+function topo(g,w,h){g.fillStyle='#0b1016';g.fillRect(0,0,w,h);g.strokeStyle='rgba(120,160,190,.22)';g.lineWidth=1;
+  for(let r=1;r<16;r++){g.beginPath();for(let a=0;a<=6.3;a+=.1){const rr=r*w*.06*(1+.18*Math.sin(a*3+r*.7));const x=w*.55+Math.cos(a)*rr,y=h*.45+Math.sin(a)*rr*1.3;a?g.lineTo(x,y):g.moveTo(x,y)}g.stroke()}
+  [['#3be08a',[.55,.25,.4,.5,.3,.75]],['#5ce1ff',[.58,.25,.7,.45,.62,.78]],['#ff5470',[.55,.25,.55,.6,.48,.82]]].forEach(([c,p])=>{g.strokeStyle=c;g.lineWidth=2.2;g.shadowColor=c;g.shadowBlur=8;g.beginPath();g.moveTo(w*p[0],h*p[1]);g.quadraticCurveTo(w*p[2],h*p[3],w*p[4],h*p[5]);g.stroke()});
+  g.shadowBlur=0;glow(g,w*.55,h*.25,14,'rgba(255,107,26,.9)');g.fillStyle='#fff';g.beginPath();g.arc(w*.55,h*.25,3,0,7);g.fill()}
+function minimal(g,w,h){grad(g,w,h,[[0,'#0c0f2a'],[.55,'#2a1f5a'],[1,'#ff6b1a']]);g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=1.5;g.beginPath();
+  for(let x=0;x<=w;x+=w/50){const t=x/w,y=h*(.56+.06*Math.sin(t*6)+.03*Math.sin(t*15)-.08*Math.exp(-(((t-.6)*8)**2)));x?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();snow(g,w,h,40,.5)}
+function trailmap(g,w,h){grad(g,w,h,[[0,'#9ecbe8'],[.4,'#dcecf6'],[1,'#f4f8fb']]);g.fillStyle='#fff';g.strokeStyle='#8aa3b8';g.lineWidth=1.2;g.beginPath();g.moveTo(-10,h*.85);g.lineTo(w*.25,h*.32);g.lineTo(w*.45,h*.4);g.lineTo(w*.62,h*.22);g.lineTo(w*1.05,h*.8);g.fill();g.stroke();
+  for(let i=0;i<120;i++){const x=rnd()*w,y=h*(.55+rnd()*.35);if(y>h*.55){g.fillStyle='#2f6b4e';g.beginPath();g.moveTo(x,y-5);g.lineTo(x-2,y);g.lineTo(x+2,y);g.fill()}}
+  [['#2a9d5a',[.62,.24,.75,.55,.8,.85]],['#2a6fd1',[.6,.24,.5,.5,.45,.85]],['#111',[.62,.23,.62,.5,.6,.86]],['#2a9d5a',[.27,.34,.2,.6,.15,.86]]].forEach(([c,p])=>{g.strokeStyle=c;g.lineWidth=2.4;g.beginPath();g.moveTo(w*p[0],h*p[1]);g.quadraticCurveTo(w*p[2],h*p[3],w*p[4],h*p[5]);g.stroke()});
+  g.fillStyle='#ff6b1a';g.beginPath();g.arc(w*.46,h*.62,5,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}
+function corduroy(g,w,h){grad(g,w,h,[[0,'#050912'],[1,'#1b2a44']]);const vx=w*.5,vy=h*.3;
+  for(let k=-24;k<=24;k++){g.strokeStyle=k%2?'rgba(190,210,240,.16)':'rgba(10,16,28,.45)';g.lineWidth=3;g.beginPath();g.moveTo(vx+k*2,vy);g.lineTo(vx+k*w*.09,h);g.stroke()}
+  g.globalCompositeOperation='lighter';const rg=g.createRadialGradient(w*.5,h*.95,0,w*.5,h*.8,h*.6);rg.addColorStop(0,'rgba(255,235,200,.35)');rg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=rg;g.fillRect(0,0,w,h);g.globalCompositeOperation='source-over';
+  grad(g,w,h*.32,[[0,'#03050a'],[1,'#0a1222']]);snow(g,w,h,40,.5)}
+function neon(g,w,h){grad(g,w,h,[[0,'#12002a'],[.5,'#3a0a5a'],[1,'#0a0018']]);const sy=h*.42,sr=w*.28;
+  const sg=g.createLinearGradient(0,sy-sr,0,sy+sr);sg.addColorStop(0,'#ffd34d');sg.addColorStop(1,'#ff2f8a');g.fillStyle=sg;g.beginPath();g.arc(w/2,sy,sr,0,7);g.fill();
+  g.fillStyle='#12002a';for(let i=0;i<6;i++)g.fillRect(w/2-sr,sy+i*sr*.16,sr*2,sr*.05+i*.6);
+  g.fillStyle='#1a0030';g.strokeStyle='#ff4fd8';g.lineWidth=1.4;g.beginPath();g.moveTo(0,h*.62);g.lineTo(w*.25,h*.42);g.lineTo(w*.4,h*.55);g.lineTo(w*.62,h*.38);g.lineTo(w*.85,h*.56);g.lineTo(w,h*.48);g.lineTo(w,h*.62);g.fill();g.stroke();
+  g.fillStyle='#0a0018';g.fillRect(0,h*.62,w,h);g.strokeStyle='rgba(80,220,255,.6)';g.lineWidth=1;
+  for(let k=-10;k<=10;k++){g.beginPath();g.moveTo(w/2+k*6,h*.62);g.lineTo(w/2+k*w*.12,h);g.stroke()}for(let i=1;i<9;i++){const y=h*.62+(h*.38)*(i/9)**1.8;g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}}
+function bootpack(g,w,h){grad(g,w,h,[[0,'#04060d'],[.6,'#0d1730'],[1,'#141d34']]);snow(g,w,h*.5,80,.7);glow(g,w*.78,h*.16,w*.25,'rgba(220,230,255,.25)');g.fillStyle='#f4f6ff';g.beginPath();g.arc(w*.78,h*.16,w*.06,0,7);g.fill();
+  ridge(g,w,h,h*.62,h*.1,'#0b1326',2,3);g.fillStyle='#cfd9ea';g.beginPath();g.moveTo(0,h*.9);g.lineTo(w*.55,h*.42);g.lineTo(w*.68,h*.48);g.lineTo(w,h*.8);g.lineTo(w,h);g.lineTo(0,h);g.fill();
+  g.fillStyle='rgba(60,75,100,.6)';g.beginPath();g.moveTo(w*.55,h*.42);g.lineTo(w*.68,h*.48);g.lineTo(w,h*.8);g.lineTo(w,h);g.lineTo(w*.5,h);g.fill();
+  g.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const t=i/7,x=w*(.12+t*.4),y=h*(.84-t*.38);glow(g,x,y,7,'rgba(255,240,200,.9)')}g.globalCompositeOperation='source-over'}
+const grid=document.getElementById('grid');
+IDEAS.forEach(([name,why,draw],i)=>{const it=document.createElement('div');it.className='item';
+  it.innerHTML=`<div class="phone"><canvas aria-label="${name} sketch"></canvas><div class="ui"><div class="road"><b>Diamond II</b><i></i></div><div class="bottom"><div class="chips"><span></span><span></span></div><div class="drop">DROP IN</div></div></div></div><h2><span>${i+1}</span>${name}</h2><p>${why}</p>`;
+  grid.appendChild(it);const cv=it.querySelector('canvas');requestAnimationFrame(()=>{const D=Math.min(2,devicePixelRatio||1),w=cv.offsetWidth*D,h=cv.offsetHeight*D;cv.width=w;cv.height=h;seed=7+i*13;const g=cv.getContext('2d');g.scale(1,1);draw(g,w,h)})});
+})();
+</script>

@@ -1,0 +1,264 @@
+<title>Stomped Topo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap">
+<style>
+/* Layout: one full-screen place (a floodlit night park): HUD on top, the lit park + Trick of the Day sign mid-screen, trophy road + DROP IN at the thumb. */
+:root{
+  color-scheme:dark;
+  --night:#05070d; --night-2:#0b1222; --ridge:#0e1830;   /* night sky down to the ridge line */
+  --snow:#dfe8f5; --snow-dim:#7f8fa8;
+  --panel:rgba(12,18,32,.78); --edge:rgba(255,255,255,.12);
+  --text:#f2f5fa; --dim:#93a1b8;
+  --accent:#ff6b1a; --accent-hi:#ffa45c; --glow:rgba(255,107,26,.55);  /* the floodlights; swapped by the color picker */
+  --gold:#ffcf3d; --ok:#3ee08a; --bad:#ff3b5c;
+  --display:'Anton','Impact','Arial Narrow',sans-serif;
+  --body:'Barlow Semi Condensed','Arial Narrow','Trebuchet MS',sans-serif;
+}
+:root[data-skin="ice"]{--accent:#35c8ff;--accent-hi:#9ae6ff;--glow:rgba(53,200,255,.5)}
+:root[data-skin="pass"]{--accent:#ffd21f;--accent-hi:#fff08a;--glow:rgba(255,210,31,.45)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--text);font-family:var(--body);font-weight:700;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+.scene{position:relative;height:100%;min-height:600px;overflow:hidden;background:radial-gradient(120% 70% at 50% 100%,var(--ridge) 0%,var(--night-2) 45%,var(--night) 100%)}
+#sky,#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#sky{z-index:0}#fx{z-index:6}
+.ui{position:relative;z-index:5;height:100%;display:flex;flex-direction:column;gap:10px;
+  padding-block:12px 14px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));max-width:520px;margin:0 auto}
+
+/* panels: dark glass with a lit top edge, like gear under floodlights */
+.panel{background:var(--panel);border:1px solid var(--edge);border-radius:14px;backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 10px 24px -12px #000}
+.press{cursor:pointer;transition:transform .08s ease,filter .08s ease}
+.press:active{transform:translateY(3px) scale(.97);filter:brightness(1.15)}
+.press:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.cap{font-family:var(--display);font-weight:400;letter-spacing:.04em;text-transform:uppercase}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:8px}
+.me{display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;min-width:0}
+.pfp{width:40px;height:40px;border-radius:10px;background:linear-gradient(160deg,#1d2a44,#0d1424);border:1.5px solid var(--accent);box-shadow:0 0 12px var(--glow);display:grid;place-items:center;font-family:var(--display);font-size:20px;color:var(--accent-hi);flex:0 0 auto}
+.me b{display:block;font-size:18px;line-height:1}
+.me small{font-size:12px;color:var(--gold);letter-spacing:.06em;text-transform:uppercase}
+.cur{margin-left:auto;display:flex;gap:6px}
+.pill{display:flex;align-items:center;gap:6px;padding:5px 11px 5px 8px;border-radius:999px;font-family:var(--display);font-size:17px;letter-spacing:.03em}
+.pill svg{width:18px;height:18px}
+
+/* trophy road */
+.road{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.road-top{display:flex;align-items:center;gap:9px}
+.badge{width:34px;height:34px;flex:0 0 auto;filter:drop-shadow(0 0 8px rgba(255,207,61,.55))}
+.road-top b{font-size:20px}
+.road-top span{margin-left:auto;font-size:14px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right}
+.road-top span strong{color:var(--gold);font-weight:800}
+.bar{position:relative;height:12px;border-radius:999px;background:#060a14;border:1px solid var(--edge);overflow:visible}
+.bar i{position:absolute;inset:0 auto 0 0;width:0;border-radius:999px;background:linear-gradient(90deg,#c98a00,var(--gold));box-shadow:0 0 14px rgba(255,207,61,.6);transition:width 1.3s cubic-bezier(.2,.9,.2,1.1)}
+.bar u{position:absolute;top:50%;width:14px;height:14px;transform:translate(-50%,-50%) rotate(45deg);background:#111a2c;border:1.5px solid var(--dim);text-decoration:none}
+.bar u.next{right:-7px;left:auto;transform:translate(0,-50%) rotate(45deg);border-color:#bfe3ff;box-shadow:0 0 10px rgba(191,227,255,.6)}
+.bar-note{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+
+/* the park: empty middle of the screen, the scene does the talking; the Trick of the Day hangs over it */
+.stage{flex:1;position:relative;min-height:220px}
+.sign{position:absolute;left:50%;top:10%;transform:translateX(-50%);text-align:center;padding:10px 18px 12px;min-width:210px;
+  background:rgba(5,7,13,.82);border:1.5px solid var(--accent);border-radius:12px;box-shadow:0 0 0 4px rgba(0,0,0,.4),0 0 28px var(--glow),inset 0 0 18px rgba(255,255,255,.04);animation:hum 3.4s ease-in-out infinite}
+.sign::before,.sign::after{content:"";position:absolute;top:-40px;width:2px;height:40px;background:linear-gradient(#3a4660,#1a2234)}
+.sign::before{left:24%}.sign::after{right:24%}
+.sign small{display:block;font-size:12px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+.sign b{display:block;font-family:var(--display);font-weight:400;font-size:40px;line-height:1.05;letter-spacing:.03em;color:var(--accent-hi);text-shadow:0 0 18px var(--glow)}
+.sign em{font-style:normal;font-size:13px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}
+@keyframes hum{0%,100%{filter:none}47%{filter:none}48%{filter:brightness(.6)}49%{filter:none}}
+.side{position:absolute;bottom:6%;display:flex;flex-direction:column;gap:9px}
+.side.l{left:0}.side.r{right:0}
+.sq{position:relative;width:60px;height:60px;display:grid;place-items:center;align-content:center;gap:2px;font-family:var(--display);font-size:12px;letter-spacing:.06em;color:var(--text);padding:0}
+.sq svg{width:26px;height:26px}
+.dot{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--bad);font-family:var(--display);font-size:12px;display:grid;place-items:center;box-shadow:0 0 10px rgba(255,59,92,.7)}
+
+/* today: two small chips instead of big cards */
+.today{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chip{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:8px;padding:8px 11px;text-align:left;color:inherit;font:inherit}
+.chip small{grid-column:1;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.chip b{grid-column:1;font-size:18px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip span{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--display);font-size:20px;color:var(--gold)}
+.nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+/* daily challenge */
+.daily{display:flex;align-items:center;gap:11px;padding:9px 12px;text-align:left;color:inherit;font:inherit}
+.daily .ico{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--gold);display:grid;place-items:center;flex:0 0 auto;box-shadow:0 0 12px rgba(255,207,61,.35)}
+.daily b{display:block;font-size:17px;line-height:1.1}
+.daily small{color:var(--dim);font-size:13px}
+.daily .rw{margin-left:auto;text-align:right;font-family:var(--display);font-size:20px;color:var(--gold);flex:0 0 auto}
+.daily .rw small{display:block;font-family:var(--body);font-size:11px;letter-spacing:.08em}
+
+/* the big button: lit like a floodlight */
+.drop{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:74px;border:0;border-radius:16px;color:#140600;
+  background:linear-gradient(180deg,var(--accent-hi),var(--accent));box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 34px var(--glow),0 10px 0 -2px rgba(0,0,0,.5);
+  font-family:var(--display);font-size:34px;letter-spacing:.08em}
+.drop svg{width:30px;height:30px}
+.drop{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 54px var(--glow),0 10px 0 -2px rgba(0,0,0,.5)}}
+
+/* bottom nav */
+.nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.nav button{height:54px;color:var(--dim);font-family:var(--display);font-size:13px;letter-spacing:.08em;display:grid;place-items:center;align-content:center;gap:3px;padding:0}
+.nav button.on{color:var(--text);border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent),0 0 14px -4px var(--glow)}
+.nav svg{width:22px;height:22px}
+
+/* color picker (mockup only) */
+.skins{position:absolute;z-index:8;right:max(10px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 132px);display:flex;flex-direction:column;gap:6px;background:rgba(5,7,13,.8);padding:6px;border-radius:12px;border:1px solid var(--edge)}
+.skins button{width:24px;height:24px;border-radius:50%;border:2px solid #05070d;cursor:pointer;padding:0}
+.skins button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:1px}
+.mock{position:absolute;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 2px);font-size:11px;color:rgba(255,255,255,.4);white-space:nowrap}
+
+/* reward moment */
+.pop{position:absolute;inset:0;z-index:9;display:grid;place-items:center;background:rgba(2,3,7,.7)}
+.card{width:min(86%,330px);padding:22px 18px 18px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;border-color:var(--accent);box-shadow:0 0 40px var(--glow);animation:slam .45s cubic-bezier(.2,1.5,.4,1)}
+@keyframes slam{0%{transform:scale(1.8);opacity:0}100%{transform:none;opacity:1}}
+.card h2{margin:0;font-family:var(--display);font-weight:400;font-size:56px;line-height:1;letter-spacing:.04em;color:var(--accent-hi);text-shadow:0 0 22px var(--glow)}
+.card p{margin:0;color:var(--dim);font-size:15px}
+.card .big{font-family:var(--display);font-size:44px;color:var(--gold);font-variant-numeric:tabular-nums;text-shadow:0 0 16px rgba(255,207,61,.5)}
+.card .votes{display:flex;gap:8px}
+.card .votes i{width:30px;height:30px;border-radius:50%;background:var(--ok);color:#03150a;display:grid;place-items:center;font-style:normal;font-weight:800;box-shadow:0 0 12px rgba(62,224,138,.6);animation:slam .35s backwards}
+.card button{width:100%;height:52px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--accent-hi),var(--accent));color:#140600;font-family:var(--display);font-size:22px;letter-spacing:.08em}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="scene" id="scene">
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <canvas id="fx" aria-hidden="true"></canvas>
+
+  <div class="skins" role="group" aria-label="Try a color">
+    <button id="sk-blaze" style="background:#ff6b1a" aria-pressed="true" aria-label="Floodlight orange" data-skin="blaze"></button>
+    <button id="sk-ice" style="background:#35c8ff" aria-pressed="false" aria-label="Glacier blue" data-skin="ice"></button>
+    <button id="sk-pass" style="background:#ffd21f" aria-pressed="false" aria-label="Lift-pass yellow" data-skin="pass"></button>
+  </div>
+
+  <div class="ui">
+    <header class="hud">
+      <div class="me panel"><div class="pfp">C</div><div><b class="cap">Connor</b><small>Gold II · Eldora</small></div></div>
+      <div class="cur">
+        <div class="pill panel" title="Points"><svg viewBox="0 0 20 20"><path d="M10 1v18M2 5.5l16 9M2 14.5l16-9" stroke="#bfe3ff" stroke-width="2" stroke-linecap="round"/></svg><span id="pts">1,284</span></div>
+        <div class="pill panel" title="Day streak"><svg viewBox="0 0 20 20"><path d="M10 1c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 3-6 0 2 1 3 2 3 0-3-1-5 1-8Z" fill="#ff8a3d"/></svg>4</div>
+      </div>
+    </header>
+
+    <section class="road panel" aria-label="Trophy road">
+      <div class="road-top">
+        <svg class="badge" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L36 10 L33 28 L20 38 L7 28 L4 10Z" fill="#1a1406" stroke="#ffcf3d" stroke-width="2.5"/><path d="M12 24 L20 8 L28 24 L20 19Z" fill="#ffcf3d"/></svg>
+        <b class="cap">Gold II</b><span><strong id="cur">1,284</strong> / 1,400<br>next: Platinum</span>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="1200" aria-valuemax="1400" aria-valuenow="1284"><i id="fill"></i><u style="left:50%"></u><u class="next"></u></div>
+      <div class="bar-note"><span id="togo">116 to go</span></div>
+    </section>
+
+    <div class="stage" aria-hidden="true"></div>
+
+    <div class="today">
+      <button class="chip panel press" id="daily"><small>Daily</small><b class="cap">Land a 360</b><span>+150</span></button>
+      <button class="chip panel press"><small>Trick of the day</small><b class="cap">Cork 720</b><span>2×</span></button>
+    </div>
+
+    <button class="drop press" id="drop"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="8" width="20" height="18" rx="4" fill="none" stroke="#140600" stroke-width="3"/><path d="M23 13l8-4v16l-8-4Z" fill="#140600"/><circle cx="13" cy="17" r="3.5" fill="#140600"/></svg>DROP IN</button>
+
+    <nav class="nav" aria-label="Main">
+      <button class="panel press on"><svg viewBox="0 0 24 24"><path d="M2 20l7-12 4 6 3-4 6 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>LODGE</button>
+      <button class="panel press"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3Z" fill="currentColor"/></svg>FEED</button>
+      <button class="panel press" style="position:relative"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2.5 2.5L16 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>JUDGE<span class="dot">7</span></button>
+      <button class="panel press"><svg viewBox="0 0 24 24"><path d="M7 3h10v6a5 5 0 0 1-10 0ZM10 15h4v3h3v3H7v-3h3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>RANKS</button>
+      <button class="panel press"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 22c1-8 17-8 18 0" fill="none" stroke="currentColor" stroke-width="2"/></svg>ME</button>
+    </nav>
+  </div>
+  <div class="mock">Mockup · tap DROP IN · colors on the right</div>
+  <div class="pop" id="pop" hidden>
+    <div class="card panel">
+      <h2>STOMPED</h2>
+      <p>Cork 720 · Trick of the Day pays 2×</p>
+      <div class="votes" aria-label="3 of 3 friends voted landed"><i>✓</i><i style="animation-delay:.15s">✓</i><i style="animation-delay:.3s">✓</i></div>
+      <div class="big">+<span id="gain">0</span></div>
+      <button class="press" id="collect">COLLECT</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let pts=1284;const fmt=n=>n.toLocaleString('en-US');
+function setBar(){const p=Math.min(100,(pts-1200)/200*100);$('#fill').style.width=p+'%';$('#pts').textContent=fmt(pts);$('#cur').textContent=fmt(pts);
+  $('#togo').textContent=pts>=1400?'Platinum unlocked':(1400-pts)+' to go'}
+setTimeout(setBar,300);
+
+document.querySelectorAll('.skins button').forEach(b=>b.onclick=()=>{document.documentElement.dataset.skin=b.dataset.skin==='blaze'?'':b.dataset.skin;
+  document.querySelectorAll('.skins button').forEach(x=>x.setAttribute('aria-pressed',x===b));try{localStorage.setItem('skin2',b.dataset.skin)}catch(e){}});
+try{const s=localStorage.getItem('skin2');if(s)document.querySelector('[data-skin="'+s+'"]')?.click()}catch(e){}
+
+/* Topo map of the mountain at night: contour lines worked out from a real height field (marching squares), runs that
+   follow the terrain downhill (green / blue / black), a lift line, elevation labels and a pin on your mountain.
+   The map is painted once per resize; only the lights sliding down the runs and the pin's pulse move. */
+const sky=$('#sky'),s=sky.getContext('2d'),fx=$('#fx'),g=fx.getContext('2d'),bg=document.createElement('canvas'),b=bg.getContext('2d');
+let W,H,D,flakes=[],bits=[],runs=[],lift=null,pin=null;
+const PEAKS=[{x:.58,y:.2,h:.8,r:.3},{x:.25,y:.28,h:.55,r:.22},{x:.82,y:.38,h:.45,r:.2},{x:.42,y:.5,h:.25,r:.25}];
+/* screen-space height: round bumps whatever the screen shape, on a face that falls toward the base (bottom) */
+function height(x,y){const a=H/W||2;let v=(1-y)*.9;PEAKS.forEach(p=>{const dx=(x-p.x)/p.r,dy=(y-p.y)*a/(p.r*1.6);v+=p.h*Math.exp(-(dx*dx+dy*dy))});
+  return v+.04*Math.sin(x*17+y*9)*Math.sin(y*21-x*3)}
+const FT=h=>Math.round((8600+h*2400)/100)*100;   /* height to feet, roughly Eldora's 8,600-12,400 ft range */
+function paint(){
+  b.clearRect(0,0,W,H);let gr=b.createRadialGradient(W*.55,H*.3,0,W*.5,H*.45,H*.8);gr.addColorStop(0,'#101820');gr.addColorStop(1,'#05080b');b.fillStyle=gr;b.fillRect(0,0,W,H);
+  const NX=90,NY=Math.round(90*H/W),cw=W/NX,ch=H/NY,f=[];
+  for(let j=0;j<=NY;j++){f[j]=[];for(let i=0;i<=NX;i++)f[j][i]=height(i/NX,j/NY)}
+  /* contour lines: one every 0.04, every 5th brighter and labelled */
+  for(let L=0,n=0;L<1.9;L+=.035,n++){const idx=n%5===0;b.strokeStyle=idx?'rgba(140,190,210,.34)':'rgba(110,160,185,.15)';b.lineWidth=(idx?1.4:1)*D;b.beginPath();
+    for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const a=f[j][i],bb=f[j][i+1],c=f[j+1][i+1],d=f[j+1][i],k=(a>L)|(bb>L)<<1|(c>L)<<2|(d>L)<<3;if(!k||k===15)continue;
+      const x=i*cw,y=j*ch,lerp=(p,q)=>(L-p)/(q-p),T=[x+cw*lerp(a,bb),y],R=[x+cw,y+ch*lerp(bb,c)],B=[x+cw*lerp(d,c),y+ch],Lf=[x,y+ch*lerp(a,d)];
+      const seg=(p,q)=>{b.moveTo(p[0],p[1]);b.lineTo(q[0],q[1])};
+      switch(k){case 1:case 14:seg(Lf,T);break;case 2:case 13:seg(T,R);break;case 3:case 12:seg(Lf,R);break;case 4:case 11:seg(R,B);break;
+        case 5:seg(Lf,T);seg(R,B);break;case 6:case 9:seg(T,B);break;case 7:case 8:seg(Lf,B);break;case 10:seg(T,R);seg(Lf,B);break}}
+    b.stroke();
+    if(idx&&L>.15){for(let t=0;t<40;t++){const i=(t*37)%NX,j=(t*53)%NY;if(Math.abs(f[j][i]-L)<.012&&i>8&&i<NX-12&&j>NY*.22&&j<NY*.62){b.fillStyle='rgba(150,195,215,.5)';b.font=(9*D)+'px "JetBrains Mono",monospace';b.fillText(FT(L).toLocaleString('en-US'),i*cw+3*D,j*ch-2*D);break}}}}
+  /* runs: start near the top, walk downhill (steepest descent with a little wander) */
+  const hp=(x,y)=>height(x/W,y/H);
+  const STARTS=[[.56,.22,'#3be08a'],[.61,.22,'#5ce1ff'],[.58,.23,'#dfe6ee'],[.26,.3,'#3be08a'],[.8,.4,'#5ce1ff'],[.64,.21,'#dfe6ee']];
+  runs=STARTS.map(([sx,sy,c],k)=>{let x=sx*W,y=sy*H;const pts=[[x,y]];for(let n=0;n<700;n++){const e=2*D,gx=(hp(x+e,y)-hp(x-e,y)),gy=(hp(x,y+e)-hp(x,y-e)),m=Math.hypot(gx,gy)||1;
+      x-=gx/m*3*D+Math.sin(n*.08+k)*.8*D;y-=gy/m*3*D-.6*D;if(y>H*.97||x<0||x>W)break;pts.push([x,y])}return {pts,c}});
+  runs.forEach(r=>{b.strokeStyle=r.c;b.lineWidth=2.2*D;b.globalAlpha=.85;b.shadowColor=r.c;b.shadowBlur=10*D;b.lineJoin='round';b.beginPath();r.pts.forEach((p,i)=>i?b.lineTo(p[0],p[1]):b.moveTo(p[0],p[1]));b.stroke()});
+  b.globalAlpha=1;b.shadowBlur=0;
+  /* the lift: straight from the base lodge to the summit, with tower ticks */
+  lift={a:[W*.5,H*.86],z:[W*.58,H*.205]};b.strokeStyle='rgba(255,207,61,.75)';b.lineWidth=1.4*D;b.setLineDash([6*D,4*D]);b.beginPath();b.moveTo(...lift.a);b.lineTo(...lift.z);b.stroke();b.setLineDash([]);
+  for(let t=.1;t<1;t+=.15){const x=lift.a[0]+(lift.z[0]-lift.a[0])*t,y=lift.a[1]+(lift.z[1]-lift.a[1])*t;b.fillStyle='#ffcf3d';b.fillRect(x-2*D,y-2*D,4*D,4*D)}
+  /* summit and base markers */
+  b.fillStyle='#eef2f7';b.beginPath();b.moveTo(W*.58,H*.185);b.lineTo(W*.57,H*.202);b.lineTo(W*.59,H*.202);b.fill();
+  b.font='600 '+(10*D)+'px Figtree,system-ui,sans-serif';b.fillStyle='rgba(238,242,247,.8)';b.fillText('SUMMIT · 10,800 FT',W*.6,H*.198);
+  pin={x:W*.5,y:H*.86};b.fillText('ELDORA BASE · 9,200 FT',W*.54,H*.875);
+  gr=b.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,H*.8);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.55)');b.fillStyle=gr;b.fillRect(0,0,W,H);
+}
+function size(){D=devicePixelRatio||1;W=sky.width=fx.width=bg.width=sky.offsetWidth*D;H=sky.height=fx.height=bg.height=sky.offsetHeight*D;
+  s.fillStyle='#070b0f';s.fillRect(0,0,W,H);clearTimeout(size.t);size.t=setTimeout(paint,30)}
+size();let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(size,200)});
+const riders=Array.from({length:8},(_,i)=>({r:i%6,t:Math.random(),v:.00004+Math.random()*.00004}));
+let last=0;
+function drawSky(t){const dt=last?Math.min(50,t-last):16;last=t;const m=still?0:dt;
+  s.drawImage(bg,0,0);
+  s.globalCompositeOperation='lighter';
+  riders.forEach(k=>{const r=runs[k.r];if(!r||r.pts.length<2)return;k.t+=m*k.v;if(k.t>1){k.t=0;k.r=Math.floor(Math.random()*runs.length)}
+    const p=r.pts[Math.floor(k.t*(r.pts.length-1))],rg=s.createRadialGradient(p[0],p[1],0,p[0],p[1],9*D);rg.addColorStop(0,'rgba(255,255,255,.95)');rg.addColorStop(.3,r.c);rg.addColorStop(1,'rgba(0,0,0,0)');
+    s.fillStyle=rg;s.beginPath();s.arc(p[0],p[1],9*D,0,7);s.fill()});
+  if(pin){const acc=css('--accent')||'#ff6b1a',ph=(t%2200)/2200;s.strokeStyle=acc;s.globalAlpha=1-ph;s.lineWidth=2*D;s.beginPath();s.arc(pin.x,pin.y,(6+22*ph)*D,0,7);s.stroke();s.globalAlpha=1;
+    const rg=s.createRadialGradient(pin.x,pin.y,0,pin.x,pin.y,14*D);rg.addColorStop(0,acc);rg.addColorStop(1,'rgba(0,0,0,0)');s.fillStyle=rg;s.beginPath();s.arc(pin.x,pin.y,14*D,0,7);s.fill()}
+  s.globalCompositeOperation='source-over';
+  if(pin){s.fillStyle='#fff';s.beginPath();s.arc(pin.x,pin.y,3.5*D,0,7);s.fill()}}
+function burst(){const col=[css('--accent'),'#ffcf3d','#3ee08a','#ffffff'];
+  for(let i=0;i<130;i++)bits.push({x:W/2,y:H*.45,vx:(Math.random()-.5)*20*D,vy:(-6-Math.random()*15)*D,s:(3+Math.random()*6)*D,a:Math.random()*6,c:col[i%col.length],t:0})}
+function tick(t){drawSky(t);g.clearRect(0,0,W,H);
+  flakes.forEach(f=>{f.y+=.0004+f.z*.0022;if(f.y>1)f.y=-.02;const x=(f.x+Math.sin(t/1500+f.w)*.012)*W,y=f.y*H;
+    g.fillStyle='rgba(240,242,248,'+(.15+f.z*.5)+')';g.beginPath();g.arc(x,y,(.5+f.z*f.z*4)*D,0,7);g.fill()});
+  bits=bits.filter(b=>b.t<150);bits.forEach(b=>{b.t++;b.vy+=.45*D;b.x+=b.vx;b.y+=b.vy;b.vx*=.99;b.a+=.2;g.save();g.translate(b.x,b.y);g.rotate(b.a);g.fillStyle=b.c;g.fillRect(-b.s/2,-b.s/4,b.s,b.s/2);g.restore()});
+  if(!still)requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+
+function count(to){const el=$('#gain');let n=0;const step=()=>{n=Math.min(to,n+Math.ceil(to/28));el.textContent=n;if(n<to)requestAnimationFrame(step)};step()}
+$('#drop').onclick=()=>{$('#pop').hidden=false;const sc=$('#scene');sc.classList.remove('shake');void sc.offsetWidth;sc.classList.add('shake');burst();count(240);try{navigator.vibrate&&navigator.vibrate([25,40,25])}catch(e){}};
+$('#collect').onclick=()=>{$('#pop').hidden=true;pts+=240;setBar();burst()};
+$('#daily').onclick=()=>$('#daily').animate([{transform:'none'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'none'}],{duration:260});
+})();
+</script>
