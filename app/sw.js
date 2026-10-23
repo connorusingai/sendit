@@ -4,7 +4,7 @@
 // - Code libraries and fonts from CDNs: use the saved copy (they never change at a given version).
 // - Database calls and videos (Supabase): never cached. They always go to the network.
 
-const CACHE = 'sendit-v1';
+const CACHE = 'sendit-v2';
 const SHELL = ['./', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -31,7 +31,8 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (url.origin === location.origin){
-    e.respondWith(fetch(req).then(res => {
+    // no-cache: ask GitHub every time (it otherwise lets phones reuse the page for 10 min, so a push looked missing)
+    e.respondWith(fetch(req, {cache: 'no-cache'}).then(res => {
       if (res.ok){ const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req).then(hit => hit || caches.match('./'))));

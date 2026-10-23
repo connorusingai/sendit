@@ -640,7 +640,9 @@ button,[data-act],select{touch-action:manipulation}
 }
 
 /* Lodge: the home screen. Plain night background for now; nothing big in the middle, everything at the thumb. */
-.lodge{position:relative;display:flex;flex-direction:column;gap:10px;min-height:calc(100vh - 190px)}
+.lodge{position:relative;display:flex;flex-direction:column;gap:10px;min-height:calc(100vh - 190px);
+  /* svh = the screen you can actually see (iPhone Safari's 100vh counts the hidden toolbar, so the Lodge scrolled a bit) */
+  min-height:calc(100svh - 176px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 .lodge-panel{background:rgba(10,14,22,.72);border:1px solid rgba(255,255,255,.12);border-radius:14px;backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px -12px #000}
 .lodge-road{display:flex;flex-direction:column;gap:8px;padding:10px 12px}
 .lodge-road .row{display:flex;align-items:center;gap:10px}
