@@ -447,6 +447,8 @@ select:focus,input:focus{border-color:var(--ice)}
   .tabs button.rec-tab .dot{width:56px;height:56px;margin-top:-10px;border:3px solid #06080C}
   .tabs .badge{top:-6px;left:auto;right:-4px;background:var(--bad);color:#fff;font-family:var(--body);font-weight:800;min-width:20px;line-height:20px;box-shadow:0 0 10px rgba(255,84,112,.6)}
   .app{padding-block-end:96px}
+  .reel{height:calc(100dvh - 214px - env(safe-area-inset-bottom,0px))}           /* the game tab bar is a bit taller */
+  .reel.feedreel{height:calc(100dvh - 166px - env(safe-area-inset-bottom,0px))}
   .lodge{min-height:calc(100svh - 162px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 }
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;
@@ -681,6 +683,11 @@ button,[data-act],select{touch-action:manipulation}
 .round{box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 5px 0 rgba(0,0,0,.55);transition:transform .08s ease,box-shadow .08s ease}
 .round:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 1px 0 rgba(0,0,0,.55)}
 @media (prefers-reduced-motion:reduce){.btn,.icon-btn,.round,.sport-switch button{transition:none}}
+/* Panels sit up off the screen like game cards; text boxes sink in like game input fields */
+.card{border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 5px 0 #04060a,0 16px 28px -14px #000}
+select,input,textarea{background:#070a10;border-color:rgba(255,255,255,.08);box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.05)}
+select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 0 0 3px rgba(255,107,26,.2);outline:none}
+details>summary{cursor:pointer}
 
 /* Lodge: the home screen. Plain night background for now; nothing big in the middle, everything at the thumb. */
 .lodge{position:relative;display:flex;flex-direction:column;gap:10px;min-height:calc(100vh - 190px);
