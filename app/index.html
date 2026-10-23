@@ -657,6 +657,31 @@ button,[data-act],select{touch-action:manipulation}
   .reel{height:calc(100vh - 120px)}
 }
 
+/* Game-style buttons everywhere: a raised top edge, a solid shadow underneath, and a press-down on tap.
+   Placed after the base rules so it restyles them without touching layout. */
+.btn{font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,#26324a,#161e2c);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 4px 0 #04060a,0 10px 18px -10px #000;transition:transform .08s ease,box-shadow .08s ease,filter .1s}
+.btn:active:not([disabled]){transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 1px 0 #04060a}
+.btn.primary{border-color:rgba(255,255,255,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 0 #8a3208,0 0 22px rgba(255,107,26,.35)}
+.btn.primary:active:not([disabled]){box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 1px 0 #8a3208,0 0 14px rgba(255,107,26,.3)}
+.btn.good{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 0 #137040}.btn.good:active{box-shadow:0 1px 0 #137040}
+.btn.bad{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 0 #8a1f30}.btn.bad:active{box-shadow:0 1px 0 #8a1f30}
+.btn.small{font-size:14px;padding:8px 12px}
+.icon-btn{background:linear-gradient(180deg,#232e43,#161e2b);border-color:rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 #04060a;font-weight:800}
+.icon-btn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 0 #04060a}
+.icon-btn.lit{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 #5a2206,0 0 12px rgba(255,107,26,.35)}
+.seg{background:#0b0f16;box-shadow:inset 0 2px 4px rgba(0,0,0,.5)}
+.seg button{font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.seg button.on{background:linear-gradient(180deg,var(--accent-hot),var(--accent));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 #8a3208}
+.sport-switch button{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 0 #04060a;transition:transform .08s ease,box-shadow .08s ease}
+.sport-switch button:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 0 #04060a}
+.sport-switch button.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 0 #0a4a5c,0 0 16px rgba(92,225,255,.3)}
+.round{box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 5px 0 rgba(0,0,0,.55);transition:transform .08s ease,box-shadow .08s ease}
+.round:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 1px 0 rgba(0,0,0,.55)}
+@media (prefers-reduced-motion:reduce){.btn,.icon-btn,.round,.sport-switch button{transition:none}}
+
 /* Lodge: the home screen. Plain night background for now; nothing big in the middle, everything at the thumb. */
 .lodge{position:relative;display:flex;flex-direction:column;gap:10px;min-height:calc(100vh - 190px);
   /* svh = the screen you can actually see (iPhone Safari's 100vh counts the hidden toolbar, so the Lodge scrolled a bit) */
