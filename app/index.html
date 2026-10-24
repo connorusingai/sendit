@@ -708,17 +708,15 @@ details>summary{cursor:pointer}
 .lodge-gap{flex:1;min-height:120px}
 .lodge-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .lodge-chip{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;padding:8px 11px;text-align:left;cursor:pointer;color:var(--ink)}
-.lodge-chip small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.lodge-chip small{font-size:11px;letter-spacing:.1em;white-space:nowrap;text-transform:uppercase;color:var(--muted)}
 .lodge-chip b{grid-column:1;font-family:var(--display);font-size:20px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lodge-chip span{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--display);font-size:22px;color:#ffcf3d}
 .lodge-chip span em{display:block;margin-top:-3px;font-style:normal;font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
-.lodge-drop{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:74px;border:0;border-radius:16px;cursor:pointer;color:var(--accent-ink);
-  background:linear-gradient(180deg,var(--accent-hot),var(--accent));font-family:var(--display);font-size:36px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
-  box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 34px rgba(255,107,26,.5),0 10px 0 -2px rgba(0,0,0,.5);animation:lodgePulse 2.4s ease-in-out infinite}
-.lodge-drop svg{width:30px;height:30px}
-.lodge-chip,.lodge-drop{transition:transform .08s ease,filter .08s ease}
-.lodge-chip:active,.lodge-drop:active{transform:translateY(3px) scale(.97);filter:brightness(1.15)}
-@keyframes lodgePulse{50%{box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 54px rgba(255,107,26,.55),0 10px 0 -2px rgba(0,0,0,.5)}}
+.lodge-chip{transition:transform .08s ease,filter .08s ease}
+.lodge-chip:active{transform:translateY(3px) scale(.97);filter:brightness(1.15)}
+/* On Base the Record button is the one way in, so it breathes */
+@media (max-width:999px){body.on-base .tabs button.rec-tab .dot{animation:recPulse 2.4s ease-in-out infinite}}
+@keyframes recPulse{50%{box-shadow:0 4px 0 rgba(0,0,0,.5),0 0 34px rgba(255,107,26,.75)}}
 
 /* Reward moment: your clip got verified */
 .reward{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(2,3,7,.72);padding-inline:16px}
@@ -731,14 +729,14 @@ details>summary{cursor:pointer}
 @keyframes rewardSlam{0%{transform:scale(1.8);opacity:0}100%{transform:none;opacity:1}}
 .shake{animation:screenShake .35s}
 @keyframes screenShake{20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}}
-@media (prefers-reduced-motion:reduce){.lodge-drop,.reward-card,.shake{animation:none}}
+@media (prefers-reduced-motion:reduce){body.on-base .tabs button.rec-tab .dot,.reward-card,.shake{animation:none}}
 
 /* Base (the home tab): your rider stands in the snow in front of the mountains; tap him for the gear sheet */
 #base-bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:none;pointer-events:none}
 body.on-base #base-bg{display:block}
 body.on-base #snow{display:none}
 .base-stage{position:relative;min-height:220px}
-.base-rider{position:absolute;left:50%;bottom:0;height:100%;max-height:min(300px,34svh);transform:translateX(-50%);border:0;padding:0;background:none;cursor:pointer;
+.base-rider{position:absolute;left:50%;bottom:0;height:100%;max-height:min(340px,40svh);transform:translateX(-50%);border:0;padding:0;background:none;cursor:pointer;
   transition:transform .32s cubic-bezier(.2,.9,.2,1)}
 .base-rider svg{display:block;height:100%;width:auto;overflow:visible;animation:baseSway 4.4s ease-in-out infinite;transform-origin:50% 95%}
 .base-rider .bob{animation:baseBob 2.2s ease-in-out infinite;transform-origin:100px 270px;transform-box:view-box}
@@ -1974,7 +1972,7 @@ function drawPinesFrame(t){
 
 
 const views = {
-  // Home screen: rank + trophy road on top, the scene in the middle (nothing on it), today's things and DROP IN at the thumb
+  // Home screen: rank + trophy road on top, the scene in the middle (nothing on it), today's things at the thumb (the Record button in the tab bar is the way in)
   lodge(){
     const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length, t = S.totd && trickById(S.totd);
     return `<section class="lodge">
@@ -1992,7 +1990,6 @@ const views = {
             : `<button class="lodge-panel lodge-chip" data-act="book"><small>Trick book</small><b>Pick a trick</b><span>›</span></button>`}
         <button class="lodge-panel lodge-chip" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b><span>${jq ? '⚖' : '✓'}</span></button>
       </div>
-      <button class="lodge-drop" data-act="tab" data-tab="record"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="8" width="20" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M23 13l8-4v16l-8-4Z" fill="currentColor"/><circle cx="13" cy="17" r="3.5" fill="currentColor"/></svg>Drop in</button>
     </section>`;
   },
   auth(){

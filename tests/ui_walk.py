@@ -6,7 +6,7 @@ made-up answer, and every write is only logged. Screenshots land in tests/shots/
 Run:  .venv-test\\Scripts\\python.exe tests\\ui_walk.py        (from dev\\sendit; uses your installed Chrome)
 
 What it checks now:
-  1. The Lodge opens first (scene, rank road, chips, DROP IN) with no page errors.
+  1. The Lodge opens first (scene, rank road, chips) with no page errors.
   2. A clip that was pending last visit and is now verified gets the reward moment (STOMPED, points, Collect).
   3. Each tab opens without errors.
 """
@@ -99,7 +99,7 @@ def main():
             pg.wait_for_timeout(600)
         pg.mouse.click(195, 420)      # close the rank splash if it's up
         pg.wait_for_timeout(5000)     # let the scene paint
-        print("lodge first:", pg.locator(".lodge").count() == 1, "| DROP IN:", pg.locator(".lodge-drop").count())
+        print("lodge first:", pg.locator(".lodge").count() == 1, "| drop-in bar gone:", pg.locator(".lodge-drop").count() == 0)
         pg.screenshot(path=SHOTS / "2-lodge.png")
         pg.click("#base-rider")                         # the rider opens the gear sheet; a pick redraws him
         pg.wait_for_timeout(500)
