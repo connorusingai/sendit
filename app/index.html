@@ -732,7 +732,7 @@ details>summary{cursor:pointer}
 body.on-base #base-bg{display:block}
 body.on-base #snow{display:none}
 .base-stage{position:relative;min-height:220px}
-.base-rider{position:absolute;left:50%;bottom:0;height:100%;max-height:380px;transform:translateX(-50%);border:0;padding:0;background:none;cursor:pointer;
+.base-rider{position:absolute;left:50%;bottom:0;height:100%;max-height:min(300px,34svh);transform:translateX(-50%);border:0;padding:0;background:none;cursor:pointer;
   transition:transform .32s cubic-bezier(.2,.9,.2,1)}
 .base-rider svg{display:block;height:100%;width:auto;overflow:visible;animation:baseSway 4.4s ease-in-out infinite;transform-origin:50% 95%}
 .base-rider .bob{animation:baseBob 2.2s ease-in-out infinite;transform-origin:100px 270px;transform-box:view-box}
@@ -1913,8 +1913,8 @@ function buildPines(){
   range(H*.56, H*.12, 9, '#122036', 'rgba(185,203,230,.6)', 33);
   // three depths: far ridge of small foggy pines, middle row, big dark pines framing the sides
   const layers = [
-    {n: Math.ceil(W/14), y: H*.56, h: [H*.07, H*.12], body: '#1b2a44', snow: '#6d84a8', a: .5, fog: 'rgba(22,35,58,.55)'},
-    {n: Math.ceil(W/34), y: H*.66, h: [H*.14, H*.24], body: '#0f1a2c', snow: '#9fb4d3', a: .7, fog: 'rgba(22,35,58,.45)'},
+    {n: Math.ceil(W/16), y: H*.56, h: [H*.08, H*.14], body: '#1b2a44', snow: '#6d84a8', a: .5, fog: 'rgba(22,35,58,.55)'},
+    {n: Math.ceil(W/46), y: H*.66, h: [H*.2, H*.31], body: '#0f1a2c', snow: '#9fb4d3', a: .7, fog: 'rgba(22,35,58,.45)'},
   ];
   for (const L of layers){
     for (let i = 0; i < L.n; i++){ const x = (i + r()*.8) / L.n * (W + 40) - 20; drawPine(g, x, L.y + r()*H*.03, L.h[0] + r()*(L.h[1]-L.h[0]), L.body, L.snow, L.a); }
