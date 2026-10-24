@@ -100,6 +100,15 @@ def main():
         pg.wait_for_timeout(5000)     # let the scene paint
         print("lodge first:", pg.locator(".lodge").count() == 1, "| DROP IN:", pg.locator(".lodge-drop").count())
         pg.screenshot(path=SHOTS / "2-lodge.png")
+        pg.click("#base-rider")                         # the rider opens the gear sheet; a pick redraws him
+        pg.wait_for_timeout(500)
+        pg.click("#gear-opts [data-k=head][data-v=Helmet]")
+        pg.wait_for_timeout(300)
+        print("gear sheet:", pg.locator("#gear-sheet.open").count() == 1,
+              "| helmet saved:", "Helmet" in (pg.evaluate("localStorage.getItem('sendit-rider')") or ""))
+        pg.screenshot(path=SHOTS / "2b-gear.png")
+        pg.click("#gear-done")
+        pg.wait_for_timeout(400)
         for tab in ["feed", "judge", "record", "duels", "lodge"]:
             pg.click(f"#tabs [data-tab={tab}]")
             pg.wait_for_timeout(900)

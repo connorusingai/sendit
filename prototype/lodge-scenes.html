@@ -1,0 +1,241 @@
+<title>Lodge Backdrops</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: the real Lodge screen (header, rank road, empty middle, chips, DROP IN, tabs) over a full-bleed canvas backdrop; a pill switches backdrops. Single dark world, same tokens as the app. */
+:root{
+  color-scheme:dark;
+  --bg:#06080C; --surface:#10151E; --ink:#EEF3F8; --muted:#8595A9; --line:#222D3E;
+  --accent:#FF6B1A; --accent-hot:#FF8A3D; --accent-ink:#160700; --gold:#ffcf3d;
+  --panel:rgba(10,14,22,.72);
+  --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
+  --body:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#bg{position:fixed;inset:0;width:100%;height:100%;display:block}
+.app{position:relative;z-index:1;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  padding-block:10px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;line-height:1;letter-spacing:.5px}
+.brand span{color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7)}
+.me-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;font-family:var(--mono);font-weight:700;font-size:13px}
+.panel{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px -12px #000}
+.road{display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+.road .row{display:flex;align-items:center;gap:10px}
+.rank{font-family:var(--display);font-weight:900;font-style:italic;font-size:26px;color:#9cc4ff;text-transform:uppercase}
+.road .mono{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;line-height:1.5}
+.road .mono b{color:var(--gold)}
+.bar{height:12px;border-radius:999px;background:#060a14;border:1px solid rgba(255,255,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;width:73%;border-radius:999px;background:linear-gradient(90deg,#c98a00,#ffcf3d);box-shadow:0 0 14px rgba(255,207,61,.6)}
+.gap{flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:6px}
+.switch{display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(6,8,12,.6);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.switch button{border:0;border-radius:999px;padding:7px 14px;background:transparent;color:var(--muted);font:600 13px var(--body);cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.switch button:focus-visible,.chip:focus-visible,.drop:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chip{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;padding:8px 11px;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.chip small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.chip b{grid-column:1;font-family:var(--display);font-size:20px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip span{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--display);font-size:22px;color:var(--gold)}
+.drop{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:74px;border:0;border-radius:16px;cursor:pointer;color:var(--accent-ink);
+  background:linear-gradient(180deg,var(--accent-hot),var(--accent));font-family:var(--display);font-size:36px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+  box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 34px rgba(255,107,26,.5),0 10px 0 -2px rgba(0,0,0,.5)}
+.drop svg{width:30px;height:30px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-items:end;padding-block:8px calc(10px + env(safe-area-inset-bottom,0px));margin-inline:-4px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;border-radius:12px;background:rgba(16,21,30,.85);border:1px solid var(--line);color:var(--muted);font:700 11px var(--body);letter-spacing:.06em;text-transform:uppercase}
+.tab svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+.tab.on{color:var(--ink);border-color:var(--accent)}
+.tab.rec{background:none;border:0}
+.tab.rec i{width:52px;height:52px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 0 20px rgba(255,107,26,.55);margin-top:-18px;border:3px solid #0a0d13}
+.tab.rec i::after{content:"";width:16px;height:16px;border-radius:50%;border:3px solid var(--accent-ink)}
+.cap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(196px + env(safe-area-inset-bottom,0px));z-index:1;font:500 12px var(--body);color:rgba(238,243,248,.55);text-align:center;width:max-content;max-width:calc(100% - 32px);pointer-events:none}
+</style>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="app">
+  <div class="top"><div class="brand">STOMP<span>ED</span></div><div class="me-chip">◆ 1284</div></div>
+  <div class="panel road">
+    <div class="row"><svg width="34" height="38" viewBox="0 0 34 38" aria-hidden="true"><path d="M17 2l14 6v11c0 9-6 14-14 17C9 33 3 28 3 19V8z" fill="#1d3b78" stroke="#9cc4ff" stroke-width="2"/><path d="M17 10l4 8-4 10-4-10z" fill="#cfe2ff"/></svg>
+      <span class="rank">Diamond II</span><span class="mono"><b>1284</b> pts<br>49 to Diamond III</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+  <div class="gap">
+    <div class="switch" role="group" aria-label="Backdrop">
+      <button id="b-pines" aria-pressed="true">4 · Snowy pines</button>
+      <button id="b-park" aria-pressed="false">5 · Park from above</button>
+    </div>
+  </div>
+  <div class="chips">
+    <button class="panel chip"><small>Trick of the day</small><b>Frontside 720</b><span>2×</span></button>
+    <button class="panel chip"><small>Judge</small><b>All caught up</b><span>✓</span></button>
+  </div>
+  <button class="drop"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="8" width="20" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M23 13l8-4v16l-8-4Z" fill="currentColor"/><circle cx="13" cy="17" r="3.5" fill="currentColor"/></svg>Drop in</button>
+  <nav class="tabs" aria-label="Mock tabs">
+    <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 20l6-11 4 6 3-4 5 9z"/></svg>Lodge</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Feed</div>
+    <div class="tab rec"><i></i>Record</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Judge</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg>Duels</div>
+  </nav>
+</div>
+
+<script>
+const cv = document.getElementById('bg'), ctx = cv.getContext('2d');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W = 0, H = 0, dpr = 1, scene = 'pines', t0 = performance.now();
+let rnd = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+/* ---------- 4: snowy pines at night ---------- */
+let pinesLayer = null, flakes = [];
+function drawPine(g, x, base, h, body, snow, snowA){
+  const tiers = 6, w0 = h * 0.46;
+  g.fillStyle = body; g.fillRect(x - h*0.025, base - h*0.1, h*0.05, h*0.12);
+  for (let i = 0; i < tiers; i++){
+    const f = i / tiers, w = w0 * (1 - f*0.78), yb = base - h*0.08 - f*h*0.78, yt = yb - h*0.3;
+    g.fillStyle = body; g.beginPath(); g.moveTo(x - w/2, yb); g.lineTo(x, yt); g.lineTo(x + w/2, yb);
+    g.quadraticCurveTo(x, yb - h*0.04, x - w/2, yb); g.fill();
+    g.fillStyle = snow; g.globalAlpha = snowA; g.beginPath();            // snow resting on the upper edge of each tier
+    g.moveTo(x - w/2, yb); g.lineTo(x, yt); g.lineTo(x + w/2, yb);
+    g.lineTo(x + w*0.36, yb - h*0.03); g.lineTo(x, yt + h*0.07); g.lineTo(x - w*0.36, yb - h*0.03); g.closePath(); g.fill();
+    g.globalAlpha = 1;
+  }
+}
+function buildPines(){
+  const c = document.createElement('canvas'); c.width = W*dpr; c.height = H*dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); const r = rnd(7);
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#04060c'); sky.addColorStop(.55, '#0c1628'); sky.addColorStop(1, '#16233a');
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  const moon = g.createRadialGradient(W*.72, H*.2, 0, W*.72, H*.2, H*.35);       // moonlight haze behind the trees
+  moon.addColorStop(0, 'rgba(170,195,235,.22)'); moon.addColorStop(1, 'rgba(170,195,235,0)');
+  g.fillStyle = moon; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(225,235,250,.85)'; g.beginPath(); g.arc(W*.72, H*.2, Math.min(W,H)*.035, 0, 7); g.fill();
+  // three depths: far ridge of small foggy pines, middle row, big dark pines framing the sides
+  const layers = [
+    {n: Math.ceil(W/14), y: H*.56, h: [H*.07, H*.12], body: '#1b2a44', snow: '#6d84a8', a: .5, fog: 'rgba(22,35,58,.55)'},
+    {n: Math.ceil(W/34), y: H*.66, h: [H*.14, H*.24], body: '#0f1a2c', snow: '#9fb4d3', a: .7, fog: 'rgba(22,35,58,.45)'},
+  ];
+  for (const L of layers){
+    for (let i = 0; i < L.n; i++){ const x = (i + r()*.8) / L.n * (W + 40) - 20; drawPine(g, x, L.y + r()*H*.03, L.h[0] + r()*(L.h[1]-L.h[0]), L.body, L.snow, L.a); }
+    g.fillStyle = L.fog; g.fillRect(0, L.y - H*.02, W, H);
+  }
+  const ground = g.createLinearGradient(0, H*.66, 0, H);
+  ground.addColorStop(0, '#2a3a55'); ground.addColorStop(1, '#121b2b');
+  g.fillStyle = ground; g.beginPath(); g.moveTo(0, H*.7); g.quadraticCurveTo(W*.5, H*.64, W, H*.71); g.lineTo(W, H); g.lineTo(0, H); g.fill();
+  const near = [[-W*.06, H*.98, H*.62], [W*.13, H*1.02, H*.44], [W*1.04, H*.97, H*.6], [W*.86, H*1.03, H*.4]];
+  for (const [x, b, h] of near) drawPine(g, x, b, h, '#05080e', '#d6e2f2', .85);
+  pinesLayer = c;
+  const fr = rnd(3); flakes = [];
+  for (let i = 0; i < Math.round(W*H/2600); i++){ const z = fr(); flakes.push({x: fr()*W, y: fr()*H, z, s: .6 + z*2.2, v: 12 + z*38, ph: fr()*6}); }
+}
+function drawPinesFrame(t){
+  ctx.drawImage(pinesLayer, 0, 0, W, H);
+  ctx.fillStyle = '#eaf1fb';
+  for (const f of flakes){
+    if (!reduce){ f.y += f.v * 0.016; if (f.y > H + 4){ f.y = -4; f.x = Math.random()*W; } }
+    const x = f.x + Math.sin(t/1600 + f.ph) * (6 + f.z*10);
+    ctx.globalAlpha = .25 + f.z*.6; ctx.beginPath(); ctx.arc(x, f.y, f.s, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- 5: terrain park from above, scrolling downhill ---------- */
+let parkStrip = null, stripH = 0, riders = [];
+function buildPark(){
+  stripH = Math.max(H*2.2, W*4);
+  const c = document.createElement('canvas'); c.width = W*dpr; c.height = stripH*dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); const r = rnd(11);
+  g.fillStyle = '#1a2334'; g.fillRect(0, 0, W, stripH);
+  g.strokeStyle = 'rgba(255,255,255,.035)'; g.lineWidth = 1;                // groomer corduroy
+  for (let y = 0; y < stripH; y += 4){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  for (let y = 0; y < stripH; y += 260){                                     // floodlight pools down both sides
+    for (const sx of [W*.08, W*.92]){
+      const p = g.createRadialGradient(sx, y + 120, 0, sx, y + 120, W*.55);
+      p.addColorStop(0, 'rgba(255,214,160,.16)'); p.addColorStop(1, 'rgba(255,214,160,0)');
+      g.fillStyle = p; g.fillRect(0, y - 200, W, 640);
+    }
+  }
+  g.setLineDash([3, 6]); g.strokeStyle = 'rgba(255,107,26,.55)'; g.lineWidth = 1.5;   // rope lines at the park edges
+  for (const x of [W*.06, W*.94]){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, stripH); g.stroke(); }
+  g.setLineDash([]);
+  const kicker = (cx, y, w) => {                                          // snow-shaped jump: tapered takeoff, rounded table, fanning landing
+    const lipY = y + w*.42, tableEnd = lipY + w*.5, landEnd = tableEnd + w*.9;
+    g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
+    const up = g.createLinearGradient(0, y, 0, lipY); up.addColorStop(0, '#222c40'); up.addColorStop(1, '#6a83a8');
+    g.fillStyle = up; g.beginPath(); g.moveTo(cx - w*.28, y);
+    g.quadraticCurveTo(cx, y - w*.06, cx + w*.28, y); g.quadraticCurveTo(cx + w*.52, lipY - w*.2, cx + w*.48, lipY);
+    g.lineTo(cx - w*.48, lipY); g.quadraticCurveTo(cx - w*.52, lipY - w*.2, cx - w*.28, y); g.fill(); g.restore();
+    g.strokeStyle = '#eef4fd'; g.lineWidth = 2.5; g.shadowColor = 'rgba(238,244,253,.8)'; g.shadowBlur = 8;
+    g.beginPath(); g.moveTo(cx - w*.46, lipY); g.quadraticCurveTo(cx, lipY + w*.03, cx + w*.46, lipY); g.stroke(); g.shadowBlur = 0;
+    const tb = g.createLinearGradient(0, lipY, 0, landEnd); tb.addColorStop(0, '#1d2638'); tb.addColorStop(.35, '#2a3750'); tb.addColorStop(.5, '#4a5f82'); tb.addColorStop(1, 'rgba(26,35,52,0)');
+    g.fillStyle = tb; g.beginPath(); g.moveTo(cx - w*.48, lipY + 2);
+    g.lineTo(cx + w*.48, lipY + 2); g.bezierCurveTo(cx + w*.5, tableEnd, cx + w*.7, tableEnd + w*.4, cx + w*.62, landEnd);
+    g.lineTo(cx - w*.62, landEnd); g.bezierCurveTo(cx - w*.7, tableEnd + w*.4, cx - w*.5, tableEnd, cx - w*.48, lipY + 2); g.fill();
+    g.strokeStyle = 'rgba(230,238,250,.35)'; g.lineWidth = 1; g.beginPath();      // knuckle line where the table drops to the landing
+    g.moveTo(cx - w*.5, tableEnd); g.quadraticCurveTo(cx, tableEnd + w*.05, cx + w*.5, tableEnd); g.stroke();
+  };
+  const rail = (x, y, len) => {
+    g.fillStyle = '#26324a'; g.fillRect(x - 9, y - 10, 18, len + 20);
+    g.strokeStyle = '#cfd9e8'; g.lineWidth = 3; g.shadowColor = 'rgba(207,217,232,.6)'; g.shadowBlur = 6;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + len); g.stroke(); g.shadowBlur = 0;
+    g.fillStyle = '#7d8aa0'; for (let k = 0; k <= 3; k++) g.fillRect(x - 3, y + len*k/3 - 1.5, 6, 3);
+  };
+  const box = (x, y, len) => {
+    g.fillStyle = '#323f58'; g.fillRect(x - 10, y, 20, len);
+    g.strokeStyle = 'rgba(255,207,61,.75)'; g.lineWidth = 1.5; g.strokeRect(x - 10, y, 20, len);
+  };
+  let y = 80;
+  while (y < stripH - 300){                                                 // alternate jump lines and jib rows
+    const k = r();
+    if (k < .45){ const w = W*(.26 + r()*.1); kicker(W*(.3 + r()*.4), y, w); y += w*1.6 + 90; }
+    else {
+      const len = 70 + r()*70; rail(W*.3, y, len); (r() < .5 ? box : rail)(W*.5, y + 20, len*.8); box(W*.7, y, len*.9);
+      y += len + 110;
+    }
+    g.fillStyle = 'rgba(255,107,26,.9)'; g.beginPath(); g.arc(W*.06, y - 40, 3, 0, 7); g.arc(W*.94, y - 40, 3, 0, 7); g.fill();  // marker poles
+  }
+  g.strokeStyle = 'rgba(220,230,245,.07)'; g.lineWidth = 1.2;              // old ski tracks
+  for (let i = 0; i < 9; i++){ const bx = W*(.15 + r()*.7), a = W*(.03 + r()*.05), wl = 140 + r()*120, ph = r()*6; g.beginPath(); for (let yy = 0; yy < stripH; yy += 8){ const x = bx + Math.sin(yy/wl + ph)*a; yy ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); }
+  parkStrip = c;
+  const rr = rnd(5); riders = [];
+  for (let i = 0; i < 4; i++) riders.push({x: W*(.25 + rr()*.5), y: rr()*H, v: 30 + rr()*25, ph: rr()*6, c: ['#ff6b1a','#35c8ff','#ffcf3d','#eef3f8'][i]});
+}
+function drawParkFrame(t){
+  const off = reduce ? 0 : ((t/1000) * 14) % stripH;                        // camera drifts downhill
+  const sy = stripH - H - off;                                             // features slide up the screen
+  const src = ((sy % stripH) + stripH) % stripH;
+  const first = Math.min(H, stripH - src);
+  ctx.drawImage(parkStrip, 0, src*dpr, W*dpr, first*dpr, 0, 0, W, first);
+  if (first < H) ctx.drawImage(parkStrip, 0, 0, W*dpr, (H - first)*dpr, 0, first, W, H - first);
+  for (const p of riders){                                                  // tiny riders carving down
+    if (!reduce){ p.y += p.v*0.016; if (p.y > H + 10){ p.y = -10; p.x = W*(.25 + Math.random()*.5); } }
+    const x = p.x + Math.sin(t/900 + p.ph)*W*.06;
+    ctx.strokeStyle = 'rgba(234,241,251,.25)'; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let k = 0; k < 10; k++){ const yy = p.y - k*5, xx = p.x + Math.sin((t - k*60)/900 + p.ph)*W*.06; k ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); }
+    ctx.stroke();
+    ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(x, p.y, 3.2, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+  }
+  const v = ctx.createLinearGradient(0, 0, 0, H);                           // keep the UI readable top and bottom
+  v.addColorStop(0, 'rgba(6,8,12,.55)'); v.addColorStop(.25, 'rgba(6,8,12,0)'); v.addColorStop(.7, 'rgba(6,8,12,0)'); v.addColorStop(1, 'rgba(6,8,12,.7)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+function resize(){
+  dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildPines(); buildPark();
+}
+function frame(now){ (scene === 'pines' ? drawPinesFrame : drawParkFrame)(now - t0); requestAnimationFrame(frame); }
+function pick(s){
+  scene = s;
+  document.getElementById('b-pines').setAttribute('aria-pressed', s === 'pines');
+  document.getElementById('b-park').setAttribute('aria-pressed', s === 'park');
+}
+document.getElementById('b-pines').onclick = () => pick('pines');
+document.getElementById('b-park').onclick = () => pick('park');
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 150); });
+resize(); requestAnimationFrame(frame);
+</script>

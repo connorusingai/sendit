@@ -1,0 +1,359 @@
+<title>Lodge Rider</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: the real Lodge screen over the snowy-pines backdrop; your rider stands in the middle; tapping the rider opens a bottom sheet of gear options. Single dark world, app tokens. */
+:root{
+  color-scheme:dark;
+  --bg:#06080C; --surface:#10151E; --ink:#EEF3F8; --muted:#8595A9; --line:#222D3E;
+  --accent:#FF6B1A; --accent-hot:#FF8A3D; --accent-ink:#160700; --gold:#ffcf3d;
+  --panel:rgba(10,14,22,.72); --outline:#0a0d13;
+  --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
+  --body:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#bg{position:fixed;inset:0;width:100%;height:100%;display:block}
+.app{position:relative;z-index:1;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  padding-block:10px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;line-height:1;letter-spacing:.5px}
+.brand span{color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7)}
+.me-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;font-family:var(--mono);font-weight:700;font-size:13px}
+.panel{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px -12px #000}
+.road{display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+.road .row{display:flex;align-items:center;gap:10px}
+.rank{font-family:var(--display);font-weight:900;font-style:italic;font-size:26px;color:#9cc4ff;text-transform:uppercase}
+.road .mono{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;line-height:1.5}
+.road .mono b{color:var(--gold)}
+.bar{height:12px;border-radius:999px;background:#060a14;border:1px solid rgba(255,255,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;width:73%;border-radius:999px;background:linear-gradient(90deg,#c98a00,#ffcf3d);box-shadow:0 0 14px rgba(255,207,61,.6)}
+
+.stage{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.stage-svg{position:absolute;inset:0 -16px;width:calc(100% + 32px);height:100%;overflow:visible;cursor:pointer;outline:none}
+.tag{position:absolute;top:4px;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(6,8,12,.6);border:1px solid rgba(255,255,255,.14);font:600 13px var(--body);color:var(--ink);cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.tag b{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-transform:uppercase}
+.tag span{color:var(--muted)}
+
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chip{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;padding:8px 11px;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.chip small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.chip b{grid-column:1;font-family:var(--display);font-size:20px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip span{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--display);font-size:22px;color:var(--gold)}
+.drop{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:74px;border:0;border-radius:16px;cursor:pointer;color:var(--accent-ink);
+  background:linear-gradient(180deg,var(--accent-hot),var(--accent));font-family:var(--display);font-size:36px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+  box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 34px rgba(255,107,26,.5),0 10px 0 -2px rgba(0,0,0,.5)}
+.drop svg{width:30px;height:30px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-items:end;padding-block:8px calc(10px + env(safe-area-inset-bottom,0px));margin-inline:-4px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;border-radius:12px;background:rgba(16,21,30,.85);border:1px solid var(--line);color:var(--muted);font:700 11px var(--body);letter-spacing:.06em;text-transform:uppercase}
+.tab svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+.tab.on{color:var(--ink);border-color:var(--accent)}
+.tab.rec{background:none;border:0}
+.tab.rec i{width:52px;height:52px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 0 20px rgba(255,107,26,.55);margin-top:-18px;border:3px solid #0a0d13}
+.tab.rec i::after{content:"";width:16px;height:16px;border-radius:50%;border:3px solid var(--accent-ink)}
+
+/* gear sheet: slides up over the chips; the rider stays visible above it */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:5;max-width:480px;margin:0 auto;background:#0d121b;border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;
+  padding-block:10px calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:12px;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.9,.2,1);box-shadow:0 -20px 40px -10px #000;max-height:52%;overflow-y:auto}
+.road,.tag{transition:transform .32s cubic-bezier(.2,.9,.2,1),opacity .2s}
+.app.editing .road,.app.editing .tag{opacity:0;pointer-events:none}
+.sheet.open{transform:none}
+.sheet .grab{width:40px;height:4px;border-radius:9px;background:var(--line);align-self:center}
+.sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheet h2{margin:0;font-family:var(--display);font-weight:900;font-size:26px;text-transform:uppercase;letter-spacing:.03em}
+.sheet header div{display:flex;gap:8px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;font:600 13px var(--body);cursor:pointer}
+.btn.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt{display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:10px}
+.opt > span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.15);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
+.pill{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:7px 14px;font:700 13px var(--body);cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sw:focus-visible,.pill:focus-visible,.btn:focus-visible,.tag:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+</style>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="app">
+  <div class="top"><div class="brand">STOMP<span>ED</span></div><div class="me-chip">◆ 1284</div></div>
+  <div class="panel road">
+    <div class="row"><svg width="34" height="38" viewBox="0 0 34 38" aria-hidden="true"><path d="M17 2l14 6v11c0 9-6 14-14 17C9 33 3 28 3 19V8z" fill="#1d3b78" stroke="#9cc4ff" stroke-width="2"/><path d="M17 10l4 8-4 10-4-10z" fill="#cfe2ff"/></svg>
+      <span class="rank">Diamond II</span><span class="mono"><b>1284</b> pts<br>49 to Diamond III</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+  <div class="stage">
+    <button class="tag" id="tag" type="button"><b>@connor</b><span>· tap to change gear</span></button>
+    <svg id="stage" class="stage-svg" role="button" tabindex="0" aria-label="Your rider. Tap to change gear."></svg>
+  </div>
+  <div class="chips">
+    <button class="panel chip"><small>Trick of the day</small><b>Frontside 720</b><span>2×</span></button>
+    <button class="panel chip"><small>Judge</small><b>All caught up</b><span>✓</span></button>
+  </div>
+  <button class="drop"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="8" width="20" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M23 13l8-4v16l-8-4Z" fill="currentColor"/><circle cx="13" cy="17" r="3.5" fill="currentColor"/></svg>Drop in</button>
+  <nav class="tabs" aria-label="Mock tabs">
+    <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 20l6-11 4 6 3-4 5 9z"/></svg>Lodge</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Feed</div>
+    <div class="tab rec"><i></i>Record</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Judge</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg>Duels</div>
+  </nav>
+</div>
+
+<section class="sheet" id="sheet" aria-label="Rider gear">
+  <div class="grab"></div>
+  <header><h2>Your rider</h2><div><button class="btn" id="shuffle" type="button">Shuffle</button><button class="btn go" id="done" type="button">Done</button></div></header>
+  <div id="opts" style="display:flex;flex-direction:column;gap:12px"></div>
+</section>
+
+<script>
+/* ---------- 4: snowy pines at night ---------- */
+let pinesLayer = null, flakes = [];
+function drawPine(g, x, base, h, body, snow, snowA){
+  const tiers = 6, w0 = h * 0.46;
+  g.fillStyle = body; g.fillRect(x - h*0.025, base - h*0.1, h*0.05, h*0.12);
+  for (let i = 0; i < tiers; i++){
+    const f = i / tiers, w = w0 * (1 - f*0.78), yb = base - h*0.08 - f*h*0.78, yt = yb - h*0.3;
+    g.fillStyle = body; g.beginPath(); g.moveTo(x - w/2, yb); g.lineTo(x, yt); g.lineTo(x + w/2, yb);
+    g.quadraticCurveTo(x, yb - h*0.04, x - w/2, yb); g.fill();
+    g.fillStyle = snow; g.globalAlpha = snowA; g.beginPath();            // snow resting on the upper edge of each tier
+    g.moveTo(x - w/2, yb); g.lineTo(x, yt); g.lineTo(x + w/2, yb);
+    g.lineTo(x + w*0.36, yb - h*0.03); g.lineTo(x, yt + h*0.07); g.lineTo(x - w*0.36, yb - h*0.03); g.closePath(); g.fill();
+    g.globalAlpha = 1;
+  }
+}
+function buildPines(){
+  const c = document.createElement('canvas'); c.width = W*dpr; c.height = H*dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); const r = rnd(7);
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#04060c'); sky.addColorStop(.55, '#0c1628'); sky.addColorStop(1, '#16233a');
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  const moon = g.createRadialGradient(W*.72, H*.2, 0, W*.72, H*.2, H*.35);       // moonlight haze behind the trees
+  moon.addColorStop(0, 'rgba(170,195,235,.22)'); moon.addColorStop(1, 'rgba(170,195,235,0)');
+  g.fillStyle = moon; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(225,235,250,.85)'; g.beginPath(); g.arc(W*.72, H*.2, Math.min(W,H)*.035, 0, 7); g.fill();
+  // three depths: far ridge of small foggy pines, middle row, big dark pines framing the sides
+  const layers = [
+    {n: Math.ceil(W/14), y: H*.56, h: [H*.07, H*.12], body: '#1b2a44', snow: '#6d84a8', a: .5, fog: 'rgba(22,35,58,.55)'},
+    {n: Math.ceil(W/34), y: H*.66, h: [H*.14, H*.24], body: '#0f1a2c', snow: '#9fb4d3', a: .7, fog: 'rgba(22,35,58,.45)'},
+  ];
+  for (const L of layers){
+    for (let i = 0; i < L.n; i++){ const x = (i + r()*.8) / L.n * (W + 40) - 20; drawPine(g, x, L.y + r()*H*.03, L.h[0] + r()*(L.h[1]-L.h[0]), L.body, L.snow, L.a); }
+    g.fillStyle = L.fog; g.fillRect(0, L.y - H*.02, W, H);
+  }
+  const ground = g.createLinearGradient(0, H*.66, 0, H);
+  ground.addColorStop(0, '#2a3a55'); ground.addColorStop(1, '#121b2b');
+  g.fillStyle = ground; g.beginPath(); g.moveTo(0, H*.7); g.quadraticCurveTo(W*.5, H*.64, W, H*.71); g.lineTo(W, H); g.lineTo(0, H); g.fill();
+  const near = [[-W*.06, H*.98, H*.62], [W*.13, H*1.02, H*.44], [W*1.04, H*.97, H*.6], [W*.86, H*1.03, H*.4]];
+  for (const [x, b, h] of near) drawPine(g, x, b, h, '#05080e', '#d6e2f2', .85);
+  pinesLayer = c;
+  const fr = rnd(3); flakes = [];
+  for (let i = 0; i < Math.round(W*H/2600); i++){ const z = fr(); flakes.push({x: fr()*W, y: fr()*H, z, s: .6 + z*2.2, v: 12 + z*38, ph: fr()*6}); }
+}
+function drawPinesFrame(t){
+  ctx.drawImage(pinesLayer, 0, 0, W, H);
+  ctx.fillStyle = '#eaf1fb';
+  for (const f of flakes){
+    if (!reduce){ f.y += f.v * 0.016; if (f.y > H + 4){ f.y = -4; f.x = Math.random()*W; } }
+    const x = f.x + Math.sin(t/1600 + f.ph) * (6 + f.z*10);
+    ctx.globalAlpha = .25 + f.z*.6; ctx.beginPath(); ctx.arc(x, f.y, f.s, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+const cv = document.getElementById('bg'), ctx = cv.getContext('2d');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W = 0, H = 0, dpr = 1, t0 = performance.now();
+let rnd = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+/* ---------- the rider ---------- */
+const OPTS = {
+  jacket: {label: 'Jacket', type: 'sw', vals: ['#ff6b1a','#2f6bff','#3ee08a','#ffcf3d','#e8ecf2','#2a2f3a','#b14bff']},
+  pants:  {label: 'Pants',  type: 'sw', vals: ['#2a2f3a','#c9b48a','#4a6b3a','#e8ecf2','#7a1f2b','#3a5a8c']},
+  fit:    {label: 'Fit',    type: 'pill', vals: ['Baggy','Slim']},
+  head:   {label: 'Head',   type: 'pill', vals: ['Beanie','Helmet','Hood']},
+  hat:    {label: 'Hat',    type: 'sw', vals: ['#2a2f3a','#ff6b1a','#e8ecf2','#ffcf3d','#2f6bff','#3ee08a']},
+  goggles:{label: 'Goggles',type: 'pill', vals: ['Up','On']},
+  lens:   {label: 'Lens',   type: 'sw', vals: ['#ff8a3d','#35c8ff','#b14bff','#ffcf3d','#3ee08a']},
+  face:   {label: 'Face',   type: 'pill', vals: ['Smirk','Grin','Gaiter']},
+  skin:   {label: 'Skin',   type: 'sw', vals: ['#f3cfa9','#d9a77c','#a8714a','#6b4428']},
+  gloves: {label: 'Gloves', type: 'sw', vals: ['#2a2f3a','#e8ecf2','#ff6b1a','#ffcf3d','#2f6bff']},
+};
+const DEFAULT = {jacket:'#ff6b1a', pants:'#2a2f3a', fit:'Baggy', head:'Beanie', hat:'#2a2f3a', goggles:'Up', lens:'#35c8ff', face:'Smirk', skin:'#f3cfa9', gloves:'#2a2f3a'};
+let me = {...DEFAULT};
+try { Object.assign(me, JSON.parse(localStorage.getItem('stomped-brawler') || '{}')); } catch (e) {}
+
+const shade = (hex, k) => {           // k<0 darker, k>0 lighter
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255].map(v => Math.round(k < 0 ? v*(1 + k) : v + (255 - v)*k));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+};
+const stageEl = document.getElementById('stage');
+function drawRider(){ try { localStorage.setItem('stomped-brawler', JSON.stringify(me)); } catch (e) {} }
+
+/* Chunky lobby character. Character units: feet on y=0, centered on x=0, ~225 tall. Big head, short legs, thick outlines, two-tone shading. */
+const f = n => n.toFixed(1);
+const OL = 'stroke="#0a0d13" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"';
+function brawler(a, p){
+  const J = a.jacket, Jd = shade(J, -.25), Jl = shade(J, .25), P = a.pants, Pd = shade(P, -.3), G = a.gloves, S = a.skin, Sd = shade(S, -.18);
+  const pw = a.fit === 'Baggy' ? 21 : 15;
+  const leg = (x, rot, lift) => `<g transform="translate(${x} ${f(-60 - lift)}) rotate(${f(rot)})">
+      <path d="M${-pw + 3} 0 L${pw - 3} 0 L${pw} 47 Q0 53 ${-pw} 47 Z" fill="${P}" ${OL}/>
+      ${a.fit === 'Baggy' ? `<path d="M${-pw + 3} 34 Q0 30 ${pw - 3} 35 M${-pw + 2} 42 Q0 38 ${pw - 2} 43" fill="none" stroke="${Pd}" stroke-width="3" stroke-linecap="round"/>` : ''}
+      <path d="M-20 44 Q-22 60 -16 61 L22 61 Q28 60 24 50 Q20 44 8 44 Z" fill="#1b1f27" ${OL}/>
+      <path d="M-18 56 L24 56" stroke="${shade(a.jacket, -.1)}" stroke-width="4"/>
+    </g>`;
+  const arm = (x, rot) => `<g transform="translate(${x} -110) rotate(${f(rot)})">
+      <path d="M-16 -6 Q-21 22 -15 44 Q0 50 15 44 Q21 22 16 -6 Z" fill="${J}" ${OL}/>
+      <path d="M6 -4 Q13 20 9 42" fill="none" stroke="${Jd}" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+      <path d="M-14 36 Q0 41 14 36" fill="none" stroke="${Jd}" stroke-width="3"/>
+      <circle cy="54" r="15" fill="${G}" ${OL}/><path d="M-6 47 Q0 44 6 47" stroke="${shade(G, .35)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`;
+  const eye = (x, rx) => `<g transform="translate(${x} -34) scale(1 ${f(p.blink)})">
+      <ellipse rx="${rx}" ry="13" fill="#fff" ${OL.replace('5', '3.5')}/><ellipse cx="3" cy="2" rx="5.5" ry="7.5" fill="#0a0d13"/><circle cx="5" cy="-1" r="2" fill="#fff"/></g>`;
+  const gogUp = a.goggles === 'Up' && a.head !== 'Helmet';
+  const gog = y => `<path d="M-48 ${y + 12} L48 ${y + 12}" stroke="#1b1f27" stroke-width="9"/>
+      <rect x="-40" y="${y}" width="80" height="27" rx="12" fill="#11151c" ${OL}/>
+      <rect x="-35" y="${y + 4}" width="70" height="19" rx="9" fill="url(#lens)"/>
+      <path d="M-27 ${y + 9} Q-18 ${y + 6} -10 ${y + 9}" stroke="#fff" stroke-width="3.5" opacity=".75" fill="none" stroke-linecap="round"/>`;
+  const hat = {
+    Beanie: `<g transform="rotate(-7 0 -60)"><path d="M-46 -50 Q-46 -100 0 -102 Q46 -100 46 -50 Z" fill="${a.hat}" ${OL}/>
+        <path d="M18 -98 Q42 -90 46 -52 L30 -52 Q30 -80 18 -98Z" fill="${shade(a.hat, -.25)}"/>
+        <rect x="-52" y="-62" width="104" height="22" rx="10" fill="${shade(a.hat, -.2)}" ${OL}/>
+        <path d="M-36 -58 L-36 -44 M-20 -58 L-20 -44 M-4 -58 L-4 -44 M12 -58 L12 -44 M28 -58 L28 -44" stroke="${shade(a.hat, -.45)}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="4" cy="-106" r="13" fill="${shade(a.hat, .3)}" ${OL}/></g>`,
+    Helmet: `<path d="M-52 -36 Q-54 -102 0 -104 Q54 -102 52 -36 Q0 -52 -52 -36 Z" fill="${a.hat}" ${OL}/>
+        <path d="M22 -100 Q50 -88 52 -38 Q44 -42 36 -44 Q38 -80 22 -100Z" fill="${shade(a.hat, -.25)}"/>
+        <path d="M-14 -96 L-12 -80 M2 -100 L2 -84 M18 -96 L16 -80" stroke="${shade(a.hat, -.4)}" stroke-width="5" stroke-linecap="round"/>
+        <path d="M-36 -82 Q-28 -94 -14 -98" stroke="#fff" stroke-width="4" opacity=".4" fill="none" stroke-linecap="round"/>`,
+    Hood: `<path d="M-52 -26 Q-58 -104 0 -106 Q58 -104 52 -26 Q46 -70 0 -74 Q-46 -70 -52 -26 Z" fill="${J}" ${OL}/>
+        <path d="M24 -102 Q56 -90 52 -30 Q48 -56 34 -66 Z" fill="${Jd}"/>`,
+  }[a.head];
+  const hoodBack = a.head === 'Hood' ? `<ellipse cx="0" cy="-36" rx="58" ry="56" fill="${Jd}" ${OL}/>` : '';
+  const brows = `<path d="M-30 ${-54 - p.brow} L-8 ${-50 - p.brow*.6}" stroke="#2a1d14" stroke-width="7" stroke-linecap="round"/>
+      <path d="M8 ${-50 - p.brow} L30 ${-58 - p.brow*1.4}" stroke="#2a1d14" stroke-width="7" stroke-linecap="round"/>`;
+  const eyes = a.goggles === 'On' || a.head === 'Helmet' ? gog(-50) : eye(-17, 11) + eye(17, 11) + brows;
+  const mouth = {
+    Smirk: `<path d="M-10 -9 Q4 -3 18 -15" fill="none" stroke="#0a0d13" stroke-width="4.5" stroke-linecap="round"/>`,
+    Grin: `<path d="M-16 -14 Q0 4 18 -14 Q0 -8 -16 -14 Z" fill="#fff" ${OL.replace('5', '3.5')}/>`,
+    Gaiter: `<path d="M-46 -26 Q0 -18 46 -26 Q46 0 30 6 Q0 14 -30 6 Q-46 0 -46 -26 Z" fill="${Jd}" ${OL}/>
+        <path d="M-40 -14 Q0 -6 40 -14 M-34 -2 Q0 6 34 -2" fill="none" stroke="${shade(J, -.45)}" stroke-width="3" stroke-linecap="round"/>`,
+  }[a.face];
+  return `
+    <g transform="translate(0 -16)">${arm(-44, p.armL)}</g>
+    ${leg(-19, p.legL, p.liftL)}${leg(19, p.legR, p.liftR)}
+    <g transform="translate(0 -16)">
+    <path d="M-40 -122 Q0 -136 40 -122 Q56 -84 50 -40 Q0 -28 -50 -40 Q-56 -84 -40 -122Z" fill="${J}" ${OL}/>
+    <path d="M14 -130 Q36 -126 42 -120 Q56 -84 50 -40 Q32 -34 18 -33 Q32 -80 14 -130Z" fill="${Jd}"/>
+    <path d="M-32 -112 Q-38 -90 -40 -70" stroke="${Jl}" stroke-width="6" fill="none" stroke-linecap="round" opacity=".7"/>
+    <path d="M-50 -92 Q0 -82 52 -92 M-52 -64 Q0 -54 54 -64" fill="none" stroke="${Jd}" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M0 -126 L0 -34" stroke="${Jd}" stroke-width="3.5"/>
+    <path d="M-40 -122 Q0 -136 40 -122 Q56 -84 50 -40 Q0 -28 -50 -40 Q-56 -84 -40 -122Z" fill="none" ${OL}/>
+    <rect x="-28" y="-134" width="56" height="20" rx="10" fill="${J}" ${OL}/>
+    ${arm(44, p.armR)}
+    <g transform="translate(0 ${f(-118 + p.headY)}) rotate(${f(p.tilt)})">
+      ${hoodBack}
+      <circle cx="0" cy="-40" r="46" fill="${Sd}"/><circle cx="-6" cy="-43" r="41" fill="${S}"/>
+      <circle cx="0" cy="-40" r="46" fill="none" ${OL}/>
+      <ellipse cx="-30" cy="-18" rx="7" ry="4" fill="#ff7a7a" opacity=".35"/><ellipse cx="30" cy="-18" rx="7" ry="4" fill="#ff7a7a" opacity=".3"/>
+      ${eyes}
+      <path d="M2 -24 Q6 -20 2 -17" stroke="${shade(S, -.35)}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      ${mouth}
+      ${hat}
+      ${gogUp ? gog(-80) : ''}
+    </g>
+    </g>`;
+}
+
+/* Lobby motion: idle bounce -> strut to a new spot -> emote (wave, hype jump, nod) -> repeat */
+const rig = (() => {
+  let x = null, facing = 1, mode = 'idle', t = 0, dur = 2.5, target = 0, last = 0, editing = false, emote = 'wave', blinkAt = 2;
+  const go = (m, d) => { mode = m; t = 0; dur = d; };
+  const size = () => { const r = stageEl.getBoundingClientRect(); return [r.width, r.height]; };
+  const sc = Hd => Math.max(.85, Math.min(1.35, Hd/300));
+  function next(Wd){
+    if (editing){ go('idle', 99); return; }
+    if (mode === 'idle'){
+      if (Math.random() < .55){
+        let k = 0; do { target = Wd*(.25 + Math.random()*.5); } while (Math.abs(target - x) < Wd*.15 && ++k < 8);
+        facing = Math.sign(target - x) || 1; go('walk', 99);
+      } else { emote = ['wave', 'hype', 'nod'][Math.floor(Math.random()*3)]; go('emote', emote === 'nod' ? 1.4 : 1.6); }
+    } else if (mode === 'walk'){ emote = ['wave', 'hype', 'nod'][Math.floor(Math.random()*3)]; go(Math.random() < .5 ? 'emote' : 'idle', 1.6); }
+    else go('idle', 1.8 + Math.random()*1.6);
+  }
+  function pose(sec){
+    const p = {y: 0, sq: 1, legL: 0, legR: 0, liftL: 0, liftR: 0, armL: 14, armR: -14, tilt: 0, headY: 0, brow: 0, blink: 1};
+    const u = Math.min(1, t/dur);
+    const breathe = Math.sin(sec*2.6);
+    p.y = -2 - 2*breathe; p.sq = 1 + .018*breathe; p.headY = 1.5*Math.sin(sec*2.6 - .6);
+    p.armL = 14 + 4*Math.sin(sec*2.6 + .4); p.armR = -14 - 4*Math.sin(sec*2.6 + .4); p.tilt = 3*Math.sin(sec*.8);
+    if (mode === 'walk'){
+      const ph = sec*9;
+      p.legL = 24*Math.sin(ph); p.legR = -24*Math.sin(ph); p.liftL = Math.max(0, -Math.cos(ph))*7; p.liftR = Math.max(0, Math.cos(ph))*7;
+      p.y = -Math.abs(Math.sin(ph))*7; p.armL = 14 - 26*Math.sin(ph); p.armR = -14 - 26*Math.sin(ph); p.tilt = 5*Math.sin(ph); p.sq = 1;
+    } else if (mode === 'emote'){
+      if (emote === 'wave'){ p.armR = -150 + 18*Math.sin(sec*16); p.tilt = -6; p.brow = 4; }
+      if (emote === 'hype'){
+        const j = Math.max(0, Math.sin(Math.PI*Math.min(1, u*1.6)));
+        p.y = -j*46; p.sq = u < .08 ? .9 : 1 + .05*j; p.armL = 20 + 150*j; p.armR = -20 - 150*j; p.legL = -10*j; p.legR = 10*j; p.brow = 6*j;
+      }
+      if (emote === 'nod'){ p.headY = 5*Math.abs(Math.sin(sec*9)); p.tilt = 8; p.brow = 5; }
+    }
+    const bk = (sec % 4.2); if (bk < .12) p.blink = .12;
+    return p;
+  }
+  function tick(now){
+    const [Wd, Hd] = size(); if (!Wd) return;
+    const dt = Math.min(.05, last ? (now - last)/1000 : 0); last = now;
+    if (x === null) x = Wd/2;
+    t += reduce ? 0 : dt;
+    if (mode === 'walk'){ x += facing*80*dt; if ((facing > 0 && x >= target) || (facing < 0 && x <= target)) next(Wd); }
+    if (editing){ x += (Wd/2 - x)*Math.min(1, dt*6); }
+    if (t >= dur) next(Wd);
+    const p = pose(reduce ? 0 : now/1000), s = sc(Hd);
+    stageEl.setAttribute('viewBox', `0 0 ${f(Wd)} ${f(Hd)}`);
+    stageEl.innerHTML = `<defs><linearGradient id="lens" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${shade(me.lens, .5)}"/><stop offset=".5" stop-color="${me.lens}"/><stop offset="1" stop-color="${shade(me.lens, -.45)}"/></linearGradient></defs>
+      <ellipse cx="${f(x)}" cy="${f(Hd - 12)}" rx="${f(62*s*(1 + p.y/160))}" ry="${f(11*s)}" fill="#000" opacity=".35"/>
+      <g transform="translate(${f(x)} ${f(Hd - 12 + p.y*s)}) scale(${f(facing*s)} ${f(s*p.sq)})">${brawler(me, p)}</g>`;
+  }
+  return {tick, edit(on){ editing = on; go('idle', on ? 99 : 1.5); }};
+})();
+
+function buildOpts(){
+  const box = document.getElementById('opts'); box.innerHTML = '';
+  for (const [k, o] of Object.entries(OPTS)){
+    if ((k === 'hat' && me.head === 'Hood') || (k === 'goggles' && me.head === 'Helmet')) continue;                         // hood uses the jacket color
+    const row = document.createElement('div'); row.className = 'opt';
+    row.innerHTML = `<span>${o.label}</span><div class="row"></div>`;
+    for (const v of o.vals){
+      const b = document.createElement('button'); b.type = 'button';
+      if (o.type === 'sw'){ b.className = 'sw'; b.style.background = v; b.setAttribute('aria-label', o.label + ' ' + v); }
+      else { b.className = 'pill'; b.textContent = v; }
+      b.setAttribute('aria-pressed', me[k] === v);
+      b.onclick = () => { me[k] = v; drawRider(); buildOpts(); };
+      row.lastElementChild.appendChild(b);
+    }
+    box.appendChild(row);
+  }
+}
+const sheet = document.getElementById('sheet');
+const app = document.querySelector('.app');
+const openSheet = () => { buildOpts(); sheet.classList.add('open'); app.classList.add('editing'); rig.edit(true); };
+stageEl.onclick = openSheet; stageEl.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSheet(); } }; document.getElementById('tag').onclick = openSheet;
+document.getElementById('done').onclick = () => { sheet.classList.remove('open'); app.classList.remove('editing'); rig.edit(false); };
+document.getElementById('shuffle').onclick = () => {
+  for (const [k, o] of Object.entries(OPTS)) me[k] = o.vals[Math.floor(Math.random()*o.vals.length)];
+  drawRider(); buildOpts();
+};
+
+function resize(){
+  dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildPines();
+}
+function frame(now){ drawPinesFrame(now - t0); rig.tick(now); requestAnimationFrame(frame); }
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 150); });
+resize(); requestAnimationFrame(frame);
+</script>
