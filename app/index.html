@@ -714,6 +714,48 @@ details>summary{cursor:pointer}
 .lodge-chip span em{display:block;margin-top:-3px;font-style:normal;font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
 .lodge-chip{transition:transform .08s ease,filter .08s ease}
 .lodge-chip:active{transform:translateY(3px) scale(.97);filter:brightness(1.15)}
+/* Base v2 "Gloss + Edge" (DESIGN.md): cut corners, heavy italic type, glossy badge with a glow, ink stamps. No rider, no scenery. */
+.base2{--hot:#ff5a1f;--b2-panel:#15161d;--b2-line:#1d1f28;gap:12px}
+body.on-base{background:#0a0b10}   /* plain near-black + grain on Base, no grid */
+body.on-base::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.12;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.base2 button{font:inherit;color:inherit;text-align:left;cursor:pointer;border:0}
+.b2-hero{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;padding:14px 14px 14px 8px;overflow:hidden;
+  background:linear-gradient(115deg,#1b1a33 0%,#111220 60%,#0c0d15 100%);clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%)}
+.b2-hero::before{content:"";position:absolute;left:-40px;top:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 65%);pointer-events:none}
+.b2-badge{position:relative;display:block;filter:drop-shadow(0 0 16px rgba(255,255,255,.18));animation:b2Pop .7s .15s both cubic-bezier(.3,1.5,.5,1)}
+.b2-rank{display:flex;flex-direction:column;gap:6px;min-width:0}
+.b2-rank small,.b2-lbl span,.b2-totd small,.b2-judge small{font:700 10.5px/1 "JetBrains Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.b2-rank b{font-family:var(--display);font-weight:900;font-style:italic;font-size:clamp(34px,10vw,44px);line-height:.85;text-transform:uppercase;overflow-wrap:anywhere}
+.b2-bar{display:block;height:8px;background:#25243a;transform:skewX(-20deg)}
+.b2-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#ffcf3d);box-shadow:0 0 12px rgba(255,140,40,.7);transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.b2-next{font-size:13px;color:var(--muted)}
+.b2-next em{font-style:normal;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.b2-totd{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--b2-panel);border-left:3px solid var(--hot)!important}
+.b2-totd span{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.b2-totd small{color:var(--hot)}
+.b2-totd b{font-family:var(--display);font-weight:900;font-size:26px;line-height:.95;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b2-totd i{font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;color:var(--hot);text-shadow:0 0 14px rgba(255,90,31,.6)}
+.b2-crew{display:flex;flex-direction:column}
+.b2-lbl{display:flex;justify-content:space-between;align-items:center;padding-bottom:4px}
+.b2-lbl button{background:none;font:700 11px/1 "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.08em;padding:4px 0}
+.b2-item{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;background:none;border-bottom:1px solid var(--b2-line)!important}
+.b2-mini{display:grid;place-items:center}
+.b2-who{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.05;text-transform:uppercase;min-width:0}
+.b2-who i{display:block;font-family:var(--body);font-style:normal;font-weight:500;font-size:12px;color:var(--muted);text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2-stamp{font-family:var(--display);font-weight:900;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border:2px solid var(--hot);color:var(--hot);transform:rotate(-6deg)}
+.b2-stamp.bail{border-color:#5d6070;color:#5d6070;transform:rotate(4deg)}
+.b2-item:first-of-type .b2-stamp{animation:b2Slam .5s .8s both cubic-bezier(.3,1.6,.5,1)}
+.b2-empty{margin:6px 0 0;color:var(--muted);font-size:13.5px}
+.b2-row{margin-top:auto}
+.b2-judge{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:var(--b2-panel);clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.b2-judge b{font-family:var(--display);font-weight:900;font-size:20px;text-transform:uppercase}
+.b2-judge.hot{background:var(--hot);color:#0a0b10}.b2-judge.hot small{color:#0a0b10}
+.base2 button{transition:transform .08s ease,filter .08s ease}
+.base2 button:active{transform:translateY(2px) scale(.98);filter:brightness(1.15)}
+@keyframes b2Pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes b2Slam{from{transform:rotate(-6deg) scale(2.4);opacity:0}to{transform:rotate(-6deg) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.b2-badge,.b2-item:first-of-type .b2-stamp{animation:none}.b2-bar i{transition:none}}
 /* On Base the Record button is the one way in, so it breathes */
 @media (max-width:999px){body.on-base .tabs button.rec-tab .dot{animation:recPulse 2.4s ease-in-out infinite}}
 @keyframes recPulse{50%{box-shadow:0 4px 0 rgba(0,0,0,.5),0 0 34px rgba(255,107,26,.75)}}
@@ -733,7 +775,7 @@ details>summary{cursor:pointer}
 
 /* Base (the home tab): your rider stands in the snow in front of the mountains; tap him for the gear sheet */
 #base-bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:none;pointer-events:none}
-body.on-base #base-bg{display:block}
+body.on-base #base-bg{display:none}   /* parked with the rider (DESIGN.md) */
 body.on-base #snow{display:none}
 .base-stage{position:relative;min-height:220px}
 .base-rider{position:absolute;left:50%;bottom:0;height:100%;max-height:min(340px,40svh);transform:translateX(-50%);border:0;padding:0;background:none;cursor:pointer;
@@ -1773,6 +1815,25 @@ const landedRule = () => `<details class="card rule"><summary>What counts as lan
   <li><b>Nope, wrong trick:</b> the spin is short or it's a different trick.</li>
   <li><b>Nope, can't see:</b> the landing is cut off or too blurry to tell.</li></ul></details>`;
 
+// Base crew list: friends' verified tricks first (yours too), else the newest verified tricks from anyone. Others' clips only show once verified, same as the Feed.
+function baseCrew(){
+  const ids = new Set(acceptedFriends().map(f => f.other && f.other.id).filter(Boolean));
+  const shown = c => c.user_id === myId() ? c.status !== 'pending' : c.status === 'verified';
+  const crew = S.clips.filter(c => (ids.has(c.user_id) || c.user_id === myId()) && shown(c)).slice(0, 5);
+  if (crew.length >= 5) return {title: 'Crew / latest', rows: crew};
+  // Not enough crew tricks yet: top up with other riders' newest verified tricks so Base never sits empty
+  const more = S.clips.filter(c => c.status === 'verified' && !crew.includes(c)).slice(0, 5 - crew.length);
+  return {title: crew.length ? 'Crew + riders / latest' : 'Riders / latest', rows: [...crew, ...more]};
+}
+function baseCrewRow(c){
+  const t = trickById(c.trick_id), who = c.profiles ? c.profiles.username : 'Rider', ok = c.status === 'verified';
+  const tier = rankInfo((c.profiles && c.profiles.points) || 0, TRICK_TIERS).tier.key;
+  return `<button class="b2-item" data-act="profile" data-id="${c.user_id}">
+    <span class="b2-mini">${badgeSVG(tier, 30)}</span>
+    <span class="b2-who">@${esc(who)}<i>${esc(t ? t.name : 'Trick')}${c.resort ? ' · ' + esc(c.resort) : ''} · ${ago(c.created_at)}</i></span>
+    <span class="b2-stamp${ok ? '' : ' bail'}">${ok ? 'Stomped' : 'Bailed'}</span></button>`;
+}
+
 // ---------- Base: your rider standing in the snow, with the mountain backdrop ----------
 // Gear is saved on this phone only (store 'rider'). Mockup history: prototype/lodge-avatar.html.
 const GEAR = {
@@ -1973,22 +2034,27 @@ function drawPinesFrame(t){
 
 const views = {
   // Home screen: rank + trophy road on top, the scene in the middle (nothing on it), today's things at the thumb (the Record button in the tab bar is the way in)
+  // Home screen, style "Gloss + Edge" (DESIGN.md, 2026-10-24): rank hero, trick of the day, crew stamps. The rider/gear sheet is parked, not deleted.
   lodge(){
     const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length, t = S.totd && trickById(S.totd);
-    return `<section class="lodge">
-      <button class="lodge-panel lodge-road" data-act="tab" data-tab="ranks" style="color:inherit;text-align:left;cursor:pointer">
-        <div class="row">${badgeSVG(r.tier.key, 38, r.div)}${rankWord(r, 24)}
-          <span class="mono"><b>${S.me.points}</b> pts${r.nextLabel ? `<br>${r.toNext} to ${esc(r.nextLabel)}` : ''}</span></div>
-        <div class="bar"><i id="lodge-bar" data-w="${Math.max(3, r.pct)}"></i></div>
+    const crew = baseCrew();
+    return `<section class="lodge base2">
+      <button class="b2-hero" data-act="tab" data-tab="ranks" aria-label="Your rank: ${esc(r.label)}">
+        <span class="b2-badge">${badgeSVG(r.tier.key, 96, r.div)}</span>
+        <span class="b2-rank"><small>Rank · @${esc(S.me.username)}</small>
+          <b class="t-${r.tier.key}">${esc(r.label)}</b>
+          <span class="b2-bar"><i id="lodge-bar" data-w="${Math.max(3, r.pct)}"></i></span>
+          <span class="b2-next"><em>${S.me.points}</em> pts${r.nextLabel ? ` · ${r.toNext} to ${esc(r.nextLabel)}` : ''}</span></span>
       </button>
-      <div class="lodge-gap base-stage">
-        <button class="base-tag" data-act="rider" type="button"><b>@${esc(S.me.username)}</b>${store.get('gear-seen') ? '' : '<span>· tap to change gear</span>'}</button>
-        <button class="base-rider" id="base-rider" data-act="rider" type="button" aria-label="Your rider. Tap to change gear.">${riderSVG(myGear())}</button>
+      ${t ? `<button class="b2-totd" data-act="totdpost"><span><small>Trick of the day</small><b>${esc(t.name)}</b></span><i>2×</i></button>`
+          : `<button class="b2-totd" data-act="book"><span><small>Trick book</small><b>Pick a trick</b></span><i>›</i></button>`}
+      <div class="b2-crew">
+        <div class="b2-lbl"><span>${crew.title}</span><button data-act="tab" data-tab="feed">All ›</button></div>
+        ${crew.rows.length ? crew.rows.map(baseCrewRow).join('')
+          : `<p class="b2-empty">${acceptedFriends().length ? 'Nothing from your crew yet. Post one and get it started.' : 'Add friends and their tricks land here.'}</p>`}
       </div>
-      <div class="lodge-chips">
-        ${t ? `<button class="lodge-panel lodge-chip" data-act="totdpost"><small>Trick of the day</small><b>${esc(t.name)}</b><span>2×<em>pts</em></span></button>`
-            : `<button class="lodge-panel lodge-chip" data-act="book"><small>Trick book</small><b>Pick a trick</b><span>›</span></button>`}
-        <button class="lodge-panel lodge-chip" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b><span>${jq ? '⚖' : '✓'}</span></button>
+      <div class="b2-row">
+        <button class="b2-judge${jq ? ' hot' : ''}" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b></button>
       </div>
     </section>`;
   },
@@ -2763,7 +2829,7 @@ function render(force = false){
     const v = $('view'); v.classList.remove('swap'); void v.offsetWidth; v.classList.add('swap'); S.shownTab = S.tab;
   }
   for (const [id, v] of Object.entries(keep)){ const el = $(id); if (el) el.value = v; }
-  const onBase = S.tab === 'lodge'; document.body.classList.toggle('on-base', onBase); if (onBase){ baseScene.start(); requestAnimationFrame(fitBase); } else { baseScene.stop(); closeGear(); }
+  const onBase = S.tab === 'lodge'; document.body.classList.toggle('on-base', onBase); baseScene.stop(); closeGear();   // night-scene canvas parked with the rider (DESIGN.md)
   syncPost();
   const bar = S.tab === 'lodge' && $('lodge-bar'); if (bar) requestAnimationFrame(() => { bar.style.width = bar.dataset.w + '%'; });
   renderRail();

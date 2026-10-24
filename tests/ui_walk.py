@@ -98,18 +98,11 @@ def main():
             pg.click("[data-act=reward-collect]")
             pg.wait_for_timeout(600)
         pg.mouse.click(195, 420)      # close the rank splash if it's up
-        pg.wait_for_timeout(5000)     # let the scene paint
-        print("lodge first:", pg.locator(".lodge").count() == 1, "| drop-in bar gone:", pg.locator(".lodge-drop").count() == 0)
+        pg.wait_for_timeout(2000)     # let the badge pop and the stamp slam
+        # Base v2 (DESIGN.md): rank hero, trick of the day, crew rows; the rider is parked
+        print("lodge first:", pg.locator(".lodge.base2").count() == 1, "| hero:", pg.locator(".b2-hero").count() == 1,
+              "| crew rows:", pg.locator(".b2-item").count(), "| rider gone:", pg.locator("#base-rider").count() == 0)
         pg.screenshot(path=SHOTS / "2-lodge.png")
-        pg.click("#base-rider")                         # the rider opens the gear sheet; a pick redraws him
-        pg.wait_for_timeout(500)
-        pg.click("#gear-opts [data-k=head][data-v=Helmet]")
-        pg.wait_for_timeout(300)
-        print("gear sheet:", pg.locator("#gear-sheet.open").count() == 1,
-              "| helmet saved:", "Helmet" in (pg.evaluate("localStorage.getItem('sendit-rider')") or ""))
-        pg.screenshot(path=SHOTS / "2b-gear.png")
-        pg.click("#gear-done")
-        pg.wait_for_timeout(400)
         for tab in ["feed", "judge", "record", "duels", "lodge"]:
             pg.click(f"#tabs [data-tab={tab}]")
             pg.wait_for_timeout(900)

@@ -1,0 +1,363 @@
+<title>Stomped Style Lineup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Bowlby+One&family=Rubik:wght@500;700;800&family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* Layout: three phone screens side by side (stack on phones), same content, three art directions. Single dark page by choice. */
+:root{
+  --page:#0d0f12; --ink:#eceae4; --mute:#8d929b; --line:#22262c;
+  --hc-bg:#111214; --hc-ink:#f1efe8; --hc-dim:#7c7f86; --hc-hot:#ff4d1a; --hc-tape:#e9e4d6;
+  --st-bg:#16324a; --st-ink:#14161a; --st-yel:#ffd23f; --st-pink:#ff5d8f; --st-cy:#38d6e8; --st-wht:#fffaf0;
+  --ct-bg1:#1b2550; --ct-bg2:#0e1430; --ct-or:#ff7a1a; --ct-card:rgba(10,14,40,.75);
+  --f-ui:"Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--page);color:var(--ink)}
+body{font:15px/1.5 var(--f-ui);padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{max-width:1040px;margin:0 auto 22px}
+header.top h1{font:900 clamp(30px,5vw,46px)/1 "Big Shoulders Display",Impact,sans-serif;letter-spacing:.01em;text-transform:uppercase;margin:0 0 6px;text-wrap:balance}
+header.top p{margin:0;color:var(--mute);font-size:17px;max-width:62ch}
+.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;max-width:1040px;margin:0 auto}
+figure{margin:0;display:flex;flex-direction:column;gap:12px;align-items:center}
+figcaption{width:300px;max-width:100%}
+figcaption b{display:block;font:700 22px/1.1 var(--f-ui);text-transform:uppercase;letter-spacing:.04em}
+figcaption span{color:var(--mute);font-size:15px}
+.phone{position:relative;width:300px;max-width:100%;height:620px;border-radius:34px;overflow:hidden;border:6px solid #2a2d33;box-shadow:0 20px 50px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.scr{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px 14px 0;position:relative;z-index:1;min-height:0}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:8px 8px 12px;position:relative;z-index:1}
+.tabs i{font-style:normal;text-align:center;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- A: HARDCORE ---------- */
+.hc{background:var(--hc-bg);color:var(--hc-ink);font-family:var(--f-ui)}
+.hc::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.hc::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-radial-gradient(ellipse 140% 70% at 70% 105%,transparent 0 18px,rgba(255,255,255,.05) 18px 19px)}
+.hc .hd{display:flex;justify-content:space-between;align-items:center}
+.hc .logo{font:900 30px/1 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase;letter-spacing:-.01em;transform:skewX(-8deg)}
+.hc .logo em{font-style:normal;color:var(--hc-hot)}
+.hc .pts{font:700 12px/1 "JetBrains Mono",monospace;border:1.5px solid var(--hc-ink);padding:6px 8px}
+.hc .rank{border-top:3px solid var(--hc-ink);border-bottom:1px solid var(--hc-dim);padding:8px 0 10px}
+.hc .rank small{font:700 10px/1 "JetBrains Mono",monospace;color:var(--hc-dim);letter-spacing:.12em}
+.hc .rank h2{margin:4px 0 6px;font:900 54px/.85 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase}
+.hc .bar{height:8px;background:repeating-linear-gradient(90deg,#2b2d31 0 6px,transparent 6px 8px)}
+.hc .bar span{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--hc-hot) 0 6px,transparent 6px 8px);animation:fill 1.2s .3s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes fill{to{width:72%}}
+.hc .meta{display:flex;justify-content:space-between;font:500 10px/1 "JetBrains Mono",monospace;color:var(--hc-dim);margin-top:6px}
+.hc .totd{position:relative;padding:16px 12px 12px;background:#1a1b1e;border-left:4px solid var(--hc-hot)}
+.hc .tape{position:absolute;top:-9px;left:10px;background:var(--hc-tape);color:#111;font:700 11px/1 var(--f-ui);letter-spacing:.12em;padding:5px 8px;transform:rotate(-2.5deg);text-transform:uppercase;box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.hc .totd b{display:block;font:900 30px/.9 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase}
+.hc .totd span{font:700 11px/1 "JetBrains Mono",monospace;color:var(--hc-hot)}
+.hc .crew small{font:700 10px/1 "JetBrains Mono",monospace;color:var(--hc-dim);letter-spacing:.12em}
+.hc .item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #26282c}
+.hc .thumb{width:44px;height:44px;background:linear-gradient(160deg,#3a3d44,#15161a 70%);position:relative;overflow:hidden}
+.hc .thumb::after{content:"";position:absolute;left:8px;right:-6px;bottom:6px;height:2px;background:#cfd2d8;transform:rotate(-18deg)}
+.hc .who{font:600 15px/1.1 var(--f-ui);text-transform:uppercase}
+.hc .who i{display:block;font:500 10px/1.3 "JetBrains Mono",monospace;font-style:normal;color:var(--hc-dim);text-transform:none}
+.hc .stamp{font:900 13px/1 "Big Shoulders Display",Impact,sans-serif;letter-spacing:.06em;padding:4px 6px;border:2px solid var(--hc-hot);color:var(--hc-hot);transform:rotate(-6deg);text-transform:uppercase}
+.hc .stamp.bail{border-color:var(--hc-dim);color:var(--hc-dim);transform:rotate(4deg)}
+.hc .first .stamp{animation:slam .5s .9s both cubic-bezier(.3,1.6,.5,1)}
+@keyframes slam{from{transform:rotate(-6deg) scale(2.4);opacity:0}to{transform:rotate(-6deg) scale(1);opacity:1}}
+.hc .drop{margin-top:auto;background:var(--hc-hot);color:#111;font:900 30px/1 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase;letter-spacing:.04em;text-align:center;padding:14px 0 12px;clip-path:polygon(0 0,100% 0,100% 78%,96% 100%,0 100%);margin-bottom:4px}
+.hc .tabs{border-top:1px solid #2a2c30}
+.hc .tabs i{font:700 10px/1 "JetBrains Mono",monospace;color:var(--hc-dim)}
+.hc .tabs i.on{color:var(--hc-ink)}
+
+/* ---------- B: STICKER / TOP-SHEET ---------- */
+.st{background:var(--st-bg);color:var(--st-wht);font-family:"Rubik",system-ui,sans-serif}
+.st::before{content:"";position:absolute;inset:auto 0 0 0;height:62%;pointer-events:none;
+  background:
+   linear-gradient(135deg,transparent 49.5%,#21486a 50%) 0 0/50% 40% no-repeat,
+   linear-gradient(225deg,transparent 49.5%,#21486a 50%) 100% 0/50% 40% no-repeat,
+   linear-gradient(#21486a,#21486a) 0 40%/100% 60% no-repeat}
+.st .hd{display:flex;justify-content:space-between;align-items:center}
+.st .logo{font:400 26px/1 "Bowlby One",Impact,sans-serif;color:var(--st-yel);-webkit-text-stroke:2px var(--st-ink);paint-order:stroke fill;transform:rotate(-3deg);text-shadow:3px 3px 0 var(--st-ink)}
+.st .sk{background:var(--st-wht);color:var(--st-ink);border:3px solid var(--st-ink);border-radius:14px;box-shadow:4px 4px 0 var(--st-ink)}
+.st .pts{font:800 13px/1 "Rubik",sans-serif;padding:6px 9px;border-radius:999px}
+.st .rank{display:flex;gap:10px;align-items:center;padding:10px;transform:rotate(-1.2deg)}
+.st .badge{flex:none;width:58px;height:58px;border-radius:50%;background:var(--st-cy);border:3px solid var(--st-ink);display:grid;place-items:center}
+.st .rank h2{margin:0;font:400 24px/1 "Bowlby One",sans-serif}
+.st .rank p{margin:2px 0 6px;font:500 12px/1.2 "Rubik",sans-serif}
+.st .bar{height:12px;border:2.5px solid var(--st-ink);border-radius:99px;overflow:hidden;background:#ececec}
+.st .bar span{display:block;height:100%;width:0;background:var(--st-pink);animation:fill 1.2s .3s cubic-bezier(.2,.8,.2,1) forwards}
+.st .pair{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+.st .totd{background:var(--st-yel);padding:10px;transform:rotate(1.5deg)}
+.st .totd small,.st .judge small{font:800 9px/1 "Rubik",sans-serif;letter-spacing:.1em}
+.st .totd b,.st .judge b{display:block;font:400 17px/1.05 "Bowlby One",sans-serif;margin-top:4px}
+.st .judge{background:var(--st-pink);padding:10px;transform:rotate(-2deg)}
+.st .crew{display:flex;flex-direction:column;gap:8px}
+.st .item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:12px}
+.st .item:nth-child(2){transform:rotate(.8deg)}
+.st .av{flex:none;width:30px;height:30px;border-radius:50%;border:2.5px solid var(--st-ink);background:var(--st-cy)}
+.st .item:nth-child(2) .av{background:var(--st-yel)}.st .item:nth-child(3) .av{background:var(--st-pink)}
+.st .item p{margin:0;flex:1;font:700 13px/1.15 "Rubik",sans-serif}
+.st .item p i{font-style:normal;font-weight:500;font-size:11px;display:block}
+.st .tag{font:800 10px/1 "Rubik",sans-serif;padding:5px 7px;border-radius:99px;border:2px solid var(--st-ink);background:var(--st-yel)}
+.st .tag.bail{background:#d6d6d6}
+.st .drop{margin-top:auto;background:var(--st-pink);color:var(--st-wht);font:400 26px/1 "Bowlby One",sans-serif;text-align:center;padding:12px 0;border:3px solid var(--st-ink);border-radius:18px;box-shadow:0 6px 0 var(--st-ink);-webkit-text-stroke:1.5px var(--st-ink);paint-order:stroke fill;margin-bottom:6px}
+.st .tabs{background:var(--st-ink)}
+.st .tabs i{font:800 10px/1 "Rubik",sans-serif;color:#9aa3ad}
+.st .tabs i.on{color:var(--st-yel)}
+
+/* ---------- C: CURRENT CARTOON (for reference) ---------- */
+.ct{background:linear-gradient(var(--ct-bg2),var(--ct-bg1));color:#eef0fb;font-family:"Fredoka",system-ui,sans-serif}
+.ct .hd{display:flex;justify-content:space-between;align-items:center}
+.ct .logo{font:700 24px/1 "Fredoka",sans-serif;font-style:italic}
+.ct .logo em{color:var(--ct-or);font-style:inherit}
+.ct .card{background:var(--ct-card);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px}
+.ct .pts{font-weight:600;font-size:13px;padding:6px 10px;border-radius:99px}
+.ct .rank h2{margin:0 0 6px;font:700 20px/1 "Fredoka",sans-serif;color:#9fc3ff;font-style:italic}
+.ct .bar{height:8px;border-radius:9px;background:#222a4d;overflow:hidden}
+.ct .bar span{display:block;height:100%;width:72%;background:#f5b82e}
+.ct .stage{flex:1;display:grid;place-items:end center;min-height:0;
+  background:linear-gradient(135deg,transparent 49.5%,#3b4a7a 50%) 0 100%/50% 34% no-repeat,linear-gradient(225deg,transparent 49.5%,#3b4a7a 50%) 100% 100%/50% 34% no-repeat}
+.ct .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ct .pair small{display:block;font-size:9px;letter-spacing:.08em;color:#aab3e8}
+.ct .pair b{font-size:14px}
+.ct .tabs i{color:#aab3e8;font-weight:600;font-size:10px}
+.ct .tabs i.on{color:var(--ct-or)}
+.ct .rec{justify-self:center;width:46px;height:46px;border-radius:50%;background:var(--ct-or);border:3px solid #fff}
+
+/* ---------- D: LIFTOFF-STYLE ---------- */
+.lf{background:#0e0d1a;color:#eef0ff;font-family:"Nunito",system-ui,sans-serif}
+.lf .scr{gap:10px;padding-top:12px}
+.lf .top{display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid #22213a}
+.lf .me{display:flex;align-items:center;gap:6px;flex:1}
+.lf .pic{width:28px;height:28px;border-radius:50%;background:linear-gradient(150deg,#5c6b8a,#232a3d);border:2px solid #4fb3f6}
+.lf .lv{font:800 11px/1 "Nunito",sans-serif}
+.lf .xp{width:70px;height:6px;border-radius:9px;border:1.5px solid #4fb3f6;margin-top:3px;overflow:hidden}
+.lf .xp span{display:block;height:100%;width:30%;background:#4fb3f6}
+.lf .stat{font:800 13px/1 "Nunito",sans-serif;display:flex;align-items:center;gap:3px}
+.lf .chips{display:flex;gap:6px;overflow:hidden}
+.lf .chip{flex:none;font:800 11px/1 "Nunito",sans-serif;padding:7px 10px;border-radius:99px;background:#1c1b2e;color:#c9cbe0}
+.lf .chip.on{background:#4fb3f6;color:#0b1730}
+.lf .hero{position:relative;border-radius:4px;padding:14px 0 10px;text-align:center;overflow:hidden;
+  background:linear-gradient(160deg,#7a6aff 0%,#4b3fc4 55%,#2f2786 100%)}
+.lf .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.35),transparent 55%)}
+.lf .hero svg{position:relative;z-index:1;animation:pop .7s .2s both cubic-bezier(.3,1.5,.5,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.lf .hero b{position:relative;z-index:1;display:block;font:900 14px/1 "Nunito",sans-serif;letter-spacing:.06em;margin-top:2px}
+.lf h4{margin:2px 0 0;font:800 15px/1 "Nunito",sans-serif;display:flex;justify-content:space-between}
+.lf h4 a{color:#4fb3f6;font-size:12px}
+.lf .graph{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center}
+.lf .graph div{display:flex;flex-direction:column;align-items:center;gap:2px;font:800 10px/1.1 "Nunito",sans-serif;color:#c9cbe0}
+.lf .graph em{font-style:normal;font-size:9px}
+.lf .post{background:#17162a;border-radius:12px;padding:8px;display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:center}
+.lf .shot{height:58px;border-radius:8px;background:linear-gradient(170deg,#9fb3c8 0%,#e8eef4 45%,#cfd8e2 46%,#7d8ea3 100%);position:relative;overflow:hidden}
+.lf .shot::after{content:"";position:absolute;width:12px;height:16px;border-radius:5px 5px 2px 2px;background:#ff6a2a;left:24px;top:12px;transform:rotate(-30deg)}
+.lf .post p{margin:0;font:800 13px/1.2 "Nunito",sans-serif}
+.lf .post p i{display:block;font-style:normal;font-weight:600;font-size:11px;color:#9a9cb8}
+.lf .post .ok{color:#4fe3b0;font-size:11px}
+.lf .nav{display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:8px 6px 12px;border-top:1px solid #22213a;position:relative;z-index:1;font:700 10px/1 "Nunito",sans-serif;color:#9a9cb8;text-align:center}
+.lf .nav .on{color:#eef0ff}
+.lf .plus{justify-self:center;width:40px;height:40px;border-radius:50%;background:#4fb3f6;color:#0b1730;display:grid;place-items:center;font:900 24px/1 "Nunito",sans-serif;box-shadow:0 4px 0 #2a7fbf}
+
+/* ---------- E: GLOSS + EDGE (proposed) ---------- */
+.ed{background:#0a0b10;color:#eef1f7;font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+.ed::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.14;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ed .scr{gap:10px;padding-top:12px}
+.ed .top{display:flex;align-items:center;gap:8px}
+.ed .logo{flex:1;font:900 26px/1 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase;transform:skewX(-8deg)}
+.ed .logo em{font-style:normal;color:#ff5a1f}
+.ed .pill{font:700 13px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;padding:6px 8px;background:#161821;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.ed .hero{position:relative;display:grid;grid-template-columns:110px 1fr;align-items:center;gap:6px;padding:12px 12px 12px 6px;
+  background:linear-gradient(115deg,#1d1840 0%,#120f26 60%,#0d0c18 100%);clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%)}
+.ed .hero::after{content:"";position:absolute;left:-30px;top:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(130,110,255,.45),transparent 65%);pointer-events:none}
+.ed .hero svg{position:relative;z-index:1;filter:drop-shadow(0 0 14px rgba(140,120,255,.55));animation:pop .7s .2s both cubic-bezier(.3,1.5,.5,1)}
+.ed .hero small{font:700 10px/1 "JetBrains Mono",monospace;color:#8f8ab8;letter-spacing:.12em}
+.ed .hero h2{margin:2px 0 6px;font:900 40px/.85 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase;color:#d9d4ff;font-style:italic}
+.ed .bar{height:7px;background:#25223f;transform:skewX(-20deg)}
+.ed .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#7d70ff,#c3baff);box-shadow:0 0 10px rgba(140,120,255,.8);animation:fill 1.2s .3s cubic-bezier(.2,.8,.2,1) forwards}
+.ed .hero p{margin:6px 0 0;font:600 13px/1 "Barlow Condensed",sans-serif;color:#a9a5c9}
+.ed .totd{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#15161d;border-left:3px solid #ff5a1f}
+.ed .totd div{flex:1}
+.ed .totd small{font:700 10px/1 "JetBrains Mono",monospace;color:#ff5a1f;letter-spacing:.12em}
+.ed .totd b{display:block;font:900 24px/.95 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase}
+.ed .x2{font:900 22px/1 "Big Shoulders Display",Impact,sans-serif;color:#ff5a1f;font-style:italic}
+.ed .lbl{font:700 10px/1 "JetBrains Mono",monospace;color:#6f7385;letter-spacing:.12em}
+.ed .item{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #1d1f28}
+.ed .item svg{filter:drop-shadow(0 0 5px rgba(255,255,255,.15))}
+.ed .who{font:700 16px/1.05 "Barlow Condensed",sans-serif;text-transform:uppercase}
+.ed .who i{display:block;font:500 11px/1.3 "Barlow Condensed",sans-serif;font-style:normal;color:#80849a;text-transform:none}
+.ed .stamp{font:900 12px/1 "Big Shoulders Display",Impact,sans-serif;letter-spacing:.06em;padding:4px 6px;border:2px solid #ff5a1f;color:#ff5a1f;transform:rotate(-6deg);text-transform:uppercase}
+.ed .stamp.bail{border-color:#5d6070;color:#5d6070;transform:rotate(4deg)}
+.ed .item:first-of-type .stamp{animation:slam .5s .9s both cubic-bezier(.3,1.6,.5,1)}
+.ed .drop{margin-top:auto;margin-bottom:4px;background:linear-gradient(180deg,#ff6a2a,#e8430f);color:#0a0b10;font:900 28px/1 "Big Shoulders Display",Impact,sans-serif;text-transform:uppercase;letter-spacing:.05em;text-align:center;padding:13px 0 11px;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:inset 0 2px 0 rgba(255,255,255,.35)}
+.ed .tabs{border-top:1px solid #1d1f28}
+.ed .tabs i{font:700 11px/1 "Barlow Condensed",sans-serif;color:#6f7385;letter-spacing:.1em}
+.ed .tabs i.on{color:#eef1f7}
+
+.notes{max-width:1040px;margin:30px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;border-top:1px solid var(--line);padding-top:20px}
+.notes h3{margin:0 0 4px;font:700 18px/1.1 var(--f-ui);text-transform:uppercase;letter-spacing:.04em}
+.notes p{margin:0;color:var(--mute);font-size:16px}
+</style>
+
+<header class="top">
+  <h1>Same home screen, five looks</h1>
+  <p>Example data. The content is identical in each one: your rank, trick of the day, what your crew posted and the DROP IN button. Only the art direction changes.</p>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="badge" viewBox="0 0 120 100">
+      <path d="M30 40 L2 30 L14 50 L4 58 L26 60 Z" fill="var(--w2)"/><path d="M90 40 L118 30 L106 50 L116 58 L94 60 Z" fill="var(--w2)"/>
+      <path d="M32 46 L12 40 L20 52 L30 56 Z" fill="var(--w1)"/><path d="M88 46 L108 40 L100 52 L90 56 Z" fill="var(--w1)"/>
+      <path d="M60 6 L94 24 L94 64 L60 84 L26 64 L26 24 Z" fill="var(--d)"/>
+      <path d="M60 12 L88 27 L88 61 L60 77 L32 61 L32 27 Z" fill="var(--m)"/>
+      <path d="M60 12 L88 27 L60 44 L32 27 Z" fill="var(--l)"/>
+      <path d="M60 22 l5 11 12 1 -9 8 3 12 -11 -6 -11 6 3 -12 -9 -8 12 -1 z" fill="#fff" opacity=".95"/>
+      <path d="M48 82 L60 96 L72 82 L60 88 Z" fill="var(--d)"/>
+    </symbol>
+    <symbol id="blade" viewBox="0 0 120 100">
+      <path d="M34 30 L0 16 L18 40 L2 48 L24 54 L8 64 L34 60 Z" fill="var(--w2)"/>
+      <path d="M86 30 L120 16 L102 40 L118 48 L96 54 L112 64 L86 60 Z" fill="var(--w2)"/>
+      <path d="M34 38 L14 30 L26 44 L34 48 Z" fill="var(--w1)"/><path d="M86 38 L106 30 L94 44 L86 48 Z" fill="var(--w1)"/>
+      <path d="M60 2 L92 18 L88 62 L60 94 L32 62 L28 18 Z" fill="#14121f"/>
+      <path d="M60 8 L86 21 L83 59 L60 86 L37 59 L34 21 Z" fill="var(--d)"/>
+      <path d="M60 14 L80 24 L78 56 L60 78 L42 56 L40 24 Z" fill="var(--m)"/>
+      <path d="M60 14 L80 24 L60 44 L40 24 Z" fill="var(--l)"/>
+      <path d="M60 44 L78 56 L60 78 Z" fill="var(--d)" opacity=".55"/>
+      <path d="M60 26 L68 40 L60 60 L52 40 Z" fill="#fff" opacity=".92"/>
+    </symbol>
+  </defs>
+</svg>
+<style>
+.t-dia{--d:#4a3fb8;--m:#7d70ff;--l:#b3abff;--w1:#c9c2ff;--w2:#8f84ff}
+.t-gold{--d:#b07a10;--m:#f2b81f;--l:#ffe27a;--w1:#ffe9a0;--w2:#f2c23a}
+.t-sil{--d:#6c7686;--m:#aab4c2;--l:#e2e8ef;--w1:#e6ebf2;--w2:#b8c1cd}
+.t-plat{--d:#167a6c;--m:#2fc4ac;--l:#8ff0df;--w1:#b5f5ea;--w2:#4fd9c2}
+.t-champ{--d:#a12f9a;--m:#e96ae0;--l:#ffb3f8;--w1:#ffc9fb;--w2:#ef86e8}
+</style>
+
+<div class="row">
+  <figure>
+    <div class="phone ed" aria-label="Gloss and edge style home screen">
+      <div class="scr">
+        <div class="top"><div class="logo">Stomp<em>ed</em></div><div class="pill">&#x1F525; 4</div><div class="pill">1,284 PTS</div></div>
+        <div class="hero t-dia">
+          <svg width="110" height="92"><use href="#blade"/></svg>
+          <div><small>RANK</small><h2>Diamond II</h2><div class="bar"><span></span></div><p>49 pts to Diamond III</p></div>
+        </div>
+        <div class="totd"><div><small>TRICK OF THE DAY</small><b>Frontside 720</b></div><span class="x2">2×</span></div>
+        <span class="lbl">CREW / LAST 24H</span>
+        <div>
+          <div class="item"><svg class="t-plat" width="30" height="25"><use href="#blade"/></svg><div class="who">@jt<i>Switch 540 · Eldora park</i></div><div class="stamp">Stomped</div></div>
+          <div class="item"><svg class="t-gold" width="30" height="25"><use href="#blade"/></svg><div class="who">@mae<i>270 on, down rail · 3 votes</i></div><div class="stamp">Stomped</div></div>
+          <div class="item"><svg class="t-sil" width="30" height="25"><use href="#blade"/></svg><div class="who">@kev<i>Backflip · Copper</i></div><div class="stamp bail">Bailed</div></div>
+        </div>
+        <div class="drop">Drop in</div>
+      </div>
+      <nav class="tabs"><i class="on">Base</i><i>Feed</i><i>Rec</i><i>Judge</i><i>Duels</i></nav>
+    </div>
+    <figcaption><b>E · Gloss + edge (my pick)</b><span>D's glossy rank badges, but sharper: blade wings, cut corners, heavy italic type, grain, ink stamps. Our own layout.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone lf" aria-label="Liftoff-style home screen">
+      <div class="scr">
+        <div class="top">
+          <div class="me"><div class="pic"></div><div><div class="lv">Lv.12</div><div class="xp"><span></span></div></div></div>
+          <div class="stat"><span style="color:#ff8a2a">&#x1F525;</span>4</div>
+          <div class="stat"><span style="color:#4fb3f6">&#9670;</span>1,284</div>
+        </div>
+        <div class="chips"><span class="chip on">Your Rank</span><span class="chip">Trickgraph</span><span class="chip">Leagues</span><span class="chip">Crew</span></div>
+        <div class="hero t-dia">
+          <svg width="120" height="100"><use href="#badge"/></svg>
+          <b>DIAMOND II · 49 TO GO</b>
+        </div>
+        <h4>Trickgraph <a>All tricks ›</a></h4>
+        <div class="graph">
+          <div class="t-plat"><svg width="44" height="37"><use href="#badge"/></svg>Spins<em>PLAT</em></div>
+          <div class="t-gold"><svg width="44" height="37"><use href="#badge"/></svg>Flips<em>GOLD</em></div>
+          <div class="t-dia"><svg width="44" height="37"><use href="#badge"/></svg>Rails<em>DIA</em></div>
+          <div class="t-sil"><svg width="44" height="37"><use href="#badge"/></svg>Grabs<em>SILV</em></div>
+          <div class="t-gold"><svg width="44" height="37"><use href="#badge"/></svg>Switch<em>GOLD</em></div>
+        </div>
+        <h4>Crew <a>See all ›</a></h4>
+        <div class="post"><div class="shot"></div><p>@jt landed Switch 540<i>Eldora park · 12 min ago</i><span class="ok">STOMPED · 5 votes</span></p></div>
+      </div>
+      <nav class="nav"><span class="on">Home</span><span>Crew</span><span class="plus">+</span><span>Ranks</span><span>Profile</span></nav>
+    </div>
+    <figcaption><b>D · Liftoff-style</b><span>Clean dark navy, rounded bold type, glossy winged rank badges. A Trickgraph ranks each trick family the way Liftoff ranks each muscle.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone hc" aria-label="Hardcore style home screen">
+      <div class="scr">
+        <div class="hd"><div class="logo">Stomp<em>ed</em></div><div class="pts">1,284 PTS</div></div>
+        <div class="rank">
+          <small>RANK / SEASON 26–27</small>
+          <h2>Diamond II</h2>
+          <div class="bar"><span></span></div>
+          <div class="meta"><span>1284</span><span>49 TO DIAMOND III</span></div>
+        </div>
+        <div class="totd"><div class="tape">Trick of the day</div><b>Frontside 720</b><span>2× PTS · ENDS 11:59PM</span></div>
+        <div class="crew">
+          <small>CREW / LAST 24H</small>
+          <div class="item first"><div class="thumb"></div><div class="who">@jt<i>Switch 540 · Eldora park</i></div><div class="stamp">Stomped</div></div>
+          <div class="item"><div class="thumb"></div><div class="who">@mae<i>270 on, down rail · 3 votes</i></div><div class="stamp">Stomped</div></div>
+          <div class="item"><div class="thumb"></div><div class="who">@kev<i>Backflip · Copper</i></div><div class="stamp bail">Bailed</div></div>
+        </div>
+        <div class="drop">Drop in</div>
+      </div>
+      <nav class="tabs"><i class="on">Base</i><i>Feed</i><i>Rec</i><i>Judge</i><i>Duels</i></nav>
+    </div>
+    <figcaption><b>A · Hardcore</b><span>Film grain, heavy condensed type, tape labels, ink stamps. Feels like a ski edit or a lift ticket.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone st" aria-label="Sticker style home screen">
+      <div class="scr">
+        <div class="hd"><div class="logo">STOMPED</div><div class="pts sk">1,284</div></div>
+        <div class="rank sk">
+          <div class="badge"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M5 17a12 12 0 0 1 24 0v3H5z" fill="#14161a"/><rect x="6" y="15" width="22" height="7" rx="3.5" fill="#ffd23f" stroke="#14161a" stroke-width="2"/></svg></div>
+          <div style="flex:1"><h2>Diamond II</h2><p>49 pts to Diamond III</p><div class="bar"><span></span></div></div>
+        </div>
+        <div class="pair">
+          <div class="totd sk"><small>TRICK OF THE DAY</small><b>Frontside 720 · 2×</b></div>
+          <div class="judge sk"><small>JUDGE</small><b>All caught up</b></div>
+        </div>
+        <div class="crew">
+          <div class="item sk"><div class="av"></div><p>@jt<i>Switch 540</i></p><span class="tag">STOMPED</span></div>
+          <div class="item sk"><div class="av"></div><p>@mae<i>270 on, down rail</i></p><span class="tag">STOMPED</span></div>
+          <div class="item sk"><div class="av"></div><p>@kev<i>Backflip</i></p><span class="tag bail">BAILED</span></div>
+        </div>
+        <div class="drop">DROP IN</div>
+      </div>
+      <nav class="tabs"><i class="on">Base</i><i>Feed</i><i>Rec</i><i>Judge</i><i>Duels</i></nav>
+    </div>
+    <figcaption><b>B · Sticker / top-sheet</b><span>Die-cut stickers, thick outlines, flat bold colors. Like ski graphics and helmet stickers. Illustrated, not childish.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone ct" aria-label="Current cartoon style home screen">
+      <div class="scr">
+        <div class="hd"><div class="logo">STOMP<em>ED</em></div><div class="pts card">1284</div></div>
+        <div class="rank card"><h2>DIAMOND II</h2><div class="bar"><span></span></div></div>
+        <div class="stage">
+          <svg width="130" height="200" viewBox="0 0 130 200" aria-hidden="true">
+            <ellipse cx="65" cy="192" rx="44" ry="6" fill="rgba(0,0,0,.35)"/>
+            <rect x="38" y="130" width="54" height="58" rx="12" fill="#2a2e3a"/>
+            <rect x="26" y="74" width="78" height="66" rx="22" fill="#ff7a1a" stroke="#1a1a1a" stroke-width="3"/>
+            <circle cx="65" cy="52" r="30" fill="#f5d0a9" stroke="#1a1a1a" stroke-width="3"/>
+            <path d="M35 46a30 30 0 0 1 60 0z" fill="#2a2e3a" stroke="#1a1a1a" stroke-width="3"/>
+            <rect x="38" y="40" width="54" height="16" rx="8" fill="#5fd3ff" stroke="#1a1a1a" stroke-width="3"/>
+            <path d="M54 68q11 8 22 0" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="pair"><div class="card"><small>TRICK OF THE DAY</small><b>Frontside 720</b></div><div class="card"><small>JUDGE</small><b>All caught up</b></div></div>
+      </div>
+      <nav class="tabs"><i class="on">Base</i><i>Feed</i><span class="rec" aria-hidden="true"></span><i>Judge</i><i>Duels</i></nav>
+    </div>
+    <figcaption><b>C · Cartoon (what's live now)</b><span>Rider in the middle, rounded cards. Included so you can compare it with the other two.</span></figcaption>
+  </figure>
+</div>
+
+<section class="notes">
+  <div><h3>A fits if</h3><p>you want it to feel like ski culture: edits, park crews, Newschoolers. The game feel comes from the stamp slams, rank-ups and the trophy road.</p></div>
+  <div><h3>B fits if</h3><p>you want more fun and color but still edgy. The rider can come back as a sticker you unlock gear for.</p></div>
+  <div><h3>D fits if</h3><p>you want what Liftoff does: ranks are the reward, and the badges are the art. The Trickgraph gives you a reason to try new trick types.</p></div>
+  <div><h3>Either way</h3><p>A, B and D all show your crew posting on the home screen. That's the part C is missing.</p></div>
+</section>
