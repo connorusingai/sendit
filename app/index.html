@@ -1856,13 +1856,20 @@ function openGear(){
   buildGear(); store.set('gear-seen', '1');
   requestAnimationFrame(() => sh.classList.add('open')); document.body.classList.add('base-editing');
 }
+function fitBase(){   // Base fills exactly the space between the header and the tab bar, then the snow field meets his boots
+  const L = document.querySelector('.lodge'), rider = $('base-rider'); if (!L || !rider) return;
+  const top = L.getBoundingClientRect().top + scrollY, tabs = $('tabbar').getBoundingClientRect().height;
+  const pad = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
+  L.style.minHeight = Math.max(440, innerHeight - top - Math.max(tabs + 10, pad)) + 'px';
+  const r = rider.getBoundingClientRect(); baseScene.ground(r.bottom - r.height*.045);
+}
 function closeGear(){ const sh = $('gear-sheet'); if (sh) sh.classList.remove('open'); document.body.classList.remove('base-editing'); }
 
 const baseScene = (() => {   // night sky, snowy mountains, rows of pines, falling snow; painted once, only the snow moves
   const cv = $('base-bg'), ctx = cv.getContext('2d');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const rnd = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  let W = 0, H = 0, dpr = 1, raf = 0, t0 = performance.now();
+  let W = 0, H = 0, dpr = 1, raf = 0, t0 = performance.now(), feet = null;
 /* ---------- 4: snowy pines at night ---------- */
 let pinesLayer = null, flakes = [];
 function drawPine(g, x, base, h, body, snow, snowA){
@@ -1888,6 +1895,8 @@ function buildPines(){
   moon.addColorStop(0, 'rgba(170,195,235,.22)'); moon.addColorStop(1, 'rgba(170,195,235,0)');
   g.fillStyle = moon; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(225,235,250,.85)'; g.beginPath(); g.arc(W*.72, H*.2, Math.min(W,H)*.035, 0, 7); g.fill();
+  const off = feet == null ? 0 : feet - H*.72;                      // the snow field sits under the rider's boots on any phone
+  g.save(); g.translate(0, off);
   const range = (base, amp, n, body, cap, seed) => {              // jagged ridge; snow caps on every peak
     const rr = rnd(seed), pts = [];
     for (let i = 0; i <= n; i++) pts.push([i/n*(W + 80) - 40, base - amp*(.45 + .55*rr())*(i % 2 ? 1 : .5)]);
@@ -1913,9 +1922,10 @@ function buildPines(){
   }
   const ground = g.createLinearGradient(0, H*.66, 0, H);
   ground.addColorStop(0, '#2a3a55'); ground.addColorStop(1, '#121b2b');
-  g.fillStyle = ground; g.beginPath(); g.moveTo(0, H*.7); g.quadraticCurveTo(W*.5, H*.64, W, H*.71); g.lineTo(W, H); g.lineTo(0, H); g.fill();
+  g.fillStyle = ground; g.beginPath(); g.moveTo(0, H*.7); g.quadraticCurveTo(W*.5, H*.64, W, H*.71); g.lineTo(W, H + Math.abs(off) + 20); g.lineTo(0, H + Math.abs(off) + 20); g.fill();
   const near = [[-W*.06, H*.98, H*.62], [W*.13, H*1.02, H*.44], [W*1.04, H*.97, H*.6], [W*.86, H*1.03, H*.4]];
   for (const [x, b, h] of near) drawPine(g, x, b, h, '#05080e', '#d6e2f2', .85);
+  g.restore();
   pinesLayer = c;
   const fr = rnd(3); flakes = [];
   for (let i = 0; i < Math.round(W*H/2600); i++){ const z = fr(); flakes.push({x: fr()*W, y: fr()*H, z, s: .6 + z*2.2, v: 12 + z*38, ph: fr()*6}); }
@@ -1935,10 +1945,11 @@ function drawPinesFrame(t){
     cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); buildPines();
   }
   function frame(now){ drawPinesFrame(now - t0); raf = requestAnimationFrame(frame); }
-  let rt; addEventListener('resize', () => { if (!raf) return; clearTimeout(rt); rt = setTimeout(resize, 150); });
+  let rt; addEventListener('resize', () => { if (!raf) return; clearTimeout(rt); rt = setTimeout(() => { resize(); fitBase(); }, 150); });
   return {
     start(){ if (raf) return; if (W !== innerWidth || H !== innerHeight) resize(); raf = requestAnimationFrame(frame); },
     stop(){ cancelAnimationFrame(raf); raf = 0; },
+    ground(y){ if (feet !== null && Math.abs(y - feet) < 3) return; feet = y; if (W) buildPines(); },
   };
 })();
 
@@ -2736,7 +2747,7 @@ function render(force = false){
     const v = $('view'); v.classList.remove('swap'); void v.offsetWidth; v.classList.add('swap'); S.shownTab = S.tab;
   }
   for (const [id, v] of Object.entries(keep)){ const el = $(id); if (el) el.value = v; }
-  const onBase = S.tab === 'lodge'; document.body.classList.toggle('on-base', onBase); if (onBase) baseScene.start(); else { baseScene.stop(); closeGear(); }
+  const onBase = S.tab === 'lodge'; document.body.classList.toggle('on-base', onBase); if (onBase){ baseScene.start(); requestAnimationFrame(fitBase); } else { baseScene.stop(); closeGear(); }
   syncPost();
   const bar = S.tab === 'lodge' && $('lodge-bar'); if (bar) requestAnimationFrame(() => { bar.style.width = bar.dataset.w + '%'; });
   renderRail();

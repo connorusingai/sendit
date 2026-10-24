@@ -10,6 +10,7 @@ What it checks now:
   2. A clip that was pending last visit and is now verified gets the reward moment (STOMPED, points, Collect).
   3. Each tab opens without errors.
 """
+import os
 import base64
 import functools
 import http.server
@@ -81,7 +82,7 @@ def main():
     srv = serve()
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome")
-        ctx = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
+        ctx = b.new_context(viewport={"width": int(os.environ.get("VW", 390)), "height": int(os.environ.get("VH", 844))}, is_mobile=True, has_touch=True)
         ctx.add_init_script(f"localStorage.setItem('sb-{REF}-auth-token', {json.dumps(json.dumps(session))});"
                             f"localStorage.setItem('seen-status-{UID}', JSON.stringify({{c1: 'pending'}}));")
         ctx.route(f"https://{REF}.supabase.co/**", handle)
