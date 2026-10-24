@@ -47,7 +47,10 @@ body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--body);font-siz
 .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding-inline:16px;padding-block:0 110px}
 button,select,input,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+::selection{background:rgba(255,107,26,.35);color:#fff}
+input,textarea{caret-color:var(--accent)}
 a{color:var(--ice)}
+.ic{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* falling snow */
 #snow{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
@@ -64,6 +67,7 @@ a{color:var(--ice)}
 .me-chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
   border-radius:999px;padding:3px 12px 3px 4px;cursor:pointer}
 .me-chip:hover{border-color:var(--accent)}
+#acct-chip{padding:6px;justify-content:center;font-size:17px}
 .me-chip b{font-family:var(--mono);font-size:13px}
 
 h2{font-family:var(--display);font-weight:900;font-size:34px;text-transform:uppercase;letter-spacing:.3px;
@@ -554,7 +558,8 @@ h2{font-size:30px;margin:4px 0 2px}
 .sec{margin:34px 0 12px!important}
 .feats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .feat{display:flex;flex-direction:column;gap:4px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
-.feat i{font-style:normal;font-size:22px}
+.feat i{font-style:normal;font-size:24px;line-height:1;color:var(--accent-hot)}
+.feat i .ic{stroke-width:1.75}
 .feat b{font-size:14.5px}
 .feat span{color:var(--muted);font-size:12.5px;line-height:1.4}
 .foot{margin:34px 0 0;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.04em;line-height:2}
@@ -661,7 +666,7 @@ button,[data-act],select{touch-action:manipulation}
 
 /* Game-style buttons everywhere: a raised top edge, a solid shadow underneath, and a press-down on tap.
    Placed after the base rules so it restyles them without touching layout. */
-.btn{font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:.06em;text-transform:uppercase;
+.btn{font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
   border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,#26324a,#161e2c);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 4px 0 #04060a,0 10px 18px -10px #000;transition:transform .08s ease,box-shadow .08s ease,filter .1s}
 .btn:active:not([disabled]){transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 1px 0 #04060a}
@@ -706,6 +711,7 @@ details>summary{cursor:pointer}
 .lodge-chip small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .lodge-chip b{grid-column:1;font-family:var(--display);font-size:20px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lodge-chip span{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--display);font-size:22px;color:#ffcf3d}
+.lodge-chip span em{display:block;margin-top:-3px;font-style:normal;font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
 .lodge-drop{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:74px;border:0;border-radius:16px;cursor:pointer;color:var(--accent-ink);
   background:linear-gradient(180deg,var(--accent-hot),var(--accent));font-family:var(--display);font-size:36px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
   box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 0 34px rgba(255,107,26,.5),0 10px 0 -2px rgba(0,0,0,.5);animation:lodgePulse 2.4s ease-in-out infinite}
@@ -779,7 +785,7 @@ body.base-editing .base-rider{transform:translateX(-50%) translateY(-34%) scale(
     <div style="display:flex;gap:8px;align-items:center">
       <button class="pill wait" id="outbox-chip" data-act="flush" hidden></button>
       <button class="me-chip" data-act="tab" data-tab="ranks" id="me-chip" aria-label="Your rank" hidden></button>
-      <button class="me-chip" data-act="tab" data-tab="ranks" data-focus="profile-card" id="acct-chip" aria-label="Account and sign out" title="Account" hidden>⚙</button>
+      <button class="me-chip" data-act="tab" data-tab="ranks" data-focus="profile-card" id="acct-chip" aria-label="Account and sign out" title="Account" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
   </header>
   <main id="view"><p class="sub">Loading…</p></main>
@@ -801,10 +807,23 @@ const SUPABASE_KEY = 'sb_publishable_sP394lJIxwiubaTzlkwSrg_poXVTb27';
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---------- catalog ----------
+// Line icons drawn in one stroke weight (shapes from Lucide, ISC license), used instead of emoji.
+const svgIcon = d => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const IC = {
+  ski: svgIcon('<path d="M3 16.5 15.5 4.2c.9-.9 2.6-.2 2 1"/><path d="M6.5 20 19 7.7c.9-.9 2.6-.2 2 1"/>'),
+  board: svgIcon('<g transform="rotate(-30 12 12)"><rect x="1.5" y="9" width="21" height="6" rx="3"/><path d="M8.5 10.6v2.8M15.5 10.6v2.8"/></g>'),
+  mountain: svgIcon('<path d="M2 20 9 7l4 7 2.5-4L22 20z"/><path d="m7.4 10 1.6 1.5L10.6 10"/>'),
+  flame: svgIcon('<path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z"/>'),
+  swords: svgIcon('<path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5M5 14l4 4M7 17l-3 3M3 19l2 2"/>'),
+  shield: svgIcon('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>'),
+  check: svgIcon('<circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'),
+  phone: svgIcon('<rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/>'),
+};
+const dots = (...parts) => parts.filter(Boolean).join(' · ');   // "Park · 16h ago", skipping blanks
 const SPORTS = {
-  ski:       {label: 'Ski',       icon: '⛷️', cats: ['Park','Rails','Pipe','Moguls','Backcountry'],
+  ski:       {label: 'Ski',       icon: IC.ski, cats: ['Park','Rails','Pipe','Moguls','Backcountry'],
               grabs: ['No grab','Mute','Safety','Japan','Tail','Critical']},
-  snowboard: {label: 'Snowboard', icon: '🏂', cats: ['Park','Rails','Pipe','Backcountry'],
+  snowboard: {label: 'Snowboard', icon: IC.board, cats: ['Park','Rails','Pipe','Backcountry'],
               grabs: ['No grab','Indy','Melon','Method','Mute','Stalefish','Tail','Nose']},
 };
 const RESORTS = ['Eldora','Winter Park','Copper','Arapahoe Basin','Breckenridge','Keystone'];
@@ -933,7 +952,7 @@ async function loadWeather(){
 function wxCard(){
   if (!S.me.home_resort) return `<button class="card wx" data-act="tab" data-tab="ranks" data-focus="home-resort" style="width:100%;text-align:left;cursor:pointer">
     <div><div class="label">Mountain conditions</div><div class="hint">Tap to set your home mountain and see snow and weather here.</div></div>
-    <span style="font-size:26px">🏔️</span></button>`;
+    <span style="font-size:26px;color:var(--ice)">${IC.mountain}</span></button>`;
   const W = S.wx; if (!W || W.resort !== S.me.home_resort) return '';
   const d = W.daily, fresh = (d.snowfall_sum[0] || 0) + (d.snowfall_sum[1] || 0);  // yesterday + today
   const day = i => new Date(d.time[i] + 'T12:00').toLocaleDateString('en-US', {weekday: 'short'});
@@ -1404,7 +1423,7 @@ function feedItem(c){
     <div class="fi-info">
       <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
       <div class="trick">${esc(clipName(c))}</div>
-      <div class="meta">${sp.icon} ${esc(c.grab)} · ${esc(t.category)} · ${esc(c.resort || '')} · ${ago(c.created_at)} ago</div>
+      <div class="meta">${sp.icon} ${dots(esc(c.grab), esc(t.category), esc(c.resort || ''), ago(c.created_at) + ' ago')}</div>
       <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' ? '<small> if verified</small>' : ''}</b>${c.totd ? '<span class="pill totd">🔥 2×</span>' : ''}</div>
     </div>
     ${S.menuFor === c.id ? clipMenu(c, mine) : ''}
@@ -1425,7 +1444,7 @@ function clipCard(c){
       <button class="avatar linkname ${mine ? 'you' : ''}" ${mine ? '' : avStyle(who)} data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
       <div class="who"><div class="name"><button class="linkname" data-act="profile" data-id="${c.user_id}">${esc(who)}</button>
         ${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
-        <div class="meta">${esc(c.resort || '')} · ${ago(c.created_at)} ago</div></div>
+        <div class="meta">${dots(esc(c.resort || ''), ago(c.created_at) + ' ago')}</div></div>
       ${status}
     </div>
     ${media}
@@ -1534,7 +1553,7 @@ function hudTiles(){
     <div class="readout">${r.nextLabel ? `${r.toNext} PTS TO ${esc(r.nextLabel).toUpperCase()}` : 'TOP RANK'}</div></button>`;
   let wx;
   if (!S.me.home_resort) wx = `<button class="card htile" data-act="tab" data-tab="ranks" data-focus="home-resort"><div class="label">Conditions</div>
-    <div style="font-size:26px">🏔️</div><div class="hint">Set your home mountain on Ranks</div></button>`;
+    <div style="font-size:26px;color:var(--ice)">${IC.mountain}</div><div class="hint">Set your home mountain on Ranks</div></button>`;
   else if (!S.wx || S.wx.resort !== S.me.home_resort) wx = `<div class="card htile"><div class="label">${esc(S.me.home_resort)}</div><div class="hint">Loading conditions…</div></div>`;
   else {
     const W = S.wx, d = W.daily, fresh = (d.snowfall_sum[0] || 0) + (d.snowfall_sum[1] || 0);
@@ -1969,7 +1988,7 @@ const views = {
         <button class="base-rider" id="base-rider" data-act="rider" type="button" aria-label="Your rider. Tap to change gear.">${riderSVG(myGear())}</button>
       </div>
       <div class="lodge-chips">
-        ${t ? `<button class="lodge-panel lodge-chip" data-act="totdpost"><small>Trick of the day</small><b>${esc(t.name)}</b><span>2×</span></button>`
+        ${t ? `<button class="lodge-panel lodge-chip" data-act="totdpost"><small>Trick of the day</small><b>${esc(t.name)}</b><span>2×<em>pts</em></span></button>`
             : `<button class="lodge-panel lodge-chip" data-act="book"><small>Trick book</small><b>Pick a trick</b><span>›</span></button>`}
         <button class="lodge-panel lodge-chip" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b><span>${jq ? '⚖' : '✓'}</span></button>
       </div>
@@ -2000,12 +2019,12 @@ const views = {
 
       <div class="label sec">Built for the whole mountain</div>
       <div class="feats">
-        <div class="feat"><i>🔥</i><b>Trick of the Day</b><span>One trick pays double for 24 hours. A daily reason to ride the park.</span></div>
-        <div class="feat"><i>🏔️</i><b>Home-mountain boards</b><span>Rank against riders at your mountain, this week or all time, with a live snow report.</span></div>
-        <div class="feat"><i>⚔️</i><b>Duels</b><span>A game of S.K.I. with friends: land the trick or take a letter.</span></div>
-        <div class="feat"><i>🛡️</i><b>Crews</b><span>Teams, clubs and park crews add up their points on one board.</span></div>
-        <div class="feat"><i>✅</i><b>Verified by riders</b><span>No judges or staff needed. Votes stay anonymous, so it's fair.</span></div>
-        <div class="feat"><i>📲</i><b>Works on any phone</b><span>Install it from the browser. Clips save offline and post when you're back in signal.</span></div>
+        <div class="feat"><i>${IC.flame}</i><b>Trick of the Day</b><span>One trick pays double for 24 hours. A daily reason to ride the park.</span></div>
+        <div class="feat"><i>${IC.mountain}</i><b>Home-mountain boards</b><span>Rank against riders at your mountain, this week or all time, with a live snow report.</span></div>
+        <div class="feat"><i>${IC.swords}</i><b>Duels</b><span>A game of S.K.I. with friends: land the trick or take a letter.</span></div>
+        <div class="feat"><i>${IC.shield}</i><b>Crews</b><span>Teams, clubs and park crews add up their points on one board.</span></div>
+        <div class="feat"><i>${IC.check}</i><b>Verified by riders</b><span>No judges or staff needed. Votes stay anonymous, so it's fair.</span></div>
+        <div class="feat"><i>${IC.phone}</i><b>Works on any phone</b><span>Install it from the browser. Clips save offline and post when you're back in signal.</span></div>
       </div>
 
       <h2 id="auth-top" class="sec">${up ? 'Join Stomped' : 'Drop in'}</h2>
@@ -2400,7 +2419,7 @@ function reelItem(c){
       <div><button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">✓</button><span class="round-label">Landed</span></div></div>`;
   return `<section class="reel-item" id="reel-${c.id}" data-id="${c.id}">
     ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
-    <div class="reel-top"><span class="pill sport">${sp.icon} Anonymous rider</span><span class="hint">${esc(c.resort || '')} · ${ago(c.created_at)}</span></div>
+    <div class="reel-top"><span class="pill sport">${sp.icon} Anonymous rider</span><span class="hint">${dots(esc(c.resort || ''), ago(c.created_at))}</span></div>
     ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(clipName(c))}</div>
       <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · 🔥 Trick of the Day' : ''}</div></div>`}
     ${actions}
