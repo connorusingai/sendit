@@ -101,7 +101,8 @@ def main():
         pg.wait_for_timeout(2000)     # let the badge pop and the stamp slam
         # Base v2 (DESIGN.md): rank hero, trick of the day, Judge + Trick book; the crew list is gone (Connor 10/25)
         print("lodge first:", pg.locator(".lodge.base2").count() == 1, "| hero:", pg.locator(".b2-hero").count() == 1,
-              "| crew list gone:", pg.locator(".b2-item").count() == 0, "| rider gone:", pg.locator("#base-rider").count() == 0)
+              "| crew list gone:", pg.locator(".b2-stamp").count() == 0, "| next to land:", pg.locator(".b2-next .b2-item").count(),
+              "| rider gone:", pg.locator("#base-rider").count() == 0)
         pg.screenshot(path=SHOTS / "2-lodge.png")
         # Rank card opens your profile: rank bar, ladder, badges, trick book, clips
         pg.click(".b2-hero")
