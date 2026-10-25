@@ -242,6 +242,12 @@ select:focus,input:focus{border-color:var(--ice)}
 /* profile */
 .prof-head{display:flex;align-items:center;gap:14px;margin-block:6px 16px}
 .prof-head h2{margin:0}
+.friend-rank{display:flex;align-items:center;gap:5px}
+.squad-seg{display:flex;width:100%;margin:4px 0 14px}
+.squad-seg button{flex:1;padding:8px 4px}
+.squad-seg .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--hot,#ff5a1f);color:#0a0b10;font:700 10px/16px "JetBrains Mono",monospace}
+.prof-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.prof-rank{display:grid;gap:8px;margin-bottom:12px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
 .stat b{display:block;font-family:var(--display);font-weight:900;font-size:30px;line-height:1;font-style:italic}
@@ -747,7 +753,7 @@ body.on-base::after{content:"";position:fixed;inset:0;pointer-events:none;z-inde
 .b2-stamp.bail{border-color:#5d6070;color:#5d6070;transform:rotate(4deg)}
 .b2-item:first-of-type .b2-stamp{animation:b2Slam .5s .8s both cubic-bezier(.3,1.6,.5,1)}
 .b2-empty{margin:6px 0 0;color:var(--muted);font-size:13.5px}
-.b2-row{margin-top:auto}
+.b2-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .b2-judge{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:var(--b2-panel);clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 .b2-judge b{font-family:var(--display);font-weight:900;font-size:20px;text-transform:uppercase}
 .b2-judge.hot{background:var(--hot);color:#0a0b10}.b2-judge.hot small{color:#0a0b10}
@@ -824,7 +830,7 @@ body.base-editing .base-rider{transform:translateX(-50%) translateY(-34%) scale(
     <div class="brand">Stomp<span>ed</span></div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="pill wait" id="outbox-chip" data-act="flush" hidden></button>
-      <button class="me-chip" data-act="tab" data-tab="ranks" id="me-chip" aria-label="Your rank" hidden></button>
+      <button class="me-chip" data-act="me" id="me-chip" aria-label="Your profile" hidden></button>
       <button class="me-chip" data-act="tab" data-tab="ranks" data-focus="profile-card" id="acct-chip" aria-label="Account and sign out" title="Account" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
   </header>
@@ -898,10 +904,11 @@ const S = {
   tricks: [], clips: [], postCombo: [], myVotes: new Set(), myLikes: new Set(), totd: null, wx: null,
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
+  squad: store.get('squad', 'friends'),
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
-  feed: {scope: store.get('feed-scope', 'everyone'), sort: store.get('feed-sort', 'hot'), limit: 30, rows: [], more: false, loaded: false},
-  board: {scope: 'friends', period: 'all', resort: '', rows: []},
+  feed: {scope: store.get('feed-scope', 'everyone') === 'friends' ? 'friends' : 'everyone', sort: store.get('feed-sort', 'hot'), limit: 30, rows: [], more: false, loaded: false},
+  board: {scope: 'global', period: 'all', resort: '', rows: []},
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
   sport: store.get('sport', 'ski'),
@@ -1301,11 +1308,10 @@ const FEED_PAGE = 30, HOT_POOL = 3;   // Hot ranks 3 pages' worth of recent clip
 async function loadFeed(){
   const F = S.feed, friends = acceptedFriends().map(f => f.other.id);
   F.loaded = true;
-  if ((F.scope === 'friends' && !friends.length) || (F.scope === 'mountain' && !S.me.home_resort)){ F.rows = []; F.more = false; return; }
+  if (F.scope === 'friends' && !friends.length){ F.rows = []; F.more = false; return; }
   const want = F.sort === 'hot' ? F.limit * HOT_POOL : F.limit;
   let q = db.from('clips').select(CLIP_SELECT).eq('status', 'verified');
   if (F.scope === 'friends') q = q.in('user_id', [myId(), ...friends]);
-  if (F.scope === 'mountain') q = q.eq('resort', S.me.home_resort);
   const rows = mustOk(await q.order('created_at', {ascending: false}).range(0, want));  // asks for one extra to see if more exist
   F.more = rows.length > want;
   const known = new Map(S.clips.map(c => [c.id, c]));   // reuse the same objects, so a like shows everywhere at once
@@ -1803,8 +1809,6 @@ function emptyFeed(){
   const F = S.feed, go = (tab, label) => `<button class="btn primary" data-act="tab" data-tab="${tab}" style="margin-top:14px">${label}</button>`;
   if (F.scope === 'friends' && !acceptedFriends().length)
     return `<div class="card empty"><strong>No friends yet</strong>Add riders you know and their verified tricks show up here.${go('duels', 'Find friends')}</div>`;
-  if (F.scope === 'mountain' && !S.me.home_resort)
-    return `<div class="card empty"><strong>Pick your mountain</strong>Then this shows verified tricks from riders there.${go('ranks', 'Set home mountain').replace('data-tab', 'data-focus="home-resort" data-tab')}</div>`;
   return `<div class="card empty"><strong>Nothing here yet</strong>Verified tricks show up here. Be the first.${go('record', 'Record a trick')}</div>`;
 }
 // Same rule for everyone, so votes (and the training data behind the trick AI) mean the same thing.
@@ -1814,25 +1818,6 @@ const landedRule = () => `<details class="card rule"><summary>What counts as lan
   <li><b>Nope, fell:</b> they fall, sit down, or put a hand down to stop falling.</li>
   <li><b>Nope, wrong trick:</b> the spin is short or it's a different trick.</li>
   <li><b>Nope, can't see:</b> the landing is cut off or too blurry to tell.</li></ul></details>`;
-
-// Base crew list: friends' verified tricks first (yours too), else the newest verified tricks from anyone. Others' clips only show once verified, same as the Feed.
-function baseCrew(){
-  const ids = new Set(acceptedFriends().map(f => f.other && f.other.id).filter(Boolean));
-  const shown = c => c.user_id === myId() ? c.status !== 'pending' : c.status === 'verified';
-  const crew = S.clips.filter(c => (ids.has(c.user_id) || c.user_id === myId()) && shown(c)).slice(0, 5);
-  if (crew.length >= 5) return {title: 'Crew / latest', rows: crew};
-  // Not enough crew tricks yet: top up with other riders' newest verified tricks so Base never sits empty
-  const more = S.clips.filter(c => c.status === 'verified' && !crew.includes(c)).slice(0, 5 - crew.length);
-  return {title: crew.length ? 'Crew + riders / latest' : 'Riders / latest', rows: [...crew, ...more]};
-}
-function baseCrewRow(c){
-  const t = trickById(c.trick_id), who = c.profiles ? c.profiles.username : 'Rider', ok = c.status === 'verified';
-  const tier = rankInfo((c.profiles && c.profiles.points) || 0, TRICK_TIERS).tier.key;
-  return `<button class="b2-item" data-act="profile" data-id="${c.user_id}">
-    <span class="b2-mini">${badgeSVG(tier, 30)}</span>
-    <span class="b2-who">@${esc(who)}<i>${esc(t ? t.name : 'Trick')}${c.resort ? ' · ' + esc(c.resort) : ''} · ${ago(c.created_at)}</i></span>
-    <span class="b2-stamp${ok ? '' : ' bail'}">${ok ? 'Stomped' : 'Bailed'}</span></button>`;
-}
 
 // ---------- Base: your rider standing in the snow, with the mountain backdrop ----------
 // Gear is saved on this phone only (store 'rider'). Mockup history: prototype/lodge-avatar.html.
@@ -2037,9 +2022,8 @@ const views = {
   // Home screen, style "Gloss + Edge" (DESIGN.md, 2026-10-24): rank hero, trick of the day, crew stamps. The rider/gear sheet is parked, not deleted.
   lodge(){
     const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length, t = S.totd && trickById(S.totd);
-    const crew = baseCrew();
     return `<section class="lodge base2">
-      <button class="b2-hero" data-act="tab" data-tab="ranks" aria-label="Your rank: ${esc(r.label)}">
+      <button class="b2-hero" data-act="me" aria-label="Your profile: ${esc(r.label)}">
         <span class="b2-badge">${badgeSVG(r.tier.key, 96, r.div)}</span>
         <span class="b2-rank"><small>Rank · @${esc(S.me.username)}</small>
           <b class="t-${r.tier.key}">${esc(r.label)}</b>
@@ -2048,13 +2032,9 @@ const views = {
       </button>
       ${t ? `<button class="b2-totd" data-act="totdpost"><span><small>Trick of the day</small><b>${esc(t.name)}</b></span><i>2×</i></button>`
           : `<button class="b2-totd" data-act="book"><span><small>Trick book</small><b>Pick a trick</b></span><i>›</i></button>`}
-      <div class="b2-crew">
-        <div class="b2-lbl"><span>${crew.title}</span><button data-act="tab" data-tab="feed">All ›</button></div>
-        ${crew.rows.length ? crew.rows.map(baseCrewRow).join('')
-          : `<p class="b2-empty">${acceptedFriends().length ? 'Nothing from your crew yet. Post one and get it started.' : 'Add friends and their tricks land here.'}</p>`}
-      </div>
       <div class="b2-row">
         <button class="b2-judge${jq ? ' hot' : ''}" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b></button>
+        <button class="b2-judge" data-act="book" data-id="${S.me.id}" data-name="${esc(S.me.username)}"><small>Trick book</small><b>${S.landed.size}/${S.tricks.length}</b></button>
       </div>
     </section>`;
   },
@@ -2114,15 +2094,15 @@ const views = {
     // Other people's clips only show once verified, so judging stays anonymous; your own clips still being judged come first.
     const F = S.feed, waiting = S.clips.filter(c => c.user_id === myId() && c.status === 'pending');
     const seg = (act, k, label, on) => `<button class="${on ? 'on' : ''}" data-act="${act}" data-k="${k}">${label}</button>`;
+    // Everyone by default; Friends is one on/off toggle (Connor 10/25: too many filters)
     const bar = `<div class="feed-bar float">
-      <div class="seg" role="group" aria-label="Whose clips">${seg('feed-scope', 'friends', 'Friends', F.scope === 'friends')}${
-        seg('feed-scope', 'mountain', 'My mountain', F.scope === 'mountain')}${seg('feed-scope', 'everyone', 'Everyone', F.scope === 'everyone')}</div>
-      <div class="seg" role="group" aria-label="Order">${seg('feed-sort', 'hot', '🔥 Hot', F.sort === 'hot')}${seg('feed-sort', 'new', 'New', F.sort === 'new')}</div></div>`;
+      <div class="seg" role="group" aria-label="Order">${seg('feed-sort', 'hot', '🔥 Hot', F.sort === 'hot')}${seg('feed-sort', 'new', 'New', F.sort === 'new')}</div>
+      <div class="seg" role="group" aria-label="Only friends">${seg('feed-scope', F.scope === 'friends' ? 'everyone' : 'friends', 'Friends', F.scope === 'friends')}</div></div>`;
     const seen = new Set(), list = [...waiting, ...F.rows].filter(c => !seen.has(c.id) && seen.add(c.id));
     const start = startHere();
     let end;
     if (!F.loaded) end = '<p class="sub">Loading…</p>';
-    else if (F.more) end = '<button class="btn ghost" data-act="feed-more" style="width:auto">Load more</button>';
+    else if (F.more) end = '<p class="sub">Loading more…</p>';
     else if (list.length) end = `<p class="hint">You're all caught up.${F.scope === 'everyone' ? '' : ` <button class="linkish" data-act="feed-scope" data-k="everyone" style="align-self:auto">See everyone</button>`}</p>`;
     else end = emptyFeed();
     return `<div class="feedwrap">${bar}<div class="reel feedreel" id="reel">
@@ -2186,20 +2166,15 @@ const views = {
     const sent = S.friends.filter(f => f.status === 'pending' && !f.incoming);
     const friends = acceptedFriends();
     const results = S.search.results;
-    return `<h2>Duels</h2><p class="sub">Game of S.K.I.: land a trick and your friend has to match it. Miss and you take a letter. Spell S-K-I and you lose rating.</p>
+    const myTurn = mine.filter(d => d.turn === myId()).length;
+    const tab = (k, label, n) => `<button class="${S.squad === k ? 'on' : ''}" data-act="squad" data-k="${k}">${label}${n ? ` <span class="cnt">${n}</span>` : ''}</button>`;
+    const head = `<h2>Squad</h2><div class="seg squad-seg" role="tablist" aria-label="Squad">${tab('friends', 'Friends', incoming.length)}${
+      tab('ranks', 'Ranks', 0)}${tab('crew', 'Crew', 0)}${tab('duels', 'Duels', myTurn)}</div>`;
 
-    <div class="card">${mine.length ? mine.map(d => {
-        const myL = d.challenger === myId() ? d.letters_challenger : d.letters_opponent;
-        const theirL = d.challenger === myId() ? d.letters_opponent : d.letters_challenger;
-        return `<button class="duel-row" data-act="open-duel" data-id="${d.id}">
-          <div class="avatar" ${avStyle(d.other.username)}>${esc(initials(d.other.username))}</div>
-          <div><b>vs ${esc(d.other.username)}</b><div class="hint" style="display:flex;gap:10px;align-items:center;margin-top:4px">
-            You ${lettersHtml(myL, true)} Them ${lettersHtml(theirL, true)}</div></div>
-          ${d.turn === myId() ? '<span class="your-turn">Your turn</span>' : '<span class="hint">Their turn</span>'}</button>`;
-      }).join('') : `<div class="empty"><strong>No duels yet</strong>Challenge a friend below.</div>`}</div>
+    if (S.squad === 'ranks') return `${head}${boardHtml()}`;
+    if (S.squad === 'crew') return `${head}${crewCard() || '<div class="card empty"><strong>Crews are coming</strong>Not switched on yet.</div>'}`;
 
-    ${crewCard()}
-    <h3>Friends</h3>
+    if (S.squad === 'friends') return `${head}
     <button class="btn small" style="margin-bottom:10px" data-act="invite">📨 Invite friends to Stomped</button>
     <form class="inline-form" id="friend-search">
       <input id="friend-q" placeholder="Find riders by username" value="${esc(S.search.q)}" autocomplete="off" aria-label="Search usernames">
@@ -2211,7 +2186,21 @@ const views = {
     <div class="label" style="margin:16px 0 8px">Your friends · ${friends.length}</div>
     <div class="card">${friends.length ? friends.map(f => friendRow(f.other, 'friend')).join('')
       : '<div class="empty" style="padding:18px">Search for your friends above to add them.</div>'}</div>
-    ${sent.length ? `<p class="hint" style="margin-top:8px">Waiting on: ${sent.map(f => esc(f.other.username)).join(', ')}</p>` : ''}
+    ${sent.length ? `<p class="hint" style="margin-top:8px">Waiting on: ${sent.map(f => esc(f.other.username)).join(', ')}</p>` : ''}`;
+
+    return `${head}<p class="sub">Game of S.K.I.: land a trick and your friend has to match it. Miss and you take a letter. Spell S-K-I and you lose rating.</p>
+
+    <div class="card">${mine.length ? mine.map(d => {
+        const myL = d.challenger === myId() ? d.letters_challenger : d.letters_opponent;
+        const theirL = d.challenger === myId() ? d.letters_opponent : d.letters_challenger;
+        return `<button class="duel-row" data-act="open-duel" data-id="${d.id}">
+          <div class="avatar" ${avStyle(d.other.username)}>${esc(initials(d.other.username))}</div>
+          <div><b>vs ${esc(d.other.username)}</b><div class="hint" style="display:flex;gap:10px;align-items:center;margin-top:4px">
+            You ${lettersHtml(myL, true)} Them ${lettersHtml(theirL, true)}</div></div>
+          ${d.turn === myId() ? '<span class="your-turn">Your turn</span>' : '<span class="hint">Their turn</span>'}</button>`;
+      }).join('') : `<div class="empty"><strong>No duels yet</strong>${friends.length ? 'Challenge one of your friends:' : 'Add friends first, then challenge them.'}</div>`}</div>
+    ${!mine.length && friends.length ? `<div class="card" style="margin-top:10px">${friends.map(f => friendRow(f.other, 'friend')).join('')}</div>` : ''}
+    ${!friends.length ? '<button class="btn" style="margin-top:10px" data-act="squad" data-k="friends">Find friends</button>' : ''}
 
     ${done.length ? `<h3>Recent duels</h3><div class="card"><ul class="board">${done.map(d => {
         const won = d.winner === myId();
@@ -2240,23 +2229,7 @@ const views = {
     <h3>The road to Legend</h3>
     ${ladder(me.points, TRICK_TIERS)}
     <h3>Leaderboard</h3>
-    <div class="filters">
-      <div class="seg" role="group" aria-label="Who">
-        <button class="${b.scope === 'friends' ? 'on' : ''}" data-act="scope" data-k="friends">Friends</button>
-        <button class="${b.scope === 'global' ? 'on' : ''}" data-act="scope" data-k="global">Everyone</button>${S.crew.ready ? `
-        <button class="${b.scope === 'crews' ? 'on' : ''}" data-act="scope" data-k="crews">Crews</button>` : ''}</div>
-      <div class="seg" role="group" aria-label="Time period">
-        <button class="${b.period === 'all' ? 'on' : ''}" data-act="period" data-k="all">All time</button>
-        <button class="${b.period === 'week' ? 'on' : ''}" data-act="period" data-k="week">Week</button></div>
-      ${b.scope === 'crews' ? '' : `<select id="board-resort" aria-label="Home mountain">
-        <option value="">All mountains</option>${RESORTS.map(r => `<option ${b.resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select>`}
-    </div>
-    ${b.scope === 'crews' ? crewBoard() : `<div class="card">${b.rows.length ? `<ol class="board">${b.rows.map((u, i) => `
-      <li class="${u.id === me.id ? 'you' : ''}" data-act="profile" data-id="${u.id}"><span class="n">${i + 1}</span>
-        ${badgeSVG(trickTierOf(u.points).key, 34)}
-        <div><b>${esc(u.username)}</b><div class="hint">${esc(rankInfo(u.points, TRICK_TIERS).label)}${u.home_resort ? ' · ' + esc(u.home_resort) : ''}</div></div>
-        <span class="score">${u.score} <small class="hint">pts</small></span></li>`).join('')}</ol>`
-      : `<div class="empty"><strong>Nobody yet</strong>${b.scope === 'friends' ? 'Add friends in the Duels tab.' : 'Be the first on the board.'}</div>`}</div>`}
+    ${boardHtml()}
     <section class="card form" id="profile-card" style="margin-top:20px">
       <div class="label">Your profile</div>
       <div class="hint">Signed in as <b>${esc(me.username)}</b> · ${esc(S.session.user.email)}</div>
@@ -2328,12 +2301,24 @@ const views = {
     const best = verified.reduce((a, c) => (!a || c.points_awarded > a.points_awarded ? c : a), null);
     const tr = rankInfo(u.points, TRICK_TIERS), dr = rankInfo(u.rating, TIERS);
     const f = S.friends.find(x => x.other && x.other.id === u.id);
-    const friendBit = mine ? '' : f && f.status === 'accepted' ? '<span class="pill ok" style="display:inline-block;margin-top:6px">Friends</span>'
+    const duel = !mine && activeDuelWith(u.id);
+    const friendBit = mine ? `<div class="prof-acts"><button class="btn small" data-act="squad-go" data-k="ranks">🏆 Leaderboard</button>
+        <button class="btn small" data-act="squad-go" data-k="friends">Friends · ${acceptedFriends().length}</button>
+        <button class="btn small" data-act="tab" data-tab="ranks" data-focus="profile-card">Settings</button></div>`
+      : f && f.status === 'accepted' ? `<div class="prof-acts"><span class="pill ok">Friends</span>${duel
+          ? `<button class="btn small" data-act="open-duel" data-id="${duel.id}">View duel</button>`
+          : `<button class="btn small primary" data-act="challenge" data-id="${u.id}">Challenge</button>`}</div>`
       : f ? '<span class="pill wait" style="display:inline-block;margin-top:6px">Request pending</span>'
       : `<button class="btn small" style="margin-top:8px" data-act="add-friend" data-id="${u.id}">+ Add friend</button>`;
     return `<button class="linkish back" data-act="back">← Back</button>
     <div class="prof-head">${badgeSVG(tr.tier.key, 72, tr.div, {glow: true})}
       <div><h2>${esc(u.username)}</h2><div class="hint">${u.home_resort ? '🏔 ' + esc(u.home_resort) : 'No home mountain yet'}</div>${friendBit}</div></div>
+    <section class="card prof-rank">
+      <div class="row">${rankWord(tr, 26)}<span class="mono hint">${u.points} pts</span></div>
+      <div class="bar"><i style="width:${Math.max(4, tr.pct)}%"></i></div>
+      <div class="hint">${tr.nextLabel ? `${tr.toNext} pts to ${esc(tr.nextLabel)}` : 'Top rank'}</div>
+    </section>
+    ${ladder(u.points, TRICK_TIERS)}
     <div class="stats">
       <div class="stat"><b>${u.points}</b><span>Points</span></div>
       <div class="stat"><b>${verified.length}</b><span>Verified</span></div>
@@ -2356,6 +2341,26 @@ const views = {
   },
 };
 
+// The leaderboard: shown in Squad > Ranks and on the Ranks page. Every row opens that rider's profile.
+function boardHtml(){
+  const b = S.board, me = S.me;
+  return `<div class="filters">
+      <div class="seg" role="group" aria-label="Who">
+        <button class="${b.scope === 'friends' ? 'on' : ''}" data-act="scope" data-k="friends">Friends</button>
+        <button class="${b.scope === 'global' ? 'on' : ''}" data-act="scope" data-k="global">Everyone</button>${S.crew.ready ? `
+        <button class="${b.scope === 'crews' ? 'on' : ''}" data-act="scope" data-k="crews">Crews</button>` : ''}</div>
+      <div class="seg" role="group" aria-label="Time period">
+        <button class="${b.period === 'all' ? 'on' : ''}" data-act="period" data-k="all">All time</button>
+        <button class="${b.period === 'week' ? 'on' : ''}" data-act="period" data-k="week">Week</button></div>
+    </div>
+    ${b.scope === 'crews' ? crewBoard() : `<div class="card">${b.rows.length ? `<ol class="board">${b.rows.map((u, i) => `
+      <li class="${u.id === me.id ? 'you' : ''}" data-act="profile" data-id="${u.id}"><span class="n">${i + 1}</span>
+        ${badgeSVG(trickTierOf(u.points).key, 34)}
+        <div><b>${esc(u.username)}</b><div class="hint">${esc(rankInfo(u.points, TRICK_TIERS).label)}${u.home_resort ? ' · ' + esc(u.home_resort) : ''}</div></div>
+        <span class="score">${u.score} <small class="hint">pts</small></span></li>`).join('')}</ol>`
+      : `<div class="empty"><strong>Nobody yet</strong>${b.scope === 'friends' ? 'Add friends in Squad › Friends.' : 'Be the first on the board.'}</div>`}</div>`}`;
+}
+
 function crewBoard(){
   const rows = S.board.rows, mine = S.crew.mine;
   return `<div class="card">${rows.length ? `<ol class="board">${rows.map((c, i) => `
@@ -2363,7 +2368,7 @@ function crewBoard(){
       <span class="crew-tag sm">${esc(c.tag)}</span>
       <div><b>${esc(c.name)}</b><div class="hint">${c.members} rider${c.members === 1 ? '' : 's'}</div></div>
       <span class="score">${c.score} <small class="hint">pts</small></span></li>`).join('')}</ol>`
-    : `<div class="empty"><strong>No crews yet</strong>Start one in the Duels tab.</div>`}</div>`;
+    : `<div class="empty"><strong>No crews yet</strong>Start one in Squad › Crew.</div>`}</div>`;
 }
 function crewCard(){
   const C = S.crew;
@@ -2408,7 +2413,7 @@ function friendRow(p, kind){
   }
   return `<div class="friend">
     <button class="avatar linkname" ${avStyle(p.username)} data-act="profile" data-id="${p.id}" aria-label="${esc(p.username)}'s profile">${esc(initials(p.username))}</button>
-    <div><b>${esc(p.username)}</b><div class="hint">${esc(rankInfo(p.rating, TIERS).label)} · ${p.rating}${kind === 'friend' ? ` · ${winChance(S.me.rating, p.rating)}% win chance` : ''}</div></div>
+    <div><b>${esc(p.username)}</b><div class="hint friend-rank">${badgeSVG(trickTierOf(p.points || 0).key, 18)}${esc(rankInfo(p.points || 0, TRICK_TIERS).label)} · ${p.points || 0} pts${kind === 'friend' ? ` · ${winChance(S.me.rating, p.rating)}% duel win` : ''}</div></div>
     <div class="acts">${acts}</div></div>`;
 }
 
@@ -2551,9 +2556,20 @@ function watchReel(){
     for (const e of entries){
       const v = e.target.querySelector('video'); if (!v) continue;
       if (e.isIntersecting && e.intersectionRatio > .6) v.play().catch(() => {}); else v.pause();
+      if (e.isIntersecting && e.target.dataset.near) feedMore();
     }
   }, {root: reel, threshold: [0, .6, 1]});
-  reel.querySelectorAll('.reel-item').forEach(el => reelObserver.observe(el));
+  const items = [...reel.querySelectorAll('.reel-item')];
+  items.slice(-3).forEach(el => { el.dataset.near = 1; });   // 3 clips from the end: fetch the next page so the scroll never stops
+  items.forEach(el => reelObserver.observe(el));
+}
+let feedLoading = false;
+async function feedMore(){
+  const F = S.feed;
+  if (S.tab !== 'feed' || !F.more || feedLoading) return;
+  feedLoading = true; F.limit += FEED_PAGE;
+  try { await loadFeed(); } catch (err){ toast(err.message); }
+  feedLoading = false; render(true);
 }
 function maybeBreak(){
   const J = S.judge;
@@ -2797,8 +2813,8 @@ const TABS = [
   ['feed','Feed','<path d="M4 5h16M4 12h16M4 19h10"/>'],
   ['record','Record','<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'],
   ['judge','Judge','<path d="M5 12l4 4L19 6"/>'],
-  ['duels','Duels','<path d="M5 19L19 5M14 5h5v5M5 5l5 5M14 14l5 5"/>'],
-];  // Ranks opens from Base's trophy road and the rank chip up top, so Record stays in the middle
+  ['duels','Squad','<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6M15 14.6c3.2-.4 6 1.6 6 5.4"/>'],
+];  // tab id stays 'duels' (lots of links use it); the screen is Squad: Friends / Ranks / Crew / Duels. Your profile opens from Base's rank card and the badge up top.
 const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
 
@@ -2832,6 +2848,8 @@ function render(force = false){
   const onBase = S.tab === 'lodge'; document.body.classList.toggle('on-base', onBase); baseScene.stop(); closeGear();   // night-scene canvas parked with the rider (DESIGN.md)
   syncPost();
   const bar = S.tab === 'lodge' && $('lodge-bar'); if (bar) requestAnimationFrame(() => { bar.style.width = bar.dataset.w + '%'; });
+  const here = document.querySelector('#view .ladder .rung.here');   // start the ladder on your tier, not on Bronze
+  if (here) here.parentElement.scrollLeft = here.offsetLeft - (here.parentElement.clientWidth - here.offsetWidth) / 2;
   renderRail();
   watchPlayers();
   if (S.tab === 'judge' || S.tab === 'feed') watchReel();
@@ -2873,7 +2891,7 @@ async function refresh(force = false){
     await loadAll();
     await loadFeed();
     await loadWeather();
-    if (S.tab === 'ranks' || WIDE.matches) await loadBoard();   // the rail shows a mini friends board
+    if (S.tab === 'ranks' || (S.tab === 'duels' && S.squad === 'ranks') || WIDE.matches) await loadBoard();   // the rail shows a mini friends board
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
     if (S.tab === 'duels' && S.duelId) await loadDuelMoves(S.duelId);
     if (S.tab === 'book' && S.book) await loadBook(S.book.id, S.book.name);
@@ -2886,7 +2904,7 @@ async function openTab(tab, focusId){
   if (tab === 'judge') S.judge = {list: judgeQueue(), voted: {}, reasonFor: null, count: 0, breakShown: false};
   if (tab === 'duels') S.duelId = null;
   S.tab = tab; S.openComments = null; $('view').innerHTML = '';
-  if (tab === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
+  if (tab === 'ranks' || (tab === 'duels' && S.squad === 'ranks')){ try { await loadBoard(); } catch (err){ toast(err.message); } }
   render(true); window.scrollTo(0, 0);
   // Links like "Pick your home mountain" land right on the control, not at the top of a long page
   const el = focusId && $(focusId);
@@ -3244,6 +3262,7 @@ document.addEventListener('click', async e => {
     case 'comments': return toggleComments(id);
     case 'delcomment': return deleteComment(id, b.dataset.clip);
     case 'profile': return openProfile(id);
+    case 'me': return openProfile(myId());
     case 'back': return openTab(S.prevTab || 'feed');
     case 'book':
       if (S.tab !== 'book') S.bookBack = S.tab;
@@ -3266,7 +3285,12 @@ document.addEventListener('click', async e => {
       const r = await db.rpc('leave_crew'); if (r.error){ toast(r.error.message); return; }
       await loadCrew(); toast(`You left ${c.name}.`); return render(true);
     }
-    case 'crew-board': S.board.scope = 'crews'; return openTab('ranks');
+    case 'crew-board': S.board.scope = 'crews'; S.squad = 'ranks'; return openTab('duels');
+    case 'squad-go': S.squad = b.dataset.k; store.set('squad', S.squad); return openTab('duels');
+    case 'squad':
+      S.squad = b.dataset.k; store.set('squad', S.squad); S.duelId = null;
+      if (S.squad === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
+      return render(true);
     case 'invite': {
       const url = location.origin + location.pathname, text = `Come duel me on Stomped. I'm ${S.me.username}.`;
       if (navigator.share){ try { await navigator.share({title: 'Stomped', text, url}); } catch (e) {} return; }

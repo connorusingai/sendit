@@ -99,10 +99,25 @@ def main():
             pg.wait_for_timeout(600)
         pg.mouse.click(195, 420)      # close the rank splash if it's up
         pg.wait_for_timeout(2000)     # let the badge pop and the stamp slam
-        # Base v2 (DESIGN.md): rank hero, trick of the day, crew rows; the rider is parked
+        # Base v2 (DESIGN.md): rank hero, trick of the day, Judge + Trick book; the crew list is gone (Connor 10/25)
         print("lodge first:", pg.locator(".lodge.base2").count() == 1, "| hero:", pg.locator(".b2-hero").count() == 1,
-              "| crew rows:", pg.locator(".b2-item").count(), "| rider gone:", pg.locator("#base-rider").count() == 0)
+              "| crew list gone:", pg.locator(".b2-item").count() == 0, "| rider gone:", pg.locator("#base-rider").count() == 0)
         pg.screenshot(path=SHOTS / "2-lodge.png")
+        # Rank card opens your profile: rank bar, ladder, badges, trick book, clips
+        pg.click(".b2-hero")
+        pg.wait_for_timeout(1200)
+        print("profile:", pg.locator(".prof-head").count() == 1, "| rank bar:", pg.locator(".prof-rank").count() == 1,
+              "| ladder:", pg.locator(".ladder .rung").count(), "| badges:", pg.locator(".ach").count())
+        pg.screenshot(path=SHOTS / "4-profile.png", full_page=True)
+        # Squad: Friends / Ranks / Crew / Duels
+        pg.click("#tabs [data-tab=duels]")
+        pg.wait_for_timeout(900)
+        for k in ["friends", "ranks", "crew", "duels"]:
+            pg.click(f".squad-seg [data-k={k}]")
+            pg.wait_for_timeout(700)
+            pg.screenshot(path=SHOTS / f"5-squad-{k}.png")
+        print("squad tabs:", pg.locator(".squad-seg button").count())
+        pg.click(".squad-seg [data-k=friends]")
         for tab in ["feed", "judge", "record", "duels", "lodge"]:
             pg.click(f"#tabs [data-tab={tab}]")
             pg.wait_for_timeout(900)
