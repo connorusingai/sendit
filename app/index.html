@@ -28,7 +28,7 @@
   --bg:#06080C; --surface:#10151E; --surface-2:#171F2C; --raise:#1C2636;
   --ink:#EEF3F8; --muted:#8595A9; --line:#222D3E;
   --accent:#FF6B1A; --accent-hot:#FF8A3D; --accent-ink:#160700; --accent-soft:rgba(255,107,26,.14);
-  --ice:#5CE1FF; --ice-soft:rgba(92,225,255,.12);
+  --ice:#c9d0de; --ice-soft:rgba(201,208,222,.12);
   --good:#3BE08A; --good-soft:rgba(59,224,138,.14); --bad:#FF5470; --bad-soft:rgba(255,84,112,.14);
   --glow:0 0 0 1px rgba(255,107,26,.5),0 0 22px rgba(255,107,26,.35);
   --shadow:0 1px 0 rgba(255,255,255,.04) inset,0 10px 30px rgba(0,0,0,.45);
@@ -40,7 +40,7 @@
 html{background:var(--bg)}
 body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;
   background:
-    radial-gradient(70% 45% at 8% -8%, rgba(92,225,255,.16), transparent 70%),
+    radial-gradient(70% 45% at 8% -8%, rgba(201,208,222,.16), transparent 70%),
     radial-gradient(60% 40% at 95% -12%, rgba(255,107,26,.18), transparent 70%),
     var(--bg);
   background-attachment:fixed}
@@ -150,7 +150,7 @@ video.clip{display:block;width:100%;aspect-ratio:4/5;max-height:70vh;background:
 .pill{font-size:11px;font-weight:800;border-radius:999px;padding:3px 9px;letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;border:1px solid}
 .pill.ok{background:var(--good-soft);color:var(--good);border-color:rgba(59,224,138,.4)}
 .pill.no{background:var(--bad-soft);color:var(--bad);border-color:rgba(255,84,112,.4)}
-.pill.wait{background:var(--ice-soft);color:var(--ice);border-color:rgba(92,225,255,.4)}
+.pill.wait{background:var(--ice-soft);color:var(--ice);border-color:rgba(201,208,222,.4)}
 .pill.totd{background:var(--accent-soft);color:var(--accent-hot);border-color:rgba(255,107,26,.5)}
 .pill.sport{background:var(--raise);color:var(--muted);border-color:var(--line)}
 
@@ -203,7 +203,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .sport-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sport-switch button{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:10px;cursor:pointer;
   font-family:var(--display);font-weight:900;font-style:italic;font-size:20px;text-transform:uppercase;display:flex;gap:8px;align-items:center;justify-content:center}
-.sport-switch button.on{border-color:var(--ice);background:var(--ice-soft);color:var(--ice);box-shadow:0 0 16px rgba(92,225,255,.3)}
+.sport-switch button.on{border-color:var(--hot,#ff5a1f);background:rgba(255,90,31,.12);color:var(--hot,#ff5a1f);box-shadow:none}
 
 /* Trick of the Day hero */
 .totd-card{position:relative;border-radius:18px;padding:1.5px;margin-bottom:18px;
@@ -276,7 +276,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .check.on{background:var(--good);border-color:#0A0D14;color:#04160C;box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .book-cat{padding:10px 14px 4px;display:flex;justify-content:space-between}
 
-.tips{padding:4px 14px 14px 52px;background:rgba(92,225,255,.05);border-top:1px dashed var(--line)}
+.tips{padding:4px 14px 14px 52px;background:rgba(201,208,222,.05);border-top:1px dashed var(--line)}
 .tips ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
 .tips .label{margin-top:10px;color:var(--ice)}
 
@@ -305,7 +305,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .reel-info .trick{font-size:30px}
 .reel-actions{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:flex-end;gap:28px}
 .reel-actions > div{display:flex;flex-direction:column;align-items:center;gap:14px}
-.judge-reel .reel-item{touch-action:pan-y;will-change:transform}
+.reel-item.judging{touch-action:pan-y;will-change:transform}
 .swipe-hint{position:absolute;top:22%;z-index:2;padding:6px 14px;border:4px solid currentColor;border-radius:12px;pointer-events:none;
   font-family:var(--display);font-weight:900;font-style:italic;font-size:40px;text-transform:uppercase;text-shadow:0 2px 0 #0A0D14}
 .swipe-hint.yes{left:18px;color:var(--good);transform:rotate(-12deg);opacity:var(--yes,0)}
@@ -316,6 +316,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .feed-bar.float .seg{pointer-events:auto;background:rgba(10,13,20,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .feed-bar.float .seg button{padding:6px 8px;font-size:12px}
 .reel.feedreel{height:calc(100dvh - 150px - env(safe-area-inset-bottom,0px))}
+.feedreel .reel-top{top:52px}   /* judge cards in the feed: clear the Hot/New/Friends bar */
 .feed-item video{object-fit:contain}
 .feed-item::after{content:'';position:absolute;left:0;right:0;bottom:0;height:45%;pointer-events:none;background:linear-gradient(transparent,rgba(0,0,0,.8))}
 .feed-item .poster{height:100%;display:grid;place-items:center}
@@ -402,7 +403,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .wx{padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center}
 .wx .now{font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;line-height:1}
 .wx .snow{text-align:right}
-.wx .snow b{display:block;font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;line-height:1;color:var(--ice);text-shadow:0 0 14px rgba(92,225,255,.4)}
+.wx .snow b{display:block;font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;line-height:1;color:var(--ice);text-shadow:0 0 14px rgba(201,208,222,.4)}
 .wx .days{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .wx .day{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px}
 .wx .day .ico{font-size:20px;line-height:1.3}
@@ -436,7 +437,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(10,13,19,.85);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
+.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);align-items:end}
 .tabs button{border:0;background:none;padding:10px 2px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;
   font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;position:relative}
 .tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -487,8 +488,8 @@ h2{font-size:30px;margin:4px 0 2px}
 .stack{gap:12px}
 .card{background:linear-gradient(180deg,rgba(24,32,46,.88),rgba(14,19,28,.9));
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  border:1px solid rgba(92,225,255,.13);border-radius:14px;
-  box-shadow:inset 0 1px 0 rgba(92,225,255,.16),0 10px 30px rgba(0,0,0,.45)}
+  border:1px solid rgba(201,208,222,.13);border-radius:14px;
+  box-shadow:inset 0 1px 0 rgba(201,208,222,.16),0 10px 30px rgba(0,0,0,.45)}
 .card-head{padding:10px 12px}
 .card-foot{padding:10px 12px 12px;gap:8px}
 .btn.primary{border-radius:0;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
@@ -509,7 +510,7 @@ h2{font-size:30px;margin:4px 0 2px}
 .minidays{display:flex;gap:6px;font-size:11px;color:var(--muted)}
 .minidays span{display:flex;flex-direction:column;align-items:center;flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 0}
 .totd-strip{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:12px;
-  background:linear-gradient(90deg,rgba(255,107,26,.22),rgba(192,33,138,.12) 55%,rgba(92,225,255,.1));border:1px solid rgba(255,107,26,.45)}
+  background:linear-gradient(90deg,rgba(255,107,26,.22),rgba(192,33,138,.12) 55%,rgba(201,208,222,.1));border:1px solid rgba(255,107,26,.45)}
 .totd-strip .x{font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;color:var(--accent);text-shadow:0 0 16px rgba(255,107,26,.7);line-height:1}
 .totd-strip .nm{font-family:var(--display);font-weight:900;font-style:italic;font-size:20px;text-transform:uppercase;line-height:1}
 .session{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:12px}
@@ -528,7 +529,7 @@ h2{font-size:30px;margin:4px 0 2px}
 .crew-head{display:flex;align-items:center;gap:12px}
 .crew-tag{display:inline-grid;place-items:center;min-width:54px;height:54px;padding:0 8px;border-radius:12px;border:1px solid var(--ice);
   background:var(--ice-soft);color:var(--ice);font-family:var(--display);font-weight:900;font-style:italic;font-size:24px;letter-spacing:.5px;
-  box-shadow:0 0 18px rgba(92,225,255,.25)}
+  box-shadow:0 0 18px rgba(201,208,222,.25)}
 .crew-tag.sm{min-width:36px;height:24px;font-size:14px;border-radius:7px;padding:0 5px;box-shadow:none}
 .crew-name{font-family:var(--display);font-weight:900;font-style:italic;font-size:24px;text-transform:uppercase;line-height:1;
   display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -653,13 +654,13 @@ button,[data-act],select{touch-action:manipulation}
   body.signed-out .rail{display:none}
   body.signed-out .brand{visibility:visible}
   body.signed-out #auth-form,body.signed-out #auth-top,body.signed-out #auth-top + .sub{max-width:480px}
-  .tabs{top:0;bottom:0;right:auto;width:228px;border-top:0;border-right:1px solid rgba(92,225,255,.14);padding:84px 14px 20px;
+  .tabs{top:0;bottom:0;right:auto;width:228px;border-top:0;border-right:1px solid rgba(201,208,222,.14);padding:84px 14px 20px;
     background:linear-gradient(180deg,rgba(10,14,22,.92),rgba(6,8,12,.95))}
   .tabs::before{content:"STOMP";position:absolute;top:24px;left:24px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;letter-spacing:.5px;transform:skewX(-6deg);color:var(--ink)}
   .tabs::after{content:"ED";position:absolute;top:24px;left:114px;font-family:var(--display);font-weight:900;font-style:italic;font-size:34px;color:var(--accent);text-shadow:0 0 18px rgba(255,107,26,.7);transform:skewX(-6deg)}
   .tabs nav{display:flex;flex-direction:column;align-items:stretch;gap:6px;max-width:none}
   .tabs button{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:10px;font-size:13px}
-  .tabs button:hover{background:rgba(92,225,255,.06)}
+  .tabs button:hover{background:rgba(201,208,222,.06)}
   .tabs button.on{background:var(--accent-soft)}
   .tabs button.on::before{top:8px;bottom:8px;left:0;right:auto;width:3px;height:auto}
   .tabs .badge{position:static;margin-left:auto}
@@ -692,12 +693,17 @@ button,[data-act],select{touch-action:manipulation}
 .seg button.on{background:linear-gradient(180deg,var(--accent-hot),var(--accent));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 #8a3208}
 .sport-switch button{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 0 #04060a;transition:transform .08s ease,box-shadow .08s ease}
 .sport-switch button:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 0 #04060a}
-.sport-switch button.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 0 #0a4a5c,0 0 16px rgba(92,225,255,.3)}
+.sport-switch button.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 0 #8a3208}
 .round{box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 5px 0 rgba(0,0,0,.55);transition:transform .08s ease,box-shadow .08s ease}
 .round:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 1px 0 rgba(0,0,0,.55)}
 @media (prefers-reduced-motion:reduce){.btn,.icon-btn,.round,.sport-switch button{transition:none}}
 /* Panels sit up off the screen like game cards; text boxes sink in like game input fields */
 .card{border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 5px 0 #04060a,0 16px 28px -14px #000}
+/* DESIGN.md "cut corners, not round ones" (critique 10/25): bevel the top-left and bottom-right like the Base panels */
+.card,.stat,.rung{border-radius:0;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.stat,.rung{clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.btn,.tile,.seg,.seg button,input,select,textarea,.sport-switch button{border-radius:0}
+.btn,.tile,.sport-switch button{clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
 select,input,textarea{background:#070a10;border-color:rgba(255,255,255,.08);box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.05)}
 select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 0 0 3px rgba(255,107,26,.2);outline:none}
 details>summary{cursor:pointer}
@@ -725,7 +731,7 @@ details>summary{cursor:pointer}
 /* Base v2 "Gloss + Edge" (DESIGN.md): cut corners, heavy italic type, glossy badge with a glow, ink stamps. No rider, no scenery. */
 .base2{--hot:#ff5a1f;--b2-panel:#15161d;--b2-line:#1d1f28;gap:12px}
 body.on-base{background:#0a0b10}   /* plain near-black + grain on Base, no grid */
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.12;mix-blend-mode:screen;
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.12;mix-blend-mode:screen;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
 .base2 button{font:inherit;color:inherit;text-align:left;cursor:pointer;border:0}
 .b2-hero{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;padding:14px 14px 14px 8px;overflow:hidden;
@@ -936,8 +942,18 @@ function ago(iso){
   const h = Math.round(m / 60); return h < 24 ? h + 'h' : Math.round(h / 24) + 'd';
 }
 let toastTimer;
+// Raw network/database errors become plain words with a next step (critique 10/25: H9)
+function plainError(msg){
+  const m = String(msg || '');
+  if (/failed to fetch|networkerror|load failed|network request failed|timeout|offline/i.test(m))
+    return 'No connection right now. Check your signal and try again.';
+  if (/jwt|token|not authenticated|401/i.test(m)) return 'You got signed out. Sign in again to keep going.';
+  if (/duplicate key|already exists/i.test(m)) return 'That was already done.';
+  if (/permission|policy|403|row-level security/i.test(m)) return "You can't do that here.";
+  return m;
+}
 function toast(msg, ms = 2800){
-  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  const t = $('toast'); t.textContent = plainError(msg); t.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, ms);
 }
 const trickById = id => S.tricks.find(t => t.id === id) || {id, name: id, category: '', pts: 0, sport: 'ski'};
@@ -1294,7 +1310,7 @@ async function loadProfile(id){
     landedTricks(id),
   ]);
   const all = mustOk(clips).filter(c => !c.hidden);
-  S.profile = {id, data: mustOk(p), landed, clips: id === myId() ? all : all.filter(c => c.status === 'verified')};
+  S.profile = {id, data: mustOk(p), landed, clips: id === myId() ? all : all.filter(c => c.status !== 'pending' || S.myVotes.has(c.id))};
 }
 async function loadComments(clipId){
   S.comments[clipId] = mustOk(await db.from('comments').select('*, profiles(username)')
@@ -1308,7 +1324,7 @@ const findClip = id => S.clips.find(x => x.id === id) || S.feed.rows.find(x => x
   || (S.profile && S.profile.clips.find(x => x.id === id));
 
 // ---------- the feed ----------
-// Verified clips from the chosen circle (friends, your mountain, or everyone), then put in order.
+// Every clip from the chosen circle (verified, still being judged, and bails), so you can always rewatch them (friends, your mountain, or everyone), then put in order.
 // "New" is newest first. "Hot" takes a pool of recent clips and ranks it: newer is better, and friends, your
 // mountain, bigger tricks, likes and comments push a clip up. A small shuffle that changes once a day keeps it
 // from feeling frozen, without clips jumping around every time the screen redraws.
@@ -1318,7 +1334,7 @@ async function loadFeed(){
   F.loaded = true;
   if (F.scope === 'friends' && !friends.length){ F.rows = []; F.more = false; return; }
   const want = F.sort === 'hot' ? F.limit * HOT_POOL : F.limit;
-  let q = db.from('clips').select(CLIP_SELECT).eq('status', 'verified');
+  let q = db.from('clips').select(CLIP_SELECT);
   if (F.scope === 'friends') q = q.in('user_id', [myId(), ...friends]);
   const rows = mustOk(await q.order('created_at', {ascending: false}).range(0, want));  // asks for one extra to see if more exist
   F.more = rows.length > want;
@@ -1335,6 +1351,7 @@ function rankHot(list, friends){
     let s = 1 + Math.log2(1 + count(c.likes)) + .5 * Math.log2(1 + count(c.comments)) + trickById(c.trick_id).pts / 40;
     if (close.has(c.user_id)) s *= 1.6;
     if (S.me.home_resort && c.resort === S.me.home_resort) s *= 1.25;
+    if (judgeable(c)) s *= 1.5;   // waiting on your vote: show it sooner
     s *= .85 + .3 * seeded(c.id + day + myId());
     return s / Math.pow(hours + 2, .8);   // older clips sink, but a great one can stay up for a day or two
   };
@@ -2144,7 +2161,8 @@ const views = {
 
   feed(){
     // Full screen, one clip at a time, swipe up for the next (like TikTok).
-    // Other people's clips only show once verified, so judging stays anonymous; your own clips still being judged come first.
+    // Every clip shows. Someone else's clip still being judged shows as a judge card (no name) until you vote on it;
+    // after that it turns into a normal clip you can rewatch. Your own clips still being judged come first. (Connor 10/25)
     const F = S.feed, waiting = S.clips.filter(c => c.user_id === myId() && c.status === 'pending');
     const seg = (act, k, label, on) => `<button class="${on ? 'on' : ''}" data-act="${act}" data-k="${k}">${label}</button>`;
     // Everyone by default; Friends is one on/off toggle (Connor 10/25: too many filters)
@@ -2160,7 +2178,7 @@ const views = {
     else end = emptyFeed();
     return `<div class="feedwrap">${bar}<div class="reel feedreel" id="reel">
       ${start ? `<section class="reel-item intro">${totdStrip()}${start}</section>` : ''}
-      ${list.map(feedItem).join('')}
+      ${list.map(c => judgeable(c) ? reelItem(c) : feedItem(c)).join('')}
       <div class="reel-end"><div>${end}</div></div></div></div>`;
   },
 
@@ -2380,7 +2398,7 @@ const views = {
     </div>
     <button class="btn" style="width:100%;margin-bottom:16px" data-act="book" data-id="${u.id}" data-name="${esc(u.username)}">${ic('book', 18)} ${mine ? 'My' : esc(u.username) + '’s'} Trick Book</button>
     ${best ? `<div class="label" style="margin-bottom:8px">Best trick · <span style="color:var(--accent)">${esc(trickById(best.trick_id).name)} +${best.points_awarded}</span></div>` : ''}
-    <div class="label" style="margin-block:14px 8px">${mine ? 'Your clips' : 'Verified clips'}</div>
+    <div class="label" style="margin-block:14px 8px">${mine ? 'Your clips' : 'Clips'}</div>
     ${P.clips.length ? `<div class="grid">${P.clips.map(c => `
       <button class="tile" data-act="playtile" aria-label="Play ${esc(trickById(c.trick_id).name)}">
         ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline loop preload="metadata"></video>` : ''}
@@ -2534,9 +2552,9 @@ function reelItem(c){
       <div><button class="round no" data-act="askreason" data-id="${c.id}" aria-label="Bailed">✕</button><span class="round-label">Bailed</span></div>
       <div><button class="round skip" data-act="skip" data-id="${c.id}" aria-label="Skip">↓</button><span class="round-label">Skip</span></div>
       <div><button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">✓</button><span class="round-label">Landed</span></div></div>`;
-  return `<section class="reel-item" id="reel-${c.id}" data-id="${c.id}">
+  return `<section class="reel-item judging" id="reel-${c.id}" data-id="${c.id}">
     ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
-    <div class="reel-top"><span class="pill sport">${sp.icon} Anonymous rider</span><span class="hint">${dots(esc(c.resort || ''), ago(c.created_at))}</span></div>
+    <div class="reel-top"><span class="pill wait">${sp.icon} Judge this · name shows after</span><span class="hint">${dots(esc(c.resort || ''), ago(c.created_at))}</span></div>
     ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(clipName(c))}</div>
       <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · Trick of the Day' : ''}</div></div>`}
     ${actions}
@@ -2551,7 +2569,7 @@ function voteStamp(landed){
     <span class="stamp">${landed ? 'Stomped!' : 'Bailed'}</span></div>`;
 }
 function refreshReelItem(id){
-  const el = id && $('reel-' + id), c = S.judge.list.find(x => x.id === id);
+  const el = id && $('reel-' + id), c = findClip(id);
   if (!el || !c) return;
   const video = el.querySelector('video'), t = video ? video.currentTime : 0;
   el.outerHTML = reelItem(c);
@@ -2567,7 +2585,7 @@ function nextReel(id){
 {
   let sw = null;
   document.addEventListener('pointerdown', e => {
-    const it = e.target.closest && e.target.closest('.judge-reel .reel-item[data-id]');
+    const it = e.target.closest && e.target.closest('.reel-item.judging[data-id]');
     if (!it || e.target.closest('button') || it.dataset.id in S.judge.voted || S.judge.reasonFor) return;
     sw = {it, x: e.clientX, y: e.clientY, dx: 0, on: false};
   });
@@ -2861,10 +2879,11 @@ const TABS = [
   ['lodge','Base','<path d="M3 20l6-11 4 6 3-4 5 9z"/>'],
   ['feed','Feed','<path d="M4 5h16M4 12h16M4 19h10"/>'],
   ['record','Record','<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'],
-  ['judge','Judge','<path d="M5 12l4 4L19 6"/>'],
   ['duels','Squad','<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6M15 14.6c3.2-.4 6 1.6 6 5.4"/>'],
 ];  // tab id stays 'duels' (lots of links use it); the screen is Squad: Friends / Ranks / Crew / Duels. Your profile opens from Base's rank card and the badge up top.
 const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
+// Shown as a judge card in the feed: someone else's clip still being judged that you haven't voted on (or just voted on, stamp showing)
+const judgeable = c => c.status === 'pending' && c.user_id !== myId() && (!S.myVotes.has(c.id) || c.id in S.judge.voted);
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
 
 function render(force = false){
@@ -2878,7 +2897,7 @@ function render(force = false){
   const duelCount = S.duels.filter(d => d.status === 'active' && d.turn === myId()).length
     + S.friends.filter(f => f.status === 'pending' && f.incoming).length;
   $('tabs').innerHTML = TABS.map(([id, label, icon]) => {
-    const badge = id === 'judge' ? judgeCount : id === 'duels' ? duelCount : 0;
+    const badge = id === 'feed' ? judgeCount : id === 'duels' ? duelCount : 0;
     if (id === 'record') return `<button class="rec-tab ${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="record" aria-label="Record">
       <span class="dot"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></span>${label}</button>`;
     return `<button class="${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}" aria-label="${label}">
@@ -2944,13 +2963,14 @@ async function refresh(force = false){
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
     if (S.tab === 'duels' && S.duelId) await loadDuelMoves(S.duelId);
     if (S.tab === 'book' && S.book) await loadBook(S.book.id, S.book.name);
-  } catch (err){ console.error(err); toast('Could not reach the server: ' + err.message); }
+  } catch (err){ console.error(err); toast(/fetch|network|load failed|timeout|offline/i.test(err.message) ? err.message : "Couldn't load the latest. It retries by itself in a few seconds."); }
   render(force);
 }
 
 async function openTab(tab, focusId){
   if (S.tab === 'record' && tab !== 'record') resetRecorder();
-  if (tab === 'judge') S.judge = {list: judgeQueue(), voted: {}, reasonFor: null, count: 0, breakShown: false};
+  if (tab === 'judge') tab = 'feed';   // judging lives in the feed now; old links still land there
+  if (tab === 'feed') S.judge = {list: [], voted: {}, reasonFor: null, count: 0, breakShown: false};
   if (tab === 'duels') S.duelId = null;
   S.tab = tab; S.openComments = null; $('view').innerHTML = '';
   if (tab === 'ranks' || (tab === 'duels' && S.squad === 'ranks')){ try { await loadBoard(); } catch (err){ toast(err.message); } }
@@ -2985,6 +3005,11 @@ async function vote(clipId, landed, reason){
   J.count++;
   S.myVotes.add(clipId);
   setTimeout(() => nextReel(clipId), 1000);   // long enough to see the stamp land
+  setTimeout(() => {   // then it becomes a normal clip (name, fire, comments) you can scroll back to
+    delete J.voted[clipId];
+    const el = $('reel-' + clipId), c = findClip(clipId);
+    if (el && c && S.tab === 'feed'){ el.outerHTML = feedItem(c); const f = $('clip-' + clipId); if (f && reelObserver) reelObserver.observe(f); }
+  }, 1700);
   maybeBreak();
   loadAll().then(() => render()).catch(() => {});  // update badges quietly
 }

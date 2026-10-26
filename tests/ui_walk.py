@@ -1,4 +1,4 @@
-"""Walk the app in a hidden Chrome as a signed-in rider, with the database faked (nothing reaches the real one).
+﻿"""Walk the app in a hidden Chrome as a signed-in rider, with the database faked (nothing reaches the real one).
 
 Only two public reads go to the real Supabase: the trick list and Trick of the Day. Every other call gets a
 made-up answer, and every write is only logged. Screenshots land in tests/shots/.
@@ -119,9 +119,17 @@ def main():
             pg.screenshot(path=SHOTS / f"5-squad-{k}.png")
         print("squad tabs:", pg.locator(".squad-seg button").count())
         pg.click(".squad-seg [data-k=friends]")
-        for tab in ["feed", "judge", "record", "duels", "lodge"]:
+        for tab in ["feed", "record", "duels", "lodge"]:
             pg.click(f"#tabs [data-tab={tab}]")
             pg.wait_for_timeout(900)
+            if tab != "lodge":
+                pg.screenshot(path=SHOTS / f"6-{tab}.png")
+        # Trick book from Base
+        pg.click(".b2-row [data-act=book]")
+        pg.wait_for_timeout(2500)
+        pg.screenshot(path=SHOTS / "7-book.png")
+        pg.click("#tabs [data-tab=lodge]")
+        pg.wait_for_timeout(900)
         pg.screenshot(path=SHOTS / "3-back-to-lodge.png")
         b.close()
     srv.shutdown()

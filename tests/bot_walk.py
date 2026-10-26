@@ -84,9 +84,16 @@ def main():
             pg.wait_for_timeout(800)
 
         def judge_yes():
-            tab("judge")
-            pg.locator("[data-act=vote][data-y='1']").first.click()
-            pg.wait_for_timeout(1200)
+            tab("feed")  # judging happens in the feed now
+            card = pg.locator(".reel-item.judging").first
+            card.scroll_into_view_if_needed()
+            pg.wait_for_timeout(600)
+            pg.screenshot(path=u.SHOTS / "bot-judge-card.png")
+            cid = card.get_attribute("data-id")
+            card.locator("[data-act=vote][data-y='1']").click()
+            pg.wait_for_timeout(2400)   # stamp, then it turns into a normal clip with the name
+            print("voted clip is now a normal clip:", pg.locator(f"article#clip-{cid}").count() == 1)
+            pg.screenshot(path=u.SHOTS / "bot-after-vote.png")
 
         def judge_no():
             pg.locator("[data-act=askreason], [data-act=vote][data-y='0']").first.click()
@@ -111,7 +118,7 @@ def main():
             pg.wait_for_timeout(3000)
 
         def every_screen():
-            for t in ["lodge", "feed", "record", "judge", "duels"]:
+            for t in ["lodge", "feed", "record", "duels"]:
                 tab(t)
             pg.click("#me-chip")
             pg.wait_for_timeout(1200)
