@@ -10,6 +10,7 @@ Checks:
   3. Rider: Base shows "@pal filmed you" with Keep / Not me, and a badge on the Base tab.
   4. Rider: Keep calls answer_filmed_clip.
   5. Feed: a kept clip says who filmed it.
+  6. Wrong rider (019): your own clip still being judged can be given to @pal from the ... menu.
 """
 import json
 import sys
@@ -25,12 +26,13 @@ FRIENDSHIP = {"requester": w.UID, "addressee": PAL["id"], "status": "accepted", 
 WAITING = {**w.CLIP, "id": "f1", "status": "pending", "points_awarded": None, "trick_id": "bs360", "filmed_by": PAL["id"],
            "rider_ok": False, "resort": "Eldora"}
 KEPT = {**w.CLIP, "id": "f2", "filmed_by": PAL["id"], "rider_ok": True}
+OOPS = {**w.CLIP, "id": "m1", "status": "pending", "points_awarded": None, "trick_id": "180", "created_at": "2026-10-27T12:00:00Z"}
 rpcs = []
 
 
 def handle(route, req):
     url = req.url
-    if "/rpc/post_for_friend" in url or "/rpc/answer_filmed_clip" in url:
+    if any(f"/rpc/{f}" in url for f in ("post_for_friend", "answer_filmed_clip", "give_clip_to_friend")):
         rpcs.append(f"{url.rsplit('/', 1)[1]} {req.post_data}")
         return route.fulfill(json="new-clip-id" if "post_for_friend" in url else None)
     if req.method == "GET" and "/rest/v1/friendships" in url:
@@ -38,7 +40,7 @@ def handle(route, req):
     if req.method == "GET" and "/rest/v1/clips" in url and "rider_ok=eq.false" in url:
         return route.fulfill(json=[WAITING])
     if req.method == "GET" and "/rest/v1/clips" in url:
-        return route.fulfill(json=[KEPT, WAITING])   # the waiting one must stay out of the feed
+        return route.fulfill(json=[OOPS, KEPT, WAITING])   # the waiting one must stay out of the feed
     if req.method == "GET" and "/rest/v1/profiles" in url and "id=in." in url:
         return route.fulfill(json=[{"id": PAL["id"], "username": "pal"}])
     return w.handle(route, req)
@@ -71,6 +73,15 @@ def main():
         view = pg.locator("#view").inner_text()
         ok.append(("Feed: kept clip says filmed by @pal", "@pal" in view))
         ok.append(("Feed: waiting clip not shown", pg.locator("#clip-f1, [data-id=f1]").count() == 0))
+
+        # Wrong rider: my own clip still being judged can go to @pal from the ... menu
+        pg.evaluate("document.querySelector('[id=clip-m1] [data-act=clip-menu]').click()"); pg.wait_for_timeout(500)
+        give = pg.locator("[data-act=give-clip]")
+        ok.append(("Own judging clip: menu offers 'Wrong rider: it's @pal'", give.count() == 1 and "@pal" in give.inner_text().lower()))
+        pg.screenshot(path=w.SHOTS / "film-4-wrong-rider.png")
+        if give.count():
+            give.click(); pg.wait_for_timeout(1200)
+        ok.append(("...which calls give_clip_to_friend", any("give_clip_to_friend" in r and PAL["id"] in r for r in rpcs)))
 
         # Filmer side: record, pick @pal, post
         pg.evaluate("document.querySelector('#tabs [data-tab=record]').click()"); pg.wait_for_timeout(800)
