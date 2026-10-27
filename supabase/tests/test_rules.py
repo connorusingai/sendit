@@ -154,8 +154,8 @@ def main():
     check("can't write to duels directly", blocked(e, "insert into public.duels (challenger, opponent) values (auth.uid(), auth.uid())"), True)
 
     print("\n-- Trick list --")
-    check("switch + rail tricks loaded (ski, 37 + 8 from 014)", one("select count(*) from public.tricks where sport = 'ski'"), 45)
-    check("switch + rail tricks loaded (snowboard, 40 + 3 from 014)", one("select count(*) from public.tricks where sport = 'snowboard'"), 43)
+    check("all ski tricks loaded (37 + 8 from 014 + 7 from 016)", one("select count(*) from public.tricks where sport = 'ski'"), 52)
+    check("all snowboard tricks loaded (40 + 3 from 014 + 8 from 016)", one("select count(*) from public.tricks where sport = 'snowboard'"), 51)
     check("no duplicate trick names within a sport",
           one("select count(*) from (select sport, name from public.tricks group by 1, 2 having count(*) > 1) d"), 0)
     s = user("switchy")
@@ -293,6 +293,20 @@ def main():
     check("clips bucket takes videos and motion JSON",
           one("select allowed_mime_types from storage.buckets where id = 'clips'"),
           ["video/mp4", "video/quicktime", "video/webm", "application/json"])
+
+    print("\n-- Beginner tricks + easier Trick of the Day (016) --")
+    check("7 new ski + 8 new snowboard beginner tricks", one("""select count(*) from public.tricks where id in
+          ('straightair','shifty','daffy','butter180','butter360','nosetap','tailtap','sb-ollie','sb-straightair',
+           'sb-shifty','sb-fs180','sb-butter180','sb-butter360','sb-nosetap','sb-tailtap')"""), 15)
+    check("Trick of the Day: own sport, Park/Rails, 60 pts max (a year, both sports)", one("""
+          select count(*) from generate_series(0, 365) g cross join (values ('ski'), ('snowboard')) s(sp)
+            join public.tricks t on t.id = public.trick_of_day(s.sp, current_date + g)
+           where t.sport <> s.sp or t.category not in ('Park','Rails') or t.pts > 60"""), 0)
+    sb_totd = one("select public.trick_of_day('snowboard')")
+    sb = user("boarder")
+    check("snowboard Trick of the Day pays 2x", land(sb, sb_totd), 2 * one("select pts from public.tricks where id = %s", sb_totd))
+    b = user("beginner")
+    check("Straight Air pays 5", land(b, "straightair"), 5 if totd != "straightair" else 10)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")

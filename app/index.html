@@ -949,7 +949,8 @@ const store = {
 };
 const S = {
   tab: 'lodge', prevTab: 'lodge', session: null, me: null,
-  tricks: [], clips: [], postCombo: [], myVotes: new Set(), myLikes: new Set(), totd: null, wx: null,
+  tricks: [], clips: [], postCombo: [], myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
+  get totd(){ return this.totds[this.sport] || null; },   // Trick of the Day for the sport you're on now
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
   squad: store.get('squad', 'friends'),
@@ -960,6 +961,7 @@ const S = {
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
   sport: store.get('sport', 'ski'),
+  sports: store.get('sports', store.get('sport', 'ski')),   // what you ride: ski / snowboard / both
   authMode: 'signin', busy: false, postPreset: null, splashDone: false,
   judge: {list: [], voted: {}, reasonFor: null, count: 0, breakShown: false},
   rec: {mode: 'idle', stream: null, recorder: null, chunks: [], blob: null, url: null, facing: 'environment',
@@ -1003,6 +1005,14 @@ function toast(msg, ms = 2800){
 const trickById = id => S.tricks.find(t => t.id === id) || {id, name: id, category: '', pts: 0, sport: 'ski'};
 const sportOf = t => SPORTS[t.sport] ? t.sport : 'ski';
 const tricksFor = (sport, cat) => S.tricks.filter(t => sportOf(t) === sport && (!cat || t.category === cat));
+// What you ride (Connor 10/27): 'ski', 'snowboard' or 'both'. A skier never sees snowboard tricks or Trick of the Day.
+const ridesSports = () => S.sports === 'both' ? Object.keys(SPORTS) : [S.sports];
+function setRides(k){
+  S.sports = k; store.set('sports', k);
+  if (k !== 'both'){ S.sport = k; store.set('sport', k); }
+}
+// Each sport has its own Trick of the Day (supabase/016).
+const isTotd = id => { const t = trickById(id); return !!t && S.totds[sportOf(t)] === id; };
 const basePoints = (trickId, grab) => Math.round(trickById(trickId).pts * (grab && grab !== 'No grab' ? 1.2 : 1));
 // What a clip would pay you. Mirrors resolve_clip() in supabase/006_grab_points.sql:
 // new trick = full points; new grab on a trick you have = just the grab (20% of base); exact repeat = 0.
@@ -1012,11 +1022,11 @@ function payout(trickId, grab, combo){
   // Rail combo (supabase/014_rail_combos.sql): a chain you haven't landed before adds half the added tricks' points.
   if (S.landed.combos && S.landed.combos.has(comboKey(trickId, chain)))
     return {pts: p.pts, why: p.why + ' · You\'ve landed this exact combo, so no combo bonus.'};
-  const bonus = comboBonus(chain) * (trickId === S.totd ? 2 : 1);
+  const bonus = comboBonus(chain) * (isTotd(trickId) ? 2 : 1);
   return {pts: p.pts + bonus, why: `🔗 New combo: +${bonus} bonus. ` + p.why};
 }
 function trickPayout(trickId, grab){
-  const base = trickById(trickId).pts, totd = trickId === S.totd, x = totd ? 2 : 1, grabbed = grab && grab !== 'No grab';
+  const base = trickById(trickId).pts, totd = isTotd(trickId), x = totd ? 2 : 1, grabbed = grab && grab !== 'No grab';
   const grabs = S.landed.get(trickId);
   if (!grabs) return {pts: Math.round(base * (grabbed ? 1.2 : 1) * x),
     why: totd ? 'New trick + Trick of the Day: 2×' : grabbed ? 'New trick! Grab adds 20%' : 'New trick! Full points'};
@@ -1079,9 +1089,20 @@ function wxCard(){
 }
 
 // ---------- trick tips ----------
-// Standard coaching basics, kept short. Specific tips for common tricks; every trick also gets
-// the general tips for its type. Inverts always carry the "learn it on a trampoline or airbag" rule.
+// Every trick has its own tips (Connor 10/27: "not general advice, tailored to that trick").
+// Inverts always add the "learn it on a trampoline or airbag" rule. The type tips are only a fallback.
 const TIPS = {
+  // ski: airs + spins
+  'straightair': ['Pop off the lip with your knees bent and hands forward, like you are jumping up onto a step.',
+                  'Look at the landing, not your skis, and land both skis at the same time with soft knees.'],
+  'shifty': ['Twist your skis sideways with your hips while your shoulders keep facing down the hill.',
+             'Shifty at the peak of the air, then snap your skis straight again before they touch down.'],
+  'daffy': ['Kick one ski forward and the other back at the top of the air, like a big running stride.',
+            'Bring your legs back together early. Landing in a split is how you tweak a knee.'],
+  'butter180': ['On a gentle groomer, press your weight onto your ski tips so the tails lift a little.',
+                'Swing your hips and tails around 180° while you stay on the tips, then settle onto both skis riding switch.'],
+  'butter360': ['A butter 180 that keeps going: stay on your tips past switch and bring your tails all the way round.',
+                'Turn your head and shoulders first and keep your hands in front of you. Leaning back stops the spin.'],
   '180': ['Pop straight up off the lip first, then turn. Spinning off the lip early makes you wash out.',
           'Your head and shoulders steer: look where you want to go and your hips follow.',
           'You land switch, so get comfortable riding switch on groomers first.'],
@@ -1092,46 +1113,214 @@ const TIPS = {
           'Spot the landing over your shoulder after the first full turn, then open up for it.'],
   '720': ['Build from clean 540s. You need a solid pop and more speed than you think.',
           'Keep your arms and body tight while you spin, then open up to slow down for the landing.'],
-  'backflip': ['Learn it on a trampoline or airbag first. Always.',
-               'Stand tall at takeoff and drive your hips and chest up. Don\'t throw your head back early.',
+  'misty540': ['A misty is a forward, tilted 540: drop your lead shoulder down toward your opposite knee as you pop.',
+               'Throw it off the lip, not before. Dropping the shoulder early sends you into the knuckle.',
+               'Get flat 540s and forward rolls on a trampoline solid first.'],
+  'rodeo540': ['A rodeo is a backflip mixed with a 540: throw your lead shoulder back and over as you spin.',
+               'Get backflips and flat 540s both solid before you mix them.'],
+  'backflip': ['Stand tall at takeoff and drive your hips and chest up. Don\'t throw your head back early.',
                'Tuck your knees to rotate faster, then open up when you spot the landing.'],
+  'cork720': ['A cork is a spin tilted on its side. Drop your lead shoulder at takeoff so your body corkscrews.',
+              'Grab to stay compact, and look for the landing on the last half-turn.',
+              'Your flat 720s should be easy before you tilt them.'],
+  'dc1080': ['Two tilted flips inside three full turns. Only after cork 720s and 900s are consistent on big jumps.',
+             'It takes a big pop and lots of speed. Learn it into an airbag.'],
+  // ski: switch
+  'sw180': ['Ride in backwards, pop, and turn 180° to land facing forward. Most people find this landing easier than a regular 180.',
+            'Look over your shoulder down the hill on the approach so you can see the lip.'],
+  'sw360': ['You take off backwards, so pick a spot on the landing to look for over your shoulder.',
+            'Keep your weight centred on takeoff. Sitting on your tails while riding switch kills the pop.'],
+  'sw540': ['You land facing forward, which is why many riders like it more than a switch 360.',
+            'Same wind-up as a switch 360, just more of it, and a bit more speed.'],
+  'sw720': ['Build from clean switch 540s. Wind up harder and stay tight in the air.',
+            'You land switch, so the landing has to feel normal riding backwards.'],
+  'swbackflip': ['Same tall, hips-up takeoff as a regular backflip, but riding backwards.',
+                 'Get the regular backflip dialled first. The takeoff feels very different riding switch.'],
+  'swcork720': ['A tilted switch 720: drop your shoulder at takeoff like a cork, but starting from switch.',
+                'Get switch 720s and regular cork 720s both solid first.'],
+  'swdc1080': ['The hardest ski trick in the app. Double corks forward first, and plenty of airbag sessions.',
+               'Huge, centred switch takeoff. Any lean back on the tails ruins it.'],
+  // ski: rails
+  '5050': ['The best first rail: ride straight onto it with flat skis, knees soft, centred.',
+           'Look at the end of the feature and ride off it before you think about turning.'],
   'board': ['Hop your skis 90° onto the rail so they sit across it, weight centred over the rail.',
             'Keep your skis flat on the rail. Catching an edge is what slams you.',
             'Shoulders stay in line with the rail. Look at the end of the rail, not your feet.'],
-  '5050': ['The best first rail: ride straight onto it with flat skis, knees soft, centred.',
-           'Look at the end of the feature and ride off it before you think about turning.'],
+  'lip': ['You come in on one side of the rail and swing your tails up and over it, so the skis cross from the far side.',
+          'Pop up, not across. Your tails have to clear the rail before they turn.'],
+  'nosepress': ['Slide straight down the rail with your weight on your tips so the tails lift off.',
+                'Lean slightly forward and keep your arms out for balance. Practise the press on flat snow first.'],
+  'tailpress': ['Slide straight with your weight on your tails so the tips lift off the rail.',
+                'Don\'t sit back: keep your chest over your knees, or your skis shoot out in front of you.'],
+  'swboard': ['A rail slide riding in backwards. Look over your shoulder at the rail the whole approach.',
+              'Hop 90° onto it just like a regular rail slide, skis flat.'],
+  'swlip': ['A lipslide coming in backwards: your tips swing over the rail this time.',
+            'Get switch rail slides solid first, then work on clearing the rail.'],
+  'sw5050': ['Ride onto the rail backwards, skis flat and straight. Look over your shoulder at the end of the rail.',
+             'Practise riding switch onto a wide box before a skinny rail.'],
   '180on': ['Turn 180° as you pop so you land on the feature riding the other way. Start the turn with your shoulders.',
             'Learn it on a wide, flat box first. Skis flat the moment they touch.'],
+  '180out': ['Slide to the end, then pop off and turn 180° so you land riding switch.',
+             'Pop off the very end of the feature. Turning early drags your skis off the side.'],
+  '270on': ['Come in from the side and spin 270° so you land on the rail sliding sideways.',
+            'Start turning off the takeoff and keep your eyes on the rail the whole way round.'],
+  'sw270on': ['A 270 on starting from switch. Spot the rail over your shoulder on the approach.',
+              'Get regular 270 ons and switch rail slides solid first.'],
+  'blind270': ['Blind means you spin with your back to the rail, so you lose sight of it until late.',
+               'Trust your timing: hit it on a box you know well before a rail.'],
+  '270out': ['From a rail slide, pop off the end and keep turning another 270° in the same direction.',
+             'Wind your shoulders up while you slide so you have spin ready at the end.'],
+  'sw270out': ['A 270 out, but the slide starts from switch. Pop at the very end and keep turning.',
+               'Look for the landing over your shoulder as you come round.'],
+  'pretzel270': ['A pretzel spins off the rail the opposite way from how you spun on.',
+                 'Get normal 270 outs first, then practise turning your shoulders the other way while you slide.'],
+  '450on': ['A 270 on plus another half-turn, so you land sliding the other way.',
+            'Get your 270 on solid before you try it.'],
+  '450out': ['From a slide, pop off the end and spin 450° to land.',
+             'Needs a strong pop off the end. Get 270 outs clean first.'],
+  'switchup': ['Change from one slide to another on the rail with a small hop, like rail slide to the other side.',
+               'Needs a long rail. Land the first slide solid before you add the switch-up.'],
   'gapon': ['Pop from the takeoff and clear the gap before the feature, then land flat with your weight centred.',
             'Hit it straight a few times first so you know how much speed you need.'],
   'swap': ['A swap is a small hop on the rail that turns you 180°, so you keep sliding facing the other way.',
            'Learn it on a long, flat box. Small pop, turn with your shoulders, land flat.'],
   'backswap': ['A swap that turns the blind way, with your back leading. Get regular swaps solid first.'],
-  '450on': ['A 270 On plus another half-turn. Get your 270 On solid before you try it.'],
+  'nosetap': ['Ride up to the end of a box or a knuckle, press your tips onto it, and pop off them.',
+              'Weight forward for the tap, then centre up in the air for the landing.'],
+  'tailtap': ['Lift your tips so your tails tap the feature, then pop off the tails.',
+              'Start on a small box end or a snow bump. Keep your chest forward so you don\'t sit back.'],
+  // ski: pipe, moguls, backcountry
+  'alley360': ['Alley-oop means spinning uphill, against the direction you\'re moving along the pipe.',
+               'Carve high up the wall and turn your shoulders uphill before you leave the lip.'],
+  'flair': ['A backflip with a half-turn that lands back into the pipe wall.',
+            'Get big pipe airs and backflips first, and learn it into an airbag.'],
+  'spread': ['Throw your arms and legs out wide at the top of the jump, then pull them back in.',
+             'Pick a bump with a clean landing so you have time to tuck back up.'],
+  'iron': ['Cross your skis into an X at the top of the air, then uncross before you land.',
+           'Keep your upper body still and facing down the hill while your legs do the work.'],
+  'mog360': ['Pop off the face of a bump and spin flat, landing on the back of the next one.',
+             'Spot the next bump early. Landing between bumps is a hard stop.'],
+  'cliff15': ['Look at the landing from below first: you want steep, deep snow and no rocks.',
+              'Hands forward, small hop off the edge, and absorb the landing with your knees.'],
+  'bcflip': ['Scout the takeoff and landing, and build the jump so the landing is steep enough.',
+             'Never your first backflip. It needs to be dialled in the park first.'],
+  // snowboard: airs + spins
+  'sb-ollie': ['Shift your weight onto your back foot, lift your front foot, then spring off the tail.',
+               'Pull both knees up in the air and land with both feet at once.'],
+  'sb-straightair': ['Pop off the lip with a flat base, knees bent, and land both feet together.',
+                     'Look at the landing the whole time. Your board goes where your eyes go.'],
+  'sb-shifty': ['Twist the board sideways under you while your shoulders stay facing down the hill.',
+                'Twist it back straight before you land so you don\'t catch an edge.'],
+  'sb-butter180': ['Press on your nose so the tail lifts, then swing the tail round 180° and ride away switch.',
+                   'Start on a gentle groomer. Lead with your shoulders and keep your knees bent.'],
+  'sb-butter360': ['A butter 180 that keeps going: stay on the nose past switch and bring the tail round again.',
+                   'Look over your shoulder for where you\'ll finish so you don\'t stall halfway.'],
   'sb-bs180': ['Backside means you turn so your back faces downhill first, which feels easiest for most riders.',
                'Pop off your tail, turn your head and shoulders, and land switch with soft knees.'],
+  'sb-fs180': ['Frontside means you open your chest toward the downhill as you turn.',
+               'Pop off your tail and turn your head first. You can see the landing the whole time.'],
   'sb-fs360': ['Frontside: you open your chest toward the downhill as you spin. You lose sight of the landing briefly.',
                'Wind up slightly, pop off your tail, and look over your lead shoulder for the landing.'],
+  'sb-bs360': ['You see the landing early on a backside 360, so spot it and let your body finish the spin.',
+               'Wind your shoulders up on the approach, then unwind as you pop off your tail.'],
+  'sb-bs540': ['A backside 360 with one more half-turn. You land switch, so ride switch first.',
+               'More wind-up and a bit more speed than your 360s.'],
+  'sb-cab540': ['A cab is a switch frontside spin. A cab 540 lands regular, which many riders find easier.',
+                'Get your cab 360s solid, then keep turning another half.'],
+  'sb-fs720': ['Two full frontside turns. Build from clean frontside 540s.',
+               'Stay tight and grab to spin faster, then open up for the landing.'],
+  'sb-bs720': ['Two full backside turns. You can spot the landing at the end, so trust the wind-up.',
+               'Needs a big pop and more speed than your 540s.'],
+  'sb-backflip': ['Pop off your tail with your chest up. Don\'t throw your head back early.',
+                  'Pull your knees up to spin faster, then open up when you see the landing.'],
+  'sb-frontflip': ['Pop off your nose and throw your chest forward and down.',
+                   'Tuck hard and look for the landing between your knees.'],
+  'sb-bscork900': ['A backside 900 tilted on its side: drop your lead shoulder at takeoff.',
+                   'Get flat backside 720s and 900s solid first.'],
+  'sb-dc1080': ['Two tilted flips inside three full turns. Only after cork 900s are consistent on big jumps.',
+                'Big pop, lots of speed, and learn it into an airbag.'],
+  // snowboard: switch
+  'sb-halfcab': ['A switch frontside 180: ride in switch and turn so you land riding regular.',
+                 'One of the easiest spins to land. Pop off the nose (your tail while riding switch).'],
+  'sb-cab360': ['A switch frontside 360. You lose sight of the landing for a moment, so spot it over your shoulder.',
+                'Get half-cabs solid and riding switch comfortable first.'],
+  'sb-swbs360': ['A backside 360 riding switch. You see the landing early, which helps.',
+                 'Keep your weight centred on takeoff. Leaning back while riding switch kills the pop.'],
+  'sb-swbs540': ['A switch backside 360 plus a half-turn. You land regular.',
+                 'More wind-up and speed than your switch 360s.'],
+  'sb-cab720': ['Two full turns from switch, frontside. Build from clean cab 540s.',
+                'Stay tight in the air, then open up to spot the landing.'],
+  'sb-swbackflip': ['Same chest-up takeoff as a backflip, but riding switch.',
+                    'Get the regular backflip dialled first.'],
+  'sb-cabdc1080': ['The hardest snowboard trick in the app: a switch double cork 1080.',
+                   'Regular double corks first, and plenty of airbag sessions.'],
+  // snowboard: rails
   'sb-5050': ['Ride straight onto the box or rail with a flat base and your weight centred.',
               'Keep your eyes on the end of the feature and ollie off at the end.'],
+  'sb-sw5050': ['A 50-50 riding in switch. Look over your shoulder at the end of the feature.',
+                'Practise on a wide box first, base flat.'],
   'sb-board': ['Ollie onto the rail and turn your board 90° so it sits across the rail.',
                'Keep your base flat and your shoulders lined up with the rail.'],
+  'sb-fsboard': ['A boardslide where you face forward down the rail, so you can see the end.',
+                 'Turn 90° as you ollie on and keep your shoulders in line with the rail.'],
+  'sb-bsboard': ['A boardslide with your back to the end of the rail, so it feels blind.',
+                 'Look over your shoulder at the end and keep your base flat.'],
+  'sb-swboard': ['A boardslide riding in switch. Get regular boardslides solid first.',
+                 'Look at the end of the rail over your shoulder the whole way.'],
+  'sb-lip': ['Come in on one side of the rail and ollie your tail over it so the board lands across it.',
+             'Pop up, not across. Your tail has to clear the rail.'],
+  'sb-fslip': ['A lipslide where you face forward down the rail once you\'re on.',
+               'Ollie high enough for the tail to clear the rail before you turn.'],
+  'sb-bslip': ['A lipslide with your back to the end of the rail. It feels blind, so look over your shoulder.',
+               'Get frontside lipslides and backside boardslides solid first.'],
+  'sb-nosepress': ['Slide straight down the feature with your weight on your front foot so the tail lifts.',
+                   'Practise the press on flat snow first. Keep your shoulders level.'],
+  'sb-tailpress': ['Slide straight with your weight on your back foot so the nose lifts off.',
+                   'Don\'t lean back too far, or the board shoots out in front of you.'],
+  'sb-50': ['A 5-0 is a tail press on a rail: only your tail touches, the nose stays up.',
+            'Ollie onto it already leaning on your back foot.'],
+  'sb-noseslide': ['Turn 90° and slide with only your nose on the rail.',
+                   'Keep your weight over the front foot. Too far back and you drop off the rail.'],
+  'sb-tailslide': ['Turn 90° and slide with only your tail on the rail.',
+                   'Weight over your back foot, and look at the end of the rail.'],
+  'sb-blunt': ['Pop your tail onto the rail with your nose pointing up high, then slide on the tail.',
+               'Get tailslides solid first. It needs a strong ollie to get the nose up.'],
+  'sb-270on': ['Come in from the side and spin 270° so you land on the rail in a boardslide.',
+               'Start turning off the takeoff and keep your eyes on the rail.'],
+  'sb-bs270on': ['A backside 270 on: your back turns toward the rail first.',
+                 'Spot the rail early. Get regular 270 ons solid first.'],
+  'sb-fs270out': ['From a boardslide, pop off the end and keep turning 270° frontside.',
+                  'Wind your shoulders up while you slide so you have spin ready.'],
+  'sb-switchup': ['Change from one slide to another on the rail with a small hop.',
+                  'Needs a long rail. Land the first slide clean before you add it.'],
+  'sb-gapon': ['Ollie from the takeoff, clear the gap, and land flat on the feature.',
+               'Hit it a few times to learn the speed before you commit.'],
+  'sb-nosetap': ['Ride up to a box end or knuckle, press your nose onto it, and ollie off.',
+                 'Weight forward for the tap, then level out in the air.'],
+  'sb-tailtap': ['Lift your nose so your tail taps the feature, then ollie off the tail.',
+                 'Start on a small box end or a snow bump.'],
+  // snowboard: pipe + backcountry
+  'sb-fsair': ['Ride up the frontside wall (your toes face it) and air straight up, then land back into the wall.',
+               'Carve up the wall instead of going straight up it. Start small.'],
+  'sb-alley': ['Alley-oop means spinning uphill, against the direction you\'re moving along the pipe.',
+               'Turn your shoulders uphill before you leave the lip.'],
+  'sb-mctwist': ['An inverted 540 in the pipe. One of the hardest pipe tricks.',
+                 'Get big pipe airs and backflips first, and learn it into an airbag.'],
+  'sb-cliff15': ['Look at the landing from below first: steep, deep snow, no rocks.',
+                 'Small ollie off the edge, eyes on the landing, absorb with your knees.'],
+  'sb-bcflip': ['Scout the takeoff and landing, and build the jump so the landing is steep enough.',
+                'Never your first backflip. It needs to be dialled in the park first.'],
 };
 const TIP_GROUPS = [
-  {test: t => /flip|Rodeo|Misty|McTwist|Flair|Cork/i.test(t.name), tips: [
-    '⚠ Upside down or off-axis: learn it on a trampoline or airbag first, ideally with a coach.',
-    'Never try a new invert on a jump you haven\'t hit many times already.']},
-  {test: t => /Switch|Cab/.test(t.name), tips: ['Switch tricks start with riding switch: spend time riding backwards on groomers until it feels normal.']},
-  {test: t => t.category === 'Rails', tips: ['Check the feature first: how long it is, and whether it\'s kinked or down.', 'Flat base, centred weight, soft knees. Commit all the way to the end.']},
-  {test: t => t.category === 'Pipe', tips: ['Carve up the wall, and pop off the lip toward the sky, not out into the flat bottom.']},
-  {test: t => t.category === 'Moguls', tips: ['Keep your upper body quiet and facing downhill. Pop off a bump you can see the landing of.']},
-  {test: t => t.category === 'Backcountry', tips: ['Scout the landing from below before you hit it, and ride with a partner and avalanche gear.', 'Pick your takeoff and landing lines, and control your speed before the lip.']},
-  {test: t => t.category === 'Park' && /\d{3}/.test(t.name), tips: ['Spot your landing before you open up, and land with your weight centred and your knees soft.']},
+  {test: t => t.category === 'Rails', tips: ['Check the feature first: how long it is, and whether it\'s kinked or down.']},
+  {test: t => t.category === 'Park', tips: ['Spot your landing before you open up, and land with your weight centred and your knees soft.']},
 ];
+const isInvert = t => /flip|Rodeo|Misty|McTwist|Flair|Cork/i.test(t.name);
 function tipsFor(t){
   const out = [...(TIPS[t.id] || [])];
-  for (const g of TIP_GROUPS) if (g.test(t)) out.push(...g.tips);
-  return out.slice(0, 5);
+  if (!out.length) for (const g of TIP_GROUPS) if (g.test(t)) out.push(...g.tips);   // only for a trick with no tips of its own
+  if (isInvert(t)) out.push('⚠ Upside down or off-axis: learn it on a trampoline or airbag first, ideally with a coach.');
+  return out.slice(0, 4);
 }
 
 // ---------- achievements: badges earned from a rider's Trick Book ----------
@@ -1286,6 +1475,13 @@ const rankTag = points => { const r = rankInfo(points, TRICK_TIERS);
   return `<span class="rank-tag t-${r.tier.key}">${badgeSVG(r.tier.key, 26, r.div)}${esc(r.label)}</span>`; };
 
 // ---------- loading from the database ----------
+// One Trick of the Day per sport (016). Before 016 is run the database has one shared trick: file it under its own sport.
+async function loadTotds(){
+  const per = await Promise.all(Object.keys(SPORTS).map(sp => db.rpc('trick_of_day', {sp})));
+  if (per.every(r => !r.error)) return Object.fromEntries(Object.keys(SPORTS).map((sp, i) => [sp, per[i].data]));
+  const one = mustOk(await db.rpc('trick_of_day')), t = trickById(one);
+  return t ? {[sportOf(t)]: one} : {};
+}
 async function loadAll(){
   if (!S.tricks.length) S.tricks = mustOk(await db.from('tricks').select('*').order('pts'));
   const [me, clips, votes, likes, totd, friends, duels, landed] = await Promise.all([
@@ -1293,7 +1489,7 @@ async function loadAll(){
     db.from('clips').select(CLIP_SELECT).order('created_at', {ascending: false}).limit(80),
     db.from('votes').select('clip_id'),  // the database only returns MY votes
     db.from('likes').select('clip_id').eq('user_id', myId()),
-    db.rpc('trick_of_day'),
+    loadTotds(),
     db.from('friendships').select(`requester, addressee, status, created_at,
       req:profiles!friendships_requester_fkey(${PROFILE_BITS}), addr:profiles!friendships_addressee_fkey(${PROFILE_BITS})`),
     db.from('duels').select(`*, ch:profiles!duels_challenger_fkey(${PROFILE_BITS}), op:profiles!duels_opponent_fkey(${PROFILE_BITS})`)
@@ -1306,7 +1502,7 @@ async function loadAll(){
   S.clips = mustOk(clips).filter(c => !c.hidden);   // removed or reported clips (011) stay out of sight, yours too
   S.myVotes = new Set(mustOk(votes).map(v => v.clip_id));
   S.myLikes = new Set(mustOk(likes).map(l => l.clip_id));
-  S.totd = mustOk(totd);
+  S.totds = totd;
   S.friends = mustOk(friends).map(f => {
     const incoming = f.addressee === myId();
     return {...f, incoming, other: incoming ? f.req : f.addr};
@@ -2145,7 +2341,8 @@ const views = {
   // Home screen: rank + trophy road on top, the scene in the middle (nothing on it), today's things at the thumb (the Record button in the tab bar is the way in)
   // Home screen, style "Gloss + Edge" (DESIGN.md, 2026-10-24): rank hero, trick of the day, crew stamps. The rider/gear sheet is parked, not deleted.
   lodge(){
-    const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length, t = S.totd && trickById(S.totd);
+    const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length;
+    const totds = ridesSports().filter(k => S.totds[k] && trickById(S.totds[k])), two = totds.length > 1;
     return `<section class="lodge base2">
       <button class="b2-hero" data-act="me" aria-label="Your profile: ${esc(r.label)}">
         <span class="b2-badge">${badgeSVG(r.tier.key, 96, r.div)}</span>
@@ -2154,7 +2351,7 @@ const views = {
           <span class="b2-bar"><i id="lodge-bar" data-w="${Math.max(3, r.pct)}"></i></span>
           <span class="b2-next"><em>${S.me.points}</em> pts${r.nextLabel ? ` · ${r.toNext} to ${esc(r.nextLabel)}` : ''}</span></span>
       </button>
-      ${t ? `<button class="b2-totd" data-act="totdpost"><span><small>Trick of the day · double points</small><b>${esc(t.name)}</b></span><i>2×</i></button>`
+      ${totds.length ? totds.map(k => `<button class="b2-totd" data-act="totdpost" data-k="${k}"><span><small>Trick of the day${two ? ' · ' + SPORTS[k].label : ''} · double points</small><b>${esc(trickById(S.totds[k]).name)}</b></span><i>2×</i></button>`).join('')
           : `<button class="b2-totd" data-act="book"><span><small>Trick book</small><b>Pick a trick</b></span><i>›</i></button>`}
       <div class="b2-row">
         <button class="b2-judge${jq ? ' hot' : ''}" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b></button>
@@ -2355,7 +2552,7 @@ const views = {
     <button class="card book-link" data-act="book" data-id="${me.id}" data-name="${esc(me.username)}">
       <span class="book-ic">${ic('book', 30)}</span>
       <div style="flex:1"><div class="label">Trick Book</div><div class="hint">Your checklist of every trick and the grabs you've done on each.</div></div>
-      <span class="count t-gold rank-word">${S.landed.size}/${S.tricks.length}</span></button>
+      <span class="count t-gold rank-word">${S.tricks.filter(t => ridesSports().includes(sportOf(t))).filter(t => S.landed.has(t.id)).length}/${S.tricks.filter(t => ridesSports().includes(sportOf(t))).length}</span></button>
     <h3>The road to Legend</h3>
     ${ladder(me.points, TRICK_TIERS)}
     <h3>Leaderboard</h3>
@@ -2363,6 +2560,9 @@ const views = {
     <section class="card form" id="profile-card" style="margin-top:20px">
       <div class="label">Your profile</div>
       <div class="hint">Signed in as <b>${esc(me.username)}</b> · ${esc(S.session.user.email)}</div>
+      <div class="field"><label class="label" for="ride-pref">I ride</label>
+        <select id="ride-pref">${[...Object.entries(SPORTS).map(([k, sp]) => [k, sp.label]), ['both', 'Both']].map(([k, l]) =>
+          `<option value="${k}" ${S.sports === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="field"><label class="label" for="home-resort">Home mountain</label>
         <select id="home-resort"><option value="">Not set</option>${RESORTS.map(r =>
           `<option ${me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
@@ -2410,7 +2610,7 @@ const views = {
           const got = B.landed.has(t.id);
           return `<div class="book-row ${got ? 'done' : ''}">
             <span class="check ${got ? 'on' : ''}" aria-label="${got ? 'Landed' : 'Not yet'}">${got ? '✓' : ''}</span>
-            <div><b>${esc(t.name)}</b>${t.id === S.totd ? ` <span class="pill totd">${ic('fire', 12)} Today 2×</span>` : ''}<div class="hint mono">${t.pts} pts</div>${got ? `<div class="chips">${
+            <div><b>${esc(t.name)}</b>${isTotd(t.id) ? ` <span class="pill totd">${ic('fire', 12)} Today 2×</span>` : ''}<div class="hint mono">${t.pts} pts</div>${got ? `<div class="chips">${
               [...B.landed.get(t.id)].filter(g => g !== 'No grab').map(g => `<span class="chip">${esc(g)}</span>`).join('')}${
               mine ? `<span class="chip next">+${Math.round(t.pts * .2)} per new grab</span>` : ''}</div>` : ''}</div>
             <div style="display:flex;gap:6px">
@@ -2830,7 +3030,7 @@ function syncPost(){
   if (S.postPreset && sportOf(trickById(S.postPreset)) === S.sport) cat.value = trickById(S.postPreset).category;
   const sel = $('post-trick'), prev = S.postPreset || sel.value;
   sel.innerHTML = tricksFor(S.sport, cat.value)
-    .map(t => `<option value="${t.id}">${S.landed.has(t.id) ? '✓ ' : ''}${esc(t.name)}${t.id === S.totd ? ' 🔥' : ''}</option>`).join('');
+    .map(t => `<option value="${t.id}">${S.landed.has(t.id) ? '✓ ' : ''}${esc(t.name)}${isTotd(t.id) ? ' 🔥' : ''}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   S.postPreset = null;
   syncCombo(cat.value === 'Rails' ? sel.value : null);
@@ -2997,8 +3197,9 @@ function showOnboarding(){
   $('overlay').innerHTML = `<div class="onboard" role="dialog" aria-label="Set up Stomped">
     <div class="ob-step">1 of 2</div><h2>Ski or<br>snowboard?</h2>
     <div class="ob-grid">${Object.entries(SPORTS).map(([k, sp]) =>
-      `<button class="btn big" data-act="ob-sport" data-k="${k}">${sp.icon}${sp.label}</button>`).join('')}</div>
-    <p class="hint">You can switch any time when you record.</p></div>`;
+      `<button class="btn big" data-act="ob-sport" data-k="${k}">${sp.icon}${sp.label}</button>`).join('')}
+      <button class="btn big" data-act="ob-sport" data-k="both" style="grid-column:1/-1">${ic('both', 22)}Both</button></div>
+    <p class="hint">You only see tricks for what you ride. Change it any time on your profile.</p></div>`;
   return true;
 }
 function onboardResort(){
@@ -3414,7 +3615,7 @@ document.addEventListener('click', async e => {
       return;
     }
     case 'close-splash': return closeSplash();
-    case 'ob-sport': S.sport = b.dataset.k; store.set('sport', S.sport); return onboardResort();
+    case 'ob-sport': setRides(b.dataset.k); return onboardResort();
     case 'ob-resort': return finishOnboarding(b.dataset.k);
     case 'reward-collect': { $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r); return; }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
@@ -3483,7 +3684,7 @@ document.addEventListener('click', async e => {
     case 'book-sport': S.book.sport = b.dataset.k; return render(true);
     case 'book-tip': S.bookTip = S.bookTip === id ? null : id; return render(true);
     case 'book-record': S.postPreset = id; S.sport = sportOf(trickById(id)); store.set('sport', S.sport); return openTab('record');
-    case 'totdpost': S.postPreset = S.totd; S.sport = sportOf(trickById(S.totd)); return openTab('record');
+    case 'totdpost': { const k = b.dataset.k || S.sport; if (!S.totds[k]) return; S.sport = k; store.set('sport', k); S.postPreset = S.totds[k]; return openTab('record'); }
     case 'playtile': {
       const v = b.querySelector('video'); if (!v) return;
       if (v.paused){ document.querySelectorAll('.tile video').forEach(o => o.pause()); v.muted = false; v.play(); } else v.pause();
@@ -3522,6 +3723,7 @@ document.addEventListener('click', async e => {
     // record
     case 'sport':
       S.sport = b.dataset.k; store.set('sport', S.sport);
+      if (S.sports !== 'both'){ S.sports = S.sport; store.set('sports', S.sports); }   // a skier switching to snowboard now rides snowboard
       if (S.rec.mode === 'review'){ const box = $('post-form'); if (box){ box.outerHTML = postForm(); syncPost(); } return; }
       return render(true);
     case 'cam-open': return openCamera();
@@ -3560,6 +3762,7 @@ document.addEventListener('change', async e => {
   if (['post-cat','post-trick','post-grab'].includes(id)) syncPost();
   if (id === 'post-combo-add' && e.target.value){ S.postCombo.push(e.target.value); syncPost(); }
   if (id === 'duel-trick') S.duelTrick = e.target.value;
+  if (id === 'ride-pref'){ setRides(e.target.value); toast('Saved'); render(true); }
   if (id === 'board-resort'){ S.board.resort = e.target.value; try { await loadBoard(); } catch (err){ toast(err.message); } render(true); }
   if (id === 'home-resort'){
     const r = await db.from('profiles').update({home_resort: e.target.value || null}).eq('id', myId());
