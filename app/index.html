@@ -245,7 +245,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .friend-rank{display:flex;align-items:center;gap:5px}
 .squad-seg{display:flex;width:100%;margin:4px 0 14px}
 .squad-seg button{flex:1;padding:8px 4px}
-.squad-seg .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--hot,#ff5a1f);color:#0a0b10;font:700 10px/16px "JetBrains Mono",monospace}
+.squad-seg .cnt,.feed-bar .cnt{display:inline-block;min-width:16px;padding:0 4px;margin-left:3px;border-radius:8px;background:var(--hot,#ff5a1f);color:#0a0b10;font:700 10px/16px "JetBrains Mono",monospace}
 .prof-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .prof-rank{display:grid;gap:8px;margin-bottom:12px;padding:14px 16px}
 .prof-rank .row{flex-wrap:wrap;gap:6px 12px;justify-content:space-between}
@@ -341,7 +341,8 @@ select:focus,input:focus{border-color:var(--ice)}
 .feed-bar.float .seg{pointer-events:auto;background:rgba(10,13,20,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .feed-bar.float .seg button{padding:6px 8px;font-size:12px}
 .reel.feedreel{height:calc(100dvh - 150px - env(safe-area-inset-bottom,0px))}
-.feedreel .reel-top{top:52px}   /* judge cards in the feed: clear the Hot/New/Friends bar */
+.feedreel .reel-top{top:62px}   /* clear the Clips | Judge bar */
+.feed-bar .on .cnt{background:#0a0b10;color:var(--hot,#ff5a1f)}
 .feed-item video{object-fit:contain}
 .feed-item::after{content:'';position:absolute;left:0;right:0;bottom:0;height:45%;pointer-events:none;background:linear-gradient(transparent,rgba(0,0,0,.8))}
 .feed-item .poster{height:100%;display:grid;place-items:center}
@@ -958,7 +959,7 @@ const S = {
   squad: store.get('squad', 'friends'),
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
-  feed: {scope: store.get('feed-scope', 'everyone') === 'friends' ? 'friends' : 'everyone', sort: store.get('feed-sort', 'hot'), limit: 30, rows: [], more: false, loaded: false},
+  feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false},   // mode: 'clips' (watch) or 'judge' (swipe stack)
   board: {scope: 'global', period: 'all', resort: '', rows: []},
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
@@ -1595,40 +1596,18 @@ const findClip = id => S.clips.find(x => x.id === id) || S.feed.rows.find(x => x
   || (S.profile && S.profile.clips.find(x => x.id === id));
 
 // ---------- the feed ----------
-// Every clip from the chosen circle (verified, still being judged, and bails), so you can always rewatch them (friends, your mountain, or everyone), then put in order.
-// "New" is newest first. "Hot" takes a pool of recent clips and ranks it: newer is better, and friends, your
-// mountain, bigger tricks, likes and comments push a clip up. A small shuffle that changes once a day keeps it
-// from feeling frozen, without clips jumping around every time the screen redraws.
-const FEED_PAGE = 30, HOT_POOL = 3;   // Hot ranks 3 pages' worth of recent clips and shows the best page
+// Newest first, everyone's clips (Connor 10/27: no Hot/New, no Friends filter; it's all new anyway)
+const FEED_PAGE = 30;
 async function loadFeed(){
-  const F = S.feed, friends = acceptedFriends().map(f => f.other.id);
+  const F = S.feed;
   F.loaded = true;
-  if (F.scope === 'friends' && !friends.length){ F.rows = []; F.more = false; return; }
-  const want = F.sort === 'hot' ? F.limit * HOT_POOL : F.limit;
-  let q = db.from('clips').select(CLIP_SELECT);
-  if (F.scope === 'friends') q = q.in('user_id', [myId(), ...friends]);
-  const rows = mustOk(await q.order('created_at', {ascending: false}).range(0, want));  // asks for one extra to see if more exist
-  F.more = rows.length > want;
+  const rows = mustOk(await db.from('clips').select(CLIP_SELECT).order('created_at', {ascending: false}).range(0, F.limit));  // asks for one extra to see if more exist
+  F.more = rows.length > F.limit;
   const known = new Map(S.clips.map(c => [c.id, c]));   // reuse the same objects, so a like shows everywhere at once
-  let list = rows.slice(0, want).filter(shownClip).map(r => known.get(r.id) || r);
+  let list = rows.slice(0, F.limit).filter(shownClip).map(r => known.get(r.id) || r);
   await loadFilmers(list);
-  if (F.sort === 'hot'){ list = rankHot(list, friends); if (list.length > F.limit) F.more = true; list = list.slice(0, F.limit); }
   if (F.pin) list = [F.pin, ...list.filter(c => c.id !== F.pin.id)];   // a clip someone sent you stays on top
   F.rows = list;
-}
-const seeded = s => { let h = 2166136261; for (const ch of s){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
-function rankHot(list, friends){
-  const close = new Set([myId(), ...friends]), day = dayKey(new Date().toISOString()), now = Date.now();
-  const score = c => {
-    const hours = Math.max(0, (now - Date.parse(c.verified_at || c.created_at)) / 36e5);
-    let s = 1 + Math.log2(1 + count(c.likes)) + .5 * Math.log2(1 + count(c.comments)) + trickById(c.trick_id).pts / 40;
-    if (close.has(c.user_id)) s *= 1.6;
-    if (S.me.home_resort && c.resort === S.me.home_resort) s *= 1.25;
-    if (judgeable(c)) s *= 1.5;   // waiting on your vote: show it sooner
-    s *= .85 + .3 * seeded(c.id + day + myId());
-    return s / Math.pow(hours + 2, .8);   // older clips sink, but a great one can stay up for a day or two
-  };
-  return list.map(c => [score(c), c]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
 }
 const activeDuelWith = id => S.duels.find(d => d.status === 'active' && d.other && d.other.id === id);
 
@@ -2149,9 +2128,7 @@ function startHere(){
   </section>`;
 }
 function emptyFeed(){
-  const F = S.feed, go = (tab, label) => `<button class="btn primary" data-act="tab" data-tab="${tab}" style="margin-top:14px">${label}</button>`;
-  if (F.scope === 'friends' && !acceptedFriends().length)
-    return `<div class="card empty"><strong>No friends yet</strong>Add riders you know and their verified tricks show up here.${go('duels', 'Find friends')}</div>`;
+  const go = (tab, label) => `<button class="btn primary" data-act="tab" data-tab="${tab}" style="margin-top:14px">${label}</button>`;
   return `<div class="card empty"><strong>Nothing here yet</strong>Verified tricks show up here. Be the first.${go('record', 'Record a trick')}</div>`;
 }
 // Same rule for everyone, so votes (and the training data behind the trick AI) mean the same thing.
@@ -2459,45 +2436,33 @@ const views = {
   },
 
   feed(){
-    // Full screen, one clip at a time, swipe up for the next (like TikTok).
-    // Every clip shows. Someone else's clip still being judged shows as a judge card (no name) until you vote on it;
-    // after that it turns into a normal clip you can rewatch. Your own clips still being judged come first. (Connor 10/25)
-    const F = S.feed, waiting = S.clips.filter(c => c.user_id === myId() && c.status === 'pending');
-    const seg = (act, k, label, on) => `<button class="${on ? 'on' : ''}" data-act="${act}" data-k="${k}">${label}</button>`;
-    // Everyone by default; Friends is one on/off toggle (Connor 10/25: too many filters)
-    const bar = `<div class="feed-bar float">
-      <div class="seg" role="group" aria-label="Order">${seg('feed-sort', 'hot', 'Hot', F.sort === 'hot')}${seg('feed-sort', 'new', 'New', F.sort === 'new')}</div>
-      <div class="seg" role="group" aria-label="Only friends">${seg('feed-scope', F.scope === 'friends' ? 'everyone' : 'friends', 'Friends', F.scope === 'friends')}</div></div>`;
-    const seen = new Set(), list = [...waiting, ...F.rows].filter(c => !seen.has(c.id) && seen.add(c.id));
-    const start = '';   // the Start here list lives on Base now (10/27)
+    // Two tabs up top, like TikTok's Following / For You (Connor 10/27): one screen, one job.
+    //   Clips = scroll and watch (every clip, bails too, newest first). Clips you still have to judge stay out of it.
+    //   Judge = the swipe stack: right = landed, left = bailed. Once judged, a clip shows up in Clips with the name.
+    const F = S.feed, J = S.judge, jq = judgeQueue().length;
+    const bar = `<div class="feed-bar float"><div class="seg" role="tablist" aria-label="Feed">
+      <button class="${F.mode === 'clips' ? 'on' : ''}" data-act="feed-mode" data-k="clips" role="tab" aria-selected="${F.mode === 'clips'}">Clips</button>
+      <button class="${F.mode === 'judge' ? 'on' : ''}" data-act="feed-mode" data-k="judge" role="tab" aria-selected="${F.mode === 'judge'}">Judge${jq ? ` <span class="cnt">${jq}</span>` : ''}</button></div></div>`;
+    if (F.mode === 'judge'){
+      const done = `<div class="rank-word t-gold" style="font-size:44px">All judged ✓</div>
+        <p class="sub" style="margin-top:10px">${J.list.length ? "That's every clip waiting on you." : 'No clips need your vote right now.'} Your vote counts ×${trickTierOf(S.me.points).w}.</p>
+        <button class="btn primary" data-act="feed-mode" data-k="clips">Watch clips</button>`;
+      return `<div class="feedwrap">${bar}<div class="reel feedreel judge-reel" id="reel">${J.list.map(reelItem).join('')}
+        <div class="reel-end"><div>${done}${landedRule()}</div></div></div></div>`;
+    }
+    const pinId = F.pin && F.pin.id;
+    const waiting = S.clips.filter(c => c.user_id === myId() && c.status === 'pending');   // your own clips still being judged come first
+    const seen = new Set(), list = [...waiting, ...F.rows].filter(c => !seen.has(c.id) && seen.add(c.id)
+      && (c.id === pinId || !needsMyVote(c)));
     let end;
     if (!F.loaded) end = '<p class="sub">Loading…</p>';
     else if (F.more) end = '<p class="sub">Loading more…</p>';
-    else if (list.length) end = `<p class="hint">You're all caught up.${F.scope === 'everyone' ? '' : ` <button class="linkish" data-act="feed-scope" data-k="everyone" style="align-self:auto">See everyone</button>`}</p>`;
+    else if (list.length) end = `<p class="hint">You're all caught up.</p>`;
     else end = emptyFeed();
     return `<div class="feedwrap">${bar}<div class="reel feedreel" id="reel">
-      ${start ? `<section class="reel-item intro">${totdStrip()}${start}</section>` : ''}
-      ${list.map(c => judgeable(c) ? reelItem(c) : feedItem(c)).join('')}
+      ${list.map(c => c.id === pinId && judgeable(c) ? reelItem(c) : feedItem(c)).join('')}
       ${!F.loaded && !list.length ? SKEL_FEED : ''}
       <div class="reel-end"><div>${end}</div></div></div></div>`;
-  },
-
-  judge(){
-    const J = S.judge;
-    if (!J.list.length) return `<h2>Judge</h2>
-      <div class="card empty"><strong>All caught up</strong>No clips need your vote right now. Nice.
-        <div class="row" style="justify-content:center;gap:8px;margin-top:14px">
-          <button class="btn primary" data-act="tab" data-tab="record">Record a trick</button>
-          <button class="btn" data-act="tab" data-tab="duels">Invite friends</button></div></div>
-      ${landedRule()}`;
-    const w = trickTierOf(S.me.points);
-    return `<div class="reel judge-reel" id="reel">${J.list.map(reelItem).join('')}
-      <div class="reel-end"><div><div class="rank-word t-gold" style="font-size:44px">All caught up</div>
-        <p class="sub" style="margin-top:10px">That's every clip waiting on you. Go ride.</p>
-        <button class="btn primary" data-act="tab" data-tab="feed">Back to the feed</button></div></div>
-    </div>
-    <p class="hint" style="text-align:center;margin-top:8px">Swipe right = landed · left = bailed · up = skip · your vote counts ×${w.w}</p>
-    ${landedRule()}`;
   },
 
   record(){
@@ -2936,7 +2901,7 @@ function watchReel(){
 let feedLoading = false;
 async function feedMore(){
   const F = S.feed;
-  if (S.tab !== 'feed' || !F.more || feedLoading) return;
+  if (S.tab !== 'feed' || F.mode !== 'clips' || !F.more || feedLoading) return;
   feedLoading = true; F.limit += FEED_PAGE;
   try { await loadFeed(); } catch (err){ toast(err.message); }
   feedLoading = false; render(true);
@@ -3197,7 +3162,11 @@ const TABS = [
   ['duels','Squad','<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6M15 14.6c3.2-.4 6 1.6 6 5.4"/>'],
   ['me','Profile','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>'],
 ];  // 5 tabs so Record sits in the middle (Connor 10/27). 'me' opens your own profile.  // tab id stays 'duels' (lots of links use it); the screen is Squad: Friends / Ranks / Crew / Duels. Your profile opens from Base's rank card and the badge up top.
-const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && c.filmed_by !== myId() && !S.myVotes.has(c.id));
+// The judge stack is a snapshot, so a card doesn't vanish under your thumb when the clips refresh
+function startJudge(){ S.judge = {list: judgeQueue(), voted: {}, reasonFor: null, count: 0, breakShown: false}; }
+// Someone else's clip still being judged that you can vote on (not one you filmed for them)
+const needsMyVote = c => c.status === 'pending' && c.user_id !== myId() && c.filmed_by !== myId() && !S.myVotes.has(c.id);
+const judgeQueue = () => S.clips.filter(needsMyVote);
 // Shown as a judge card in the feed: someone else's clip still being judged that you haven't voted on (or just voted on, stamp showing)
 const judgeable = c => c.status === 'pending' && c.user_id !== myId() && (!S.myVotes.has(c.id) || c.id in S.judge.voted);
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
@@ -3329,8 +3298,9 @@ async function refresh(force = false){
 
 async function openTab(tab, focusId){
   if (S.tab === 'record' && tab !== 'record') resetRecorder();
-  if (tab === 'judge') tab = 'feed';   // judging lives in the feed now; old links still land there
-  if (tab === 'feed') S.judge = {list: [], voted: {}, reasonFor: null, count: 0, breakShown: false};
+  // Judge links (Base, alerts) open Feed on the Judge tab; the Feed tab itself opens on Clips
+  if (tab === 'judge'){ tab = 'feed'; S.feed.mode = 'judge'; } else if (tab === 'feed') S.feed.mode = 'clips';
+  if (tab === 'feed') startJudge();
   if (tab === 'duels') S.duelId = null;
   S.tab = tab; S.openComments = null; $('view').innerHTML = '';
   if (tab === 'ranks' || (tab === 'duels' && S.squad === 'ranks')){ try { await loadBoard(); } catch (err){ toast(err.message); } }
@@ -3368,7 +3338,7 @@ async function vote(clipId, landed, reason){
   setTimeout(() => {   // then it becomes a normal clip (name, fire, comments) you can scroll back to
     delete J.voted[clipId];
     const el = $('reel-' + clipId), c = findClip(clipId);
-    if (el && c && S.tab === 'feed'){ el.outerHTML = feedItem(c); const f = $('clip-' + clipId); if (f && reelObserver) reelObserver.observe(f); }
+    if (el && c && S.tab === 'feed' && S.feed.mode === 'clips'){ el.outerHTML = feedItem(c); const f = $('clip-' + clipId); if (f && reelObserver) reelObserver.observe(f); }
   }, 1700);
   maybeBreak();
   loadAll().then(() => render()).catch(() => {});  // update badges quietly
@@ -3534,12 +3504,12 @@ async function submitPost(){
       render(true); return;
     }
     toast('Posted. Riders are judging it now.');
-    S.tab = 'feed'; await refresh(true); window.scrollTo(0, 0);
+    S.tab = 'feed'; S.feed.mode = 'clips'; await refresh(true); window.scrollTo(0, 0);
   } catch (err){
     if (looksOffline(err) && blob){
       try {
         await queueClip({kind: 'post', fields, blob, motion: mot});
-        resetRecorder(); S.postCombo = []; S.tab = 'feed'; render(true); window.scrollTo(0, 0);
+        resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0);
         toast("No signal. Saved on your phone, and it uploads when you're back online.", 5000);
         return;
       } catch (e) { /* couldn't save it either: fall through to the error */ }
@@ -3771,12 +3741,10 @@ document.addEventListener('click', async e => {
     case 'feedback-send': return sendFeedback(b);
     case 'delete-account': S.confirmDelete = !S.confirmDelete; return render(true);
     case 'delete-account-yes': return deleteAccount(b);
-    case 'feed-scope': case 'feed-sort': {
-      const k = act === 'feed-scope' ? 'scope' : 'sort';
-      S.feed[k] = b.dataset.k; store.set('feed-' + k, b.dataset.k); S.feed.limit = FEED_PAGE; S.feed.loaded = false; S.feed.pin = null; S.feed.rows = []; render(true);
-      try { await loadFeed(); } catch (err){ toast(err.message); }
-      return render(true);
-    }
+    case 'feed-mode':
+      if (S.feed.mode === b.dataset.k) return;
+      S.feed.mode = b.dataset.k; if (b.dataset.k === 'judge') startJudge();
+      render(true); return window.scrollTo(0, 0);
     case 'feed-more':
       S.feed.limit += FEED_PAGE; b.disabled = true; b.textContent = 'Loading…';
       try { await loadFeed(); } catch (err){ toast(err.message); }

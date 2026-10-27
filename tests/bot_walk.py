@@ -84,15 +84,17 @@ def main():
             pg.wait_for_timeout(800)
 
         def judge_yes():
-            tab("feed")  # judging happens in the feed now
+            tab("feed")
+            pg.click("[data-act=feed-mode][data-k=judge]")  # Clips | Judge tabs on the feed (10/27)
+            pg.wait_for_timeout(500)
             card = pg.locator(".reel-item.judging").first
             card.scroll_into_view_if_needed()
             pg.wait_for_timeout(600)
             pg.screenshot(path=u.SHOTS / "bot-judge-card.png")
             cid = card.get_attribute("data-id")
             card.locator("[data-act=vote][data-y='1']").click()
-            pg.wait_for_timeout(2400)   # stamp, then it turns into a normal clip with the name
-            print("voted clip is now a normal clip:", pg.locator(f"article#clip-{cid}").count() == 1)
+            pg.wait_for_timeout(2400)   # stamp, then the stack moves to the next clip
+            print("stamp stays on the judged card:", pg.locator(f"#reel-{cid} .reel-done").count() == 1)
             pg.screenshot(path=u.SHOTS / "bot-after-vote.png")
 
         def judge_no():
