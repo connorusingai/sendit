@@ -23,6 +23,8 @@ GONE = "99999999-8888-7777-6666-555555555555"
 OTHER = {**w.CLIP, "id": SHARED, "user_id": "22222222-0000-0000-0000-000000000000", "trick_id": "bs360",
          "profiles": {"username": "pal", "points": 300}}
 
+PAL = {"id": OTHER["user_id"], "username": "pal", "points": 300, "rating": 1000}
+
 
 def handle(route, req):
     single = "vnd.pgrst.object" in req.headers.get("accept", "")   # .maybeSingle() may ask for a list or one object
@@ -30,6 +32,8 @@ def handle(route, req):
         return route.fulfill(json=OTHER if single else [OTHER])
     if "/rest/v1/clips" in req.url and f"id=eq.{GONE}" in req.url:
         return route.fulfill(json=[])
+    if "/rest/v1/profiles" in req.url and "username=eq.pal" in req.url:
+        return route.fulfill(json=PAL if single else [PAL])
     return w.handle(route, req)
 
 
@@ -79,6 +83,20 @@ def main():
         msg = pg.evaluate("document.getElementById('toast').textContent")
         ok.append(("removed clip: plain message", "removed" in msg or "Couldn't open" in msg))
         print("   toast:", msg)
+
+        # App invites (?from=USERNAME)
+        pg = page(b, False, logs)
+        pg.goto(w.URL + "?from=pal", wait_until="networkidle"); pg.wait_for_timeout(1500)
+        ok.append(("invite, signed out: '@pal invited you' note", "@pal invited you" in (pg.locator(".sent-you").inner_text() if pg.locator(".sent-you").count() else "")))
+        pg = page(b, True, logs)
+        pg.goto(w.URL + "?from=pal", wait_until="networkidle"); pg.wait_for_timeout(4000)
+        ok.append(("invite, signed in: Squad shows @pal to add", pg.locator("#view").inner_text().count("pal") > 0 and pg.locator("[data-act=add-friend], [data-act=addfriend], [data-act=friend-add]").count() > 0))
+        pg.screenshot(path=w.SHOTS / "share-3-invited.png")
+        pg.mouse.click(195, 420); pg.evaluate("document.querySelector('#tabs [data-tab=lodge]').click()"); pg.wait_for_timeout(800)
+        pg.evaluate("window.__shared = null; document.querySelector('.b2-invite').click()"); pg.wait_for_timeout(400)
+        d = pg.evaluate("window.__shared") or {}
+        ok.append(("Base invite button shares ?from= link", "?from=walker" in d.get("url", "")))
+        print("   invite text:", d.get("text"))
         b.close()
     srv.shutdown()
     for name, good in ok:

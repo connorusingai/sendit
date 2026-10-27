@@ -736,7 +736,8 @@ button,[data-act],select{touch-action:manipulation}
 .fi-side .icon-btn{min-width:48px;min-height:48px;justify-content:center}
 .fi-info .linkname{min-height:40px;display:inline-flex;align-items:center}
 .linkish{min-height:44px;display:inline-flex;align-items:center}
-.btn.small{min-height:44px}.b2-lbl button{min-height:44px;padding-inline:10px}
+.btn.small{min-height:44px}
+.b2-invite{width:100%;margin-top:12px;min-height:48px;justify-content:center}.b2-lbl button{min-height:44px;padding-inline:10px}
 /* Rank tag on feed clips: badge + rank name in the rank's color (name, not just color) */
 .rank-tag{display:inline-flex;align-items:center;gap:3px;padding:1px 8px 1px 2px;border:1px solid currentColor;background:rgba(0,0,0,.5);
   font-family:var(--display);font-style:italic;font-weight:900;text-transform:uppercase;font-size:14px;letter-spacing:.03em;line-height:1}
@@ -2160,6 +2161,7 @@ const views = {
         <button class="b2-judge" data-act="book" data-id="${S.me.id}" data-name="${esc(S.me.username)}"><small>Trick book</small><b>${S.landed.size}/${S.tricks.length}</b></button>
       </div>
       ${startHere() || nextToLand()}
+      <button class="btn b2-invite" data-act="invite">${ic('send', 16)} Invite friends to Stomped</button>
     </section>`;
   },
   auth(){
@@ -2167,7 +2169,8 @@ const views = {
     const up = S.authMode === 'signup';
     const ladder = TRICK_TIERS.slice().reverse();
     return `<section class="lhero">
-        ${store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Sign up and it opens right after.</a>` : ''}
+        ${store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Sign up and it opens right after.</a>`
+          : store.get('pending-from', '') ? `<a class="card sent-you" href="#auth-top"><b>@${esc(store.get('pending-from', ''))} invited you.</b> Sign up and you can add them right away.</a>` : ''}
         <div class="eyebrow">The trick app for skiers & snowboarders</div>
         <h1>Land it.<br><span>Prove it.</span></h1>
         <p class="lede">Film a trick in the app. Other riders judge it, anonymously. Every verified trick earns points
@@ -2429,7 +2432,7 @@ const views = {
     const tr = rankInfo(u.points, TRICK_TIERS), dr = rankInfo(u.rating, TIERS);
     const f = S.friends.find(x => x.other && x.other.id === u.id);
     const duel = !mine && activeDuelWith(u.id);
-    const friendBit = mine ? `<div class="prof-acts"><button class="btn small" data-act="squad-go" data-k="ranks">${ic('trophy', 15)} Leaderboard</button>
+    const friendBit = mine ? `<div class="prof-acts"><button class="btn small" data-act="invite">${ic('send', 15)} Invite</button><button class="btn small" data-act="squad-go" data-k="ranks">${ic('trophy', 15)} Leaderboard</button>
         <button class="btn small" data-act="squad-go" data-k="friends">Friends · ${acceptedFriends().length}</button></div>`
       : f && f.status === 'accepted' ? `<div class="prof-acts"><span class="pill ok">Friends</span>${duel
           ? `<button class="btn small" data-act="open-duel" data-id="${duel.id}">View duel</button>`
@@ -3012,7 +3015,7 @@ async function finishOnboarding(resort){
     if (r.error) toast('Could not save your mountain. Pick it later in Ranks.'); else await refresh(true);
   }
   if (!S.feed.pin) S.tab = 'lodge';   // a clip a friend sent wins over Base
-  render(true); showRecHint();
+  render(true); showRecHint(); offerInviter();   // then "@x invited you", once setup is out of the way
 }
 // One bubble over the Record button until you've posted once. Any tap hides it for good.
 function showRecHint(){
@@ -3469,7 +3472,8 @@ document.addEventListener('click', async e => {
       if (S.squad === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
       return render(true);
     case 'invite': {
-      const url = location.origin + location.pathname, text = `Come duel me on Stomped. I'm ${S.me.username}.`;
+      const url = `${location.origin}${location.pathname}?from=${encodeURIComponent(S.me.username)}`;
+      const text = `Get on Stomped with me: film tricks, riders judge them, rank up. I'm @${S.me.username}.`;
       if (navigator.share){ try { await navigator.share({title: 'Stomped', text, url}); } catch (e) {} return; }
       try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Invite link copied. Paste it to your friends.'); }
       catch (e) { toast(url, 6000); }
@@ -3619,6 +3623,27 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
     history.replaceState(null, '', location.pathname);
   }
 }
+// ---------- app invites (?from=USERNAME): after sign-up, offer to add the friend who sent it ----------
+{
+  const from = new URLSearchParams(location.search).get('from');
+  if (from && /^[\w.-]{2,24}$/.test(from)){
+    store.set('pending-from', from);
+    history.replaceState(null, '', location.pathname);
+  }
+}
+async function offerInviter(){
+  const from = store.get('pending-from', '');
+  if (!from) return;
+  store.set('pending-from', '');
+  if (from.toLowerCase() === S.me.username.toLowerCase()) return;
+  const r = await db.from('profiles').select(PROFILE_BITS).eq('username', from).maybeSingle();
+  if (r.error || !r.data) return;   // renamed or deleted: nothing to offer
+  if (S.friends.some(f => f.other && f.other.id === r.data.id)) return;
+  S.squad = 'friends'; S.search = {...(S.search || {}), q: from, results: [r.data]};
+  if (store.get('pending-clip', '')) return;   // a clip link wins; they can add them from the clip
+  await openTab('duels');
+  toast(`@${from} invited you. Tap Add to be friends.`, 5000);
+}
 // ---------- clip links (?clip=ID): open that exact clip, even after signing up first ----------
 {
   const id = new URLSearchParams(location.search).get('clip');
@@ -3666,7 +3691,7 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ if (!showOnboarding()) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); } }
+    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ const setup = showOnboarding(); if (!setup) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); if (!setup) offerInviter(); } }
   }, 0);
 });
 </script>
