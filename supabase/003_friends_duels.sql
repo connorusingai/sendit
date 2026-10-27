@@ -1,4 +1,4 @@
--- Sendit database, version 3: snowboard tricks, friends, and Game of S.K.I. duels.
+-- Stomped database, version 3: snowboard tricks, friends, and Game of S.K.I. duels.
 -- Paste into Supabase > SQL Editor > New query and click Run.
 -- If a popup asks about Row Level Security, pick the option that runs WITHOUT
 -- enabling it: this file sets its own rules below.

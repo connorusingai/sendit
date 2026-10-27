@@ -1,4 +1,4 @@
--- Sendit database, version 7: switch tricks and a full set of rail tricks.
+-- Stomped database, version 7: switch tricks and a full set of rail tricks.
 -- Switch versions of spins and flips are worth about 30% more than the regular trick.
 -- Paste into Supabase > SQL Editor and click Run. It only adds tricks.
 

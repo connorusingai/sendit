@@ -1,4 +1,4 @@
--- Sendit database, version 5: an easier start, a harder top.
+-- Stomped database, version 5: an easier start, a harder top.
 -- Trick rank thresholds, with each gap 50 points bigger than the last:
 --   Bronze 0 · Silver 100 · Gold 250 · Platinum 450 · Diamond 700 · Legend 1000
 -- Vote weight follows trick rank, so it has to move with the new thresholds.

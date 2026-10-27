@@ -1,4 +1,4 @@
--- Sendit database, version 4: one and done.
+-- Stomped database, version 4: one and done.
 -- A trick pays points only the FIRST time it's verified for you. Repeats pay 0.
 -- Grabs don't make it a new trick (a Mute 360 and a Safety 360 are both a 360).
 -- One exception, so Trick of the Day still matters to riders who already have it:

@@ -1,4 +1,4 @@
--- Sendit database, version 2: Trick of the Day, likes, comments, weekly leaderboard.
+-- Stomped database, version 2: Trick of the Day, likes, comments, weekly leaderboard.
 -- Paste into Supabase > SQL Editor > New query and click Run, same as 001.
 -- If a popup asks about Row Level Security, pick the option that runs WITHOUT
 -- enabling it: this file sets its own rules below.

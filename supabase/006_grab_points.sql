@@ -1,4 +1,4 @@
--- Sendit database, version 6: new grabs on a trick you already have pay just the grab.
+-- Stomped database, version 6: new grabs on a trick you already have pay just the grab.
 --   New trick                   = base × 1.2 if grabbed (× 2 on Trick of the Day)
 --   Same trick, new grab        = the grab's worth only: 20% of base (× 2 on Trick of the Day)
 --   Exact repeat (trick + grab) = 0, except a Trick of the Day repeat pays base once that day

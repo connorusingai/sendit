@@ -1,4 +1,4 @@
--- Sendit database, version 9: "Boardslide" isn't a ski trick name.
+-- Stomped database, version 9: "Boardslide" isn't a ski trick name.
 -- Rename the two ski versions. Snowboard keeps Boardslide. Only names change, so clips are unaffected.
 -- Paste into Supabase > SQL Editor and click Run.
 

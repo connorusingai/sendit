@@ -1,4 +1,4 @@
-r"""Play out Sendit's database rules on a throwaway Postgres, before touching the real one.
+r"""Play out Stomped's database rules on a throwaway Postgres, before touching the real one.
 
 Loads supabase/001..006 into a local database (with small stand-ins for the parts of
 Supabase that aren't plain Postgres: logins and file storage), then acts out real

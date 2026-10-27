@@ -1,4 +1,4 @@
--- Sendit database, version 10: Crews.
+-- Stomped database, version 10: Crews.
 -- A crew is a group of friends (like a ski club) with its own leaderboard.
 -- You can be in one crew at a time. Join with the crew's 6-letter invite code.
 -- Paste into Supabase > SQL Editor > New query and click Run.

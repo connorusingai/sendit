@@ -1,4 +1,4 @@
-# Sendit features
+# Stomped features
 
 What's decided, and why. ✅ = in the prototype.
 

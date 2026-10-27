@@ -30,5 +30,5 @@ A running list to pick from. ✅ = built. Roughly in order of how much I think e
     rotation to combine with video.
 
 ## Growth
-11. ✅ *(share cards)* **Share a verified clip** to Instagram/TikTok with a Sendit rank frame on it.
+11. ✅ *(share cards)* **Share a verified clip** to Instagram/TikTok with a Stomped rank frame on it.
 12. **Resort partnerships later:** a mountain's own leaderboard and Trick of the Day.

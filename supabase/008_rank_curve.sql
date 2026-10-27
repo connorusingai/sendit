@@ -1,4 +1,4 @@
--- Sendit database, version 8: trick rank on an upward curve.
+-- Stomped database, version 8: trick rank on an upward curve.
 -- Tier n needs 50 × n × (n+1) points, so each gap is 100 bigger than the last:
 --   Bronze 0 · Silver 100 · Gold 300 · Platinum 600 · Diamond 1000 · Legend 1500
 -- Replaces the 005 ladder (the trick list roughly doubled in 007).

@@ -1,12 +1,12 @@
-# Setting up the Sendit backend (Supabase)
+# Setting up the Stomped backend (Supabase)
 
 Supabase is a hosted database with sign-in and file storage built in. The free plan is
-enough for Sendit until well past the CU ski club launch. About 15 minutes, all in the browser.
+enough for Stomped until well past the CU ski club launch. About 15 minutes, all in the browser.
 
 ## 1. Make the project
 1. Go to **supabase.com** → *Start your project* → sign in (GitHub or email).
 2. *New project*:
-   - **Name:** `sendit`
+   - **Name:** `sendit` (the project's original name; keep it, the app connects by URL)
    - **Database password:** click *Generate*, then save it in your password manager.
      You'll rarely need it, but you can't see it again.
    - **Region:** *West US* (closest to Boulder).

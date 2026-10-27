@@ -1,4 +1,4 @@
--- Sendit database, version 1: accounts, clips, community voting, leaderboard.
+-- Stomped database, version 1: accounts, clips, community voting, leaderboard.
 -- Paste this whole file into Supabase > SQL Editor > New query, then click Run.
 -- Duels come in a later file (002), once this part works.
 --
