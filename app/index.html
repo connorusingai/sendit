@@ -256,6 +256,15 @@ select:focus,input:focus{border-color:var(--ice)}
 .stat b{display:block;font-family:var(--display);font-weight:900;font-size:30px;line-height:1;font-style:italic}
 .stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
 .medals{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+/* Skeletons: grey shapes where content is about to load (feels faster than "Loading…") */
+.skel{display:block;height:12px;border-radius:2px;background:linear-gradient(90deg,var(--surface-2) 0%,var(--raise) 50%,var(--surface-2) 100%);background-size:200% 100%;animation:skel 1.3s linear infinite}
+.skel.big{height:22px}.skel.round{width:44px;height:44px;border-radius:50%}
+.skel-item .fi-info{display:flex;flex-direction:column;gap:10px}.skel-item .fi-side{gap:16px}
+.skel-prof{display:flex;flex-direction:column;gap:12px;margin-block:10px}.skel-prof .skel.card-h{height:120px}
+@keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion: reduce){.skel{animation:none}}
+.sent-you{display:block;padding:12px 14px;margin-block:0 14px;border-color:var(--accent);color:var(--ink);text-decoration:none}
+.sent-you b{color:var(--accent)}
 .medals .card{padding:14px 10px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
 .medals .rank-word{white-space:nowrap}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -844,7 +853,7 @@ body.base-editing .base-rider{transform:translateX(-50%) translateY(-34%) scale(
       <button class="me-chip" data-act="tab" data-tab="ranks" data-focus="profile-card" id="acct-chip" aria-label="Account and sign out" title="Account" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
   </header>
-  <main id="view"><p class="sub">Loading…</p></main>
+  <main id="view"><div class="skel-prof" aria-busy="true" aria-label="Loading"><i class="skel big" style="width:55%"></i><i class="skel" style="width:35%"></i><i class="skel card-h"></i><i class="skel card-h"></i></div></main>
 </div>
 <aside class="rail" id="rail" aria-label="Your stats"></aside>
 </div>
@@ -950,6 +959,12 @@ function plainError(msg){
   if (/jwt|token|not authenticated|401/i.test(m)) return 'You got signed out. Sign in again to keep going.';
   if (/duplicate key|already exists/i.test(m)) return 'That was already done.';
   if (/permission|policy|403|row-level security/i.test(m)) return "You can't do that here.";
+  // Anything else that reads like database or code talk: say it plainly, keep the details in the console
+  if (/violates|constraint|column|relation|syntax|PGRST|uuid|null value|does not exist|schema cache|unexpected|undefined|\bat \w+ \(/i.test(m)){
+    console.warn('Hidden error:', m);
+    const head = m.match(/^([A-Z][a-z]+(?: [a-z]+)? failed): /);   // keep "Vote failed" etc.
+    return (head ? head[1] + '. ' : '') + 'Something went wrong on our end. Try again in a minute.';
+  }
   return m;
 }
 function toast(msg, ms = 2800){
@@ -1341,6 +1356,7 @@ async function loadFeed(){
   const known = new Map(S.clips.map(c => [c.id, c]));   // reuse the same objects, so a like shows everywhere at once
   let list = rows.slice(0, want).filter(r => !r.hidden).map(r => known.get(r.id) || r);
   if (F.sort === 'hot'){ list = rankHot(list, friends); if (list.length > F.limit) F.more = true; list = list.slice(0, F.limit); }
+  if (F.pin) list = [F.pin, ...list.filter(c => c.id !== F.pin.id)];   // a clip someone sent you stays on top
   F.rows = list;
 }
 const seeded = s => { let h = 2166136261; for (const ch of s){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
@@ -1488,6 +1504,12 @@ for (const [ev, on] of [['play', true], ['pause', false]])
   document.addEventListener(ev, e => { const p = e.target.closest && e.target.closest('.player'); if (p) p.classList.toggle('playing', on); }, true);
 const lettersHtml = (n, small) => `<div class="letters ${small ? 'small' : ''}">${['S','K','I'].map((l, i) => `<b class="${i < n ? 'hit' : ''}">${l}</b>`).join('')}</div>`;
 
+// Skeletons shown while a screen's data is on its way
+const SKEL_FEED = `<section class="reel-item skel-item" aria-busy="true" aria-label="Loading clips">
+  <div class="fi-side">${'<i class="skel round"></i>'.repeat(4)}</div>
+  <div class="fi-info"><i class="skel" style="width:35%"></i><i class="skel big" style="width:70%"></i><i class="skel" style="width:55%"></i></div></section>`;
+const SKEL_PAGE = `<div class="skel-prof" aria-busy="true" aria-label="Loading"><i class="skel round" style="width:72px;height:72px"></i>
+  <i class="skel big" style="width:50%"></i><i class="skel" style="width:30%"></i><i class="skel card-h"></i><i class="skel card-h"></i></div>`;
 // The "Verified / Judging / Not verified" pill and the points shown on a clip
 function clipStatus(c){
   const mine = c.user_id === myId();
@@ -1567,9 +1589,10 @@ function clipCard(c){
 
 // The ⋯ menu under a clip: report someone else's clip, or remove your own.
 function clipMenu(c, mine){
-  if (mine) return `<div class="clip-menu"><button class="btn small bad" data-act="remove-clip" data-id="${c.id}">Remove this clip</button>
+  const send = `<button class="btn small" data-act="share-link" data-id="${c.id}">${c.status === 'pending' ? 'Send it to friends to judge' : 'Send this clip'}</button>`;
+  if (mine) return `<div class="clip-menu">${send}<button class="btn small bad" data-act="remove-clip" data-id="${c.id}">Remove this clip</button>
     <span class="hint">The video is deleted for good. Your points stay.</span></div>`;
-  return `<div class="clip-menu"><span class="hint">Report this clip</span>
+  return `<div class="clip-menu">${send}<span class="hint">Report this clip</span>
     ${[['inappropriate', 'Inappropriate'], ['spam', 'Spam'], ['fake', 'Fake or not their clip'], ['other', 'Something else']].map(([k, label]) =>
       `<button class="btn small" data-act="report" data-id="${c.id}" data-k="${k}">${label}</button>`).join('')}
     <span class="hint">Three reports hide it for everyone.</span></div>`;
@@ -2113,6 +2136,7 @@ const views = {
     const up = S.authMode === 'signup';
     const ladder = TRICK_TIERS.slice().reverse();
     return `<section class="lhero">
+        ${store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Sign up and it opens right after.</a>` : ''}
         <div class="eyebrow">The trick app for skiers & snowboarders</div>
         <h1>Land it.<br><span>Prove it.</span></h1>
         <p class="lede">Film a trick in the app. Other riders judge it, anonymously. Every verified trick earns points
@@ -2179,6 +2203,7 @@ const views = {
     return `<div class="feedwrap">${bar}<div class="reel feedreel" id="reel">
       ${start ? `<section class="reel-item intro">${totdStrip()}${start}</section>` : ''}
       ${list.map(c => judgeable(c) ? reelItem(c) : feedItem(c)).join('')}
+      ${!F.loaded && !list.length ? SKEL_FEED : ''}
       <div class="reel-end"><div>${end}</div></div></div></div>`;
   },
 
@@ -2329,7 +2354,7 @@ const views = {
 
   book(){
     const B = S.book;
-    if (!B) return '<p class="sub">Loading…</p>';
+    if (!B) return SKEL_PAGE;
     const mine = B.id === myId(), all = tricksFor(B.sport);
     const done = all.filter(t => B.landed.has(t.id));
     const banked = done.reduce((n, t) => n + t.pts, 0);
@@ -2365,7 +2390,7 @@ const views = {
 
   profile(){
     const P = S.profile;
-    if (!P || !P.data) return '<p class="sub">Loading…</p>';
+    if (!P || !P.data) return SKEL_PAGE;
     const u = P.data, mine = u.id === myId();
     const verified = P.clips.filter(c => c.status === 'verified');
     const fire = P.clips.reduce((n, c) => n + count(c.likes), 0);
@@ -3392,6 +3417,7 @@ document.addEventListener('click', async e => {
       const c = findClip(id); if (S.menuFor === id && c) item.insertAdjacentHTML('beforeend', clipMenu(c, c.user_id === myId()));
       return;
     }
+    case 'share-link': return shareClipLink(id);
     case 'report': return report({clip_id: id}, b.dataset.k);
     case 'report-comment': return report({comment_id: id}, 'inappropriate', b.dataset.clip);
     case 'remove-clip': return removeClip(id);
@@ -3401,7 +3427,7 @@ document.addEventListener('click', async e => {
     case 'delete-account-yes': return deleteAccount(b);
     case 'feed-scope': case 'feed-sort': {
       const k = act === 'feed-scope' ? 'scope' : 'sort';
-      S.feed[k] = b.dataset.k; store.set('feed-' + k, b.dataset.k); S.feed.limit = FEED_PAGE; S.feed.loaded = false; render(true);
+      S.feed[k] = b.dataset.k; store.set('feed-' + k, b.dataset.k); S.feed.limit = FEED_PAGE; S.feed.loaded = false; S.feed.pin = null; S.feed.rows = []; render(true);
       try { await loadFeed(); } catch (err){ toast(err.message); }
       return render(true);
     }
@@ -3516,6 +3542,37 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
     history.replaceState(null, '', location.pathname);
   }
 }
+// ---------- clip links (?clip=ID): open that exact clip, even after signing up first ----------
+{
+  const id = new URLSearchParams(location.search).get('clip');
+  if (id && /^[0-9a-f-]{36}$/i.test(id)){
+    store.set('pending-clip', id.toLowerCase());
+    history.replaceState(null, '', location.pathname);
+  }
+}
+async function shareClipLink(id){
+  const c = findClip(id); if (!c) return;
+  const who = c.user_id === myId() ? 'my' : '@' + (c.profiles ? c.profiles.username : 'a rider') + "'s";
+  const url = `${location.origin}${location.pathname}?clip=${c.id}`, name = clipName(c);
+  const text = c.status === 'pending' ? `Did ${who === 'my' ? 'I' : who.slice(0, -2)} land this ${name}? Judge it on Stomped.`
+    : c.status === 'verified' ? `Watch ${who} ${name}. Verified on Stomped.` : `Watch ${who} ${name} on Stomped.`;
+  if (navigator.share){ try { await navigator.share({title: `${name} on Stomped`, text, url}); } catch (e) {} return; }
+  try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Link copied. Paste it to your friends.'); }
+  catch (e) { toast(url, 6000); }
+}
+async function openPendingClip(){
+  const id = store.get('pending-clip', '');
+  if (!id) return;
+  store.set('pending-clip', '');
+  const r = await db.from('clips').select(CLIP_SELECT).eq('id', id).maybeSingle();
+  if (r.error){ toast("Couldn't open that clip. Check your signal and tap the link again.", 4500); return; }
+  if (!r.data || r.data.hidden){ toast("That clip was removed, so it can't be shown.", 4500); return; }
+  S.feed.pin = findClip(id) || r.data;
+  await openTab('feed');
+  try { await loadFeed(); } catch (e) {}
+  render(true);
+  const el = $('clip-' + id); if (el) el.scrollIntoView({block: 'start'});
+}
 function offerPendingCrew(){
   const code = store.get('pending-crew', '');
   if (!code || !S.crew.ready) return;
@@ -3532,7 +3589,7 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); offerPendingCrew(); } }
+    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); } }
   }, 0);
 });
 </script>
