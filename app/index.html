@@ -277,6 +277,17 @@ select:focus,input:focus{border-color:var(--ice)}
   box-shadow:0 8px 24px rgba(0,0,0,.5);cursor:pointer}
 .rec-hint::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);border:8px solid transparent;border-bottom:0;border-top-color:var(--accent)}
 .rec-hint small{display:block;font-weight:500;opacity:.8}
+/* "Get Stomped on your home screen" card (Connor 10/27): slides up from the bottom, over the tab bar */
+.install-sheet{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:35;max-width:440px;margin:0 auto;
+  padding:16px;display:grid;gap:10px;transform:translateY(130%);transition:transform .32s cubic-bezier(.2,.9,.3,1.2)}
+.install-sheet.open{transform:none}
+.install-sheet h3{margin:0;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.03em;text-transform:uppercase}
+.install-sheet p{margin:0;color:var(--muted)}
+.install-sheet ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.install-sheet ol svg{width:18px;height:18px;vertical-align:-3px;color:var(--accent-hot)}
+.install-sheet .btns{display:flex;gap:8px}
+.install-sheet .btns .btn{flex:1}
+.inapp-note{border-left:3px solid var(--accent)!important}
 @media (prefers-reduced-motion:no-preference){.rec-hint{animation:hintbob 1.6s ease-in-out infinite}}
 @keyframes hintbob{50%{transform:translateX(-50%) translateY(-4px)}}
 .sent-you{display:block;padding:12px 14px;margin-block:0 14px;border-color:var(--accent);color:var(--ink);text-decoration:none}
@@ -2389,6 +2400,7 @@ const views = {
     return `<section class="lhero">
         ${store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Sign up and it opens right after.</a>`
           : store.get('pending-from', '') ? `<a class="card sent-you" href="#auth-top"><b>@${esc(store.get('pending-from', ''))} invited you.</b> Sign up and you can add them right away.</a>` : ''}
+        ${inAppBrowser() ? `<div class="card sent-you inapp-note"><b>Open this in ${realBrowser()} first.</b> Tap ••• at the top, then Open in ${realBrowser()}. ${inAppBrowser()}'s browser can't keep Stomped on your home screen or keep you signed in.</div>` : ''}
         <div class="eyebrow">The trick app for skiers & snowboarders</div>
         <h1>Land it.<br><span>Prove it.</span></h1>
         <p class="lede">Film a trick in the app. Other riders judge it, anonymously. Every verified trick earns points
@@ -3242,6 +3254,7 @@ async function finishOnboarding(resort){
   }
   if (!S.feed.pin) S.tab = 'lodge';   // a clip a friend sent wins over Base
   render(true); showRecHint(); offerInviter();   // then "@x invited you", once setup is out of the way
+  setTimeout(offerInstall, 4000);
 }
 // One bubble over the Record button until you've posted once. Any tap hides it for good.
 function showRecHint(){
@@ -3253,6 +3266,48 @@ function showRecHint(){
   const off = () => { store.set('rec-hint-' + myId(), '1'); h.remove(); document.removeEventListener('pointerdown', off, true); };
   setTimeout(() => document.addEventListener('pointerdown', off, true), 300);
 }
+// ---------- add to home screen (Connor 10/27) ----------
+// Android Chrome: we catch its install offer and fire it from our own button.
+// iPhone: no website is allowed to trigger it, so we show the 2 taps (Share, then Add to Home Screen).
+// Apps' built-in browsers (Instagram, TikTok, Snapchat...) can't add anything: they have to open it in Safari/Chrome first.
+let installEvt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+addEventListener('appinstalled', () => { store.set('installed', '1'); hideInstall(); });
+const UA = navigator.userAgent;
+const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || store.get('installed', '') === '1';
+const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = () => /Android/.test(UA);
+function inAppBrowser(){   // '' when it's a real browser
+  const m = UA.match(/Instagram|FBAN|FBAV|FB_IAB|Snapchat|musical_ly|BytedanceWebview|TikTok|LinkedInApp/);
+  return m ? ({FBAN: 'Facebook', FBAV: 'Facebook', FB_IAB: 'Facebook', musical_ly: 'TikTok', BytedanceWebview: 'TikTok', LinkedInApp: 'LinkedIn'}[m[0]] || m[0]) : '';
+}
+const realBrowser = () => isIOS() ? 'Safari' : 'Chrome';
+const SHARE_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+function offerInstall(){
+  if (!S.me || isInstalled() || !(isIOS() || isAndroid()) || $('install-sheet')) return;
+  if (Date.now() < +store.get('install-later', '0')) return;
+  const app = inAppBrowser();
+  let body, go = '';
+  if (app) body = `<p>You're in ${app}'s browser, which can't do it. Tap <b>•••</b> at the top, then <b>Open in ${realBrowser()}</b>, and sign in there.</p>`;
+  else if (isAndroid() && installEvt){ body = '<p>One tap. It opens full screen, like a real app.</p>'; go = '<button class="btn primary" data-act="install-go">Add it</button>'; }
+  else if (isAndroid()) body = '<ol><li>Tap <b>⋮</b> at the top right</li><li>Tap <b>Add to Home screen</b> (or <b>Install app</b>)</li></ol>';
+  else body = `<ol><li>Tap ${SHARE_IC} <b>Share</b> (on the newest iPhones it's under <b>•••</b>)</li><li>Scroll down, tap <b>Add to Home Screen</b></li></ol>`;
+  const sh = document.createElement('section');
+  sh.id = 'install-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Add Stomped to your home screen');
+  sh.innerHTML = `<h3>Put Stomped on your home screen</h3>${body}
+    <div class="btns"><button class="btn ghost" data-act="install-later">Later</button>${go}</div>`;
+  document.body.appendChild(sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+}
+function hideInstall(){ const sh = $('install-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
+async function installGo(){
+  if (!installEvt) return hideInstall();
+  installEvt.prompt();
+  const r = await installEvt.userChoice.catch(() => null); installEvt = null;
+  if (r && r.outcome === 'accepted') store.set('installed', '1'); else store.set('install-later', String(Date.now() + 3 * 864e5));
+  hideInstall();
+}
+
 function showSplash(){
   if (S.splashDone) return;
   S.splashDone = true;
@@ -3660,6 +3715,8 @@ document.addEventListener('click', async e => {
     }
     case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
     case 'close-modal': $('overlay').innerHTML = ''; return;
+    case 'install-go': return installGo();
+    case 'install-later': store.set('install-later', String(Date.now() + 3 * 864e5)); return hideInstall();   // ask again in 3 days
     case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
     // judging
     case 'askreason': { const was = S.judge.reasonFor; S.judge.reasonFor = id; refreshReelItem(was); return refreshReelItem(id); }
@@ -3931,7 +3988,7 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ const setup = showOnboarding(); if (!setup) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); if (!setup) offerInviter(); } }
+    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ const setup = showOnboarding(); if (!setup) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); if (!setup){ offerInviter(); setTimeout(offerInstall, 6000); } } }
   }, 0);
 });
 </script>
