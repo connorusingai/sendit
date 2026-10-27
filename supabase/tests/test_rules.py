@@ -129,7 +129,8 @@ def main():
     check("2 Bronze votes decide a clip (a 3-person friend test works)", judge(post(d, "180"), who=voters[:2])[0], "verified")
     split = post(d, "360")
     judge(split, who=voters[:1])
-    check("...but 1 yes + 1 no isn't 70% landed, so it's rejected", judge(split, landed=False, who=voters[1:2])[0], "rejected")
+    check("1 yes + 1 no is a split: it waits for more judges (018)", judge(split, landed=False, who=voters[1:2])[0], "pending")
+    check("...and 2 more yes votes verify it (3 of 4 = 75%)", judge(split, who=voters[2:4])[0], "verified")
 
     print("\n-- Security (acting as a signed-in rider) --")
     def as_user(uid, sql, *a):
@@ -332,6 +333,23 @@ def main():
     nope = film(filmer, rider)
     check("'Not me' deletes it and returns the video path", as_user(rider, "select public.answer_filmed_clip(%s, false)", nope)[0][0], f"{filmer}/x.mp4")
     check("...and it's gone", one("select count(*) from public.clips where id = %s", nope), 0)
+
+    print("\n-- Judge score (018) --")
+    honest, joker, poster = [user(f"honest{i}") for i in range(3)], user("joker"), user("poster18")
+    trust = lambda uid: float(one("select public.judge_trust(%s)", uid))
+    check("a new judge's vote counts fully", trust(joker), 1.0)
+    for _ in range(4):   # the joker says bailed, three honest judges say landed
+        c = post(poster, "180")
+        judge(c, landed=False, who=[joker])
+        judge(c, who=honest)
+    check("4 jokes in a row: joker's vote is worth under 0.2", round(trust(joker), 2), 0.18)
+    check("honest judges keep full weight", round(trust(honest[0]), 2), 1.0)
+    c = post(poster, "180")
+    judge(c, landed=False, who=[joker])
+    check("joker + 1 honest 'landed': not enough weight yet", judge(c, who=honest[:1])[0], "pending")
+    check("...a 2nd honest vote verifies it (the joke barely counts)", judge(c, who=honest[1:2])[0], "verified")
+    check("nobody can read the scores from the app", blocked(joker, "select * from public.judge_stats"), True)
+    check("nobody can call judge_trust from the app", blocked(joker, "select public.judge_trust(auth.uid())"), True)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
