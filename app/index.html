@@ -728,6 +728,18 @@ button,[data-act],select{touch-action:manipulation}
 .card,.stat,.rung{border-radius:0;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .stat,.rung{clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
 .btn,.tile,.seg,.seg button,input,select,textarea,.sport-switch button{border-radius:0}
+/* Cold fingers and gloves (10/27): everything you tap is at least ~44px (Apple's minimum), feed buttons 48px */
+.me-chip{min-height:44px}#acct-chip{min-width:44px}
+.seg button,.feed-bar.float .seg button{min-height:42px}
+.feed-bar.float .seg button{padding:8px 12px}
+.fi-side{gap:6px}
+.fi-side .icon-btn{min-width:48px;min-height:48px;justify-content:center}
+.fi-info .linkname{min-height:40px;display:inline-flex;align-items:center}
+.linkish{min-height:44px;display:inline-flex;align-items:center}
+.btn.small{min-height:44px}.b2-lbl button{min-height:44px;padding-inline:10px}
+/* Rank tag on feed clips: badge + rank name in the rank's color (name, not just color) */
+.rank-tag{display:inline-flex;align-items:center;gap:3px;padding:1px 8px 1px 2px;border:1px solid currentColor;background:rgba(0,0,0,.5);
+  font-family:var(--display);font-style:italic;font-weight:900;text-transform:uppercase;font-size:14px;letter-spacing:.03em;line-height:1}
 .btn,.tile,.sport-switch button{clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
 select,input,textarea{background:#070a10;border-color:rgba(255,255,255,.08);box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.05)}
 select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:inset 0 2px 5px rgba(0,0,0,.6),0 0 0 3px rgba(255,107,26,.2);outline:none}
@@ -1269,6 +1281,8 @@ function badgeSVG(key, size = 64, div = 0, {glow = false, float = false} = {}){
 const badgeRect = (x, y, size) => { const k = size / 120; return [x - 16 * k, y - 16 * k, 152 * k, 164 * k]; };
 const rankWord = (info, size) => `<span class="rank-word t-${info.tier.key}" style="font-size:${size}px">${esc(info.label)}</span>`;
 const miniBadge = points => badgeSVG(trickTierOf(points).key, 22);
+const rankTag = points => { const r = rankInfo(points, TRICK_TIERS);
+  return `<span class="rank-tag t-${r.tier.key}">${badgeSVG(r.tier.key, 26, r.div)}${esc(r.label)}</span>`; };
 
 // ---------- loading from the database ----------
 async function loadAll(){
@@ -1548,13 +1562,13 @@ function feedItem(c){
       <button class="avatar linkname ${mine ? 'you' : ''}" ${mine ? '' : avStyle(who)} data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
       <button class="icon-btn ${liked ? 'lit' : ''}" data-act="like" data-id="${c.id}" aria-pressed="${liked}" aria-label="Fire">${ICON.fire}${count(c.likes)}</button>
       <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
-      ${mine && c.status === 'verified' ? `<button class="icon-btn" data-act="share-card" data-id="${c.id}" aria-label="Share this trick">${ICON.share}Share</button>` : ''}
+      <button class="icon-btn" data-act="share-link" data-id="${c.id}" aria-label="Send this clip">${ICON.share}Share</button>
       ${mine && c.status === 'pending' ? `<button class="icon-btn" data-act="delete" data-id="${c.id}" aria-label="Delete">${ICON.trash}</button>`
         : `<button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-label="More options">${ICON.more}</button>`}
       <button class="icon-btn" data-act="mute" aria-label="Turn sound on">${ICON.mute}</button>
     </div>
     <div class="fi-info">
-      <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
+      <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? rankTag(c.profiles.points) : ''}</div>
       <div class="trick">${esc(clipName(c))}</div>
       <div class="meta">${sp.icon} ${dots(esc(c.grab), esc(t.category), esc(c.resort || ''), ago(c.created_at) + ' ago')}</div>
       <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' ? '<small> if verified</small>' : ''}</b>${c.totd ? `<span class="pill totd">${ic('fire', 12)} 2×</span>` : ''}</div>
@@ -1605,7 +1619,8 @@ function clipCard(c){
 
 // The ⋯ menu under a clip: report someone else's clip, or remove your own.
 function clipMenu(c, mine){
-  const send = `<button class="btn small" data-act="share-link" data-id="${c.id}">${c.status === 'pending' ? 'Send it to friends to judge' : 'Send this clip'}</button>`;
+  const send = `<button class="btn small" data-act="share-link" data-id="${c.id}">${c.status === 'pending' ? 'Send it to friends to judge' : 'Send this clip'}</button>`
+    + (mine && c.status === 'verified' ? `<button class="btn small" data-act="share-card" data-id="${c.id}">Share as an image (for stories)</button>` : '');
   if (mine) return `<div class="clip-menu">${send}<button class="btn small bad" data-act="remove-clip" data-id="${c.id}">Remove this clip</button>
     <span class="hint">The video is deleted for good. Your points stay.</span></div>`;
   return `<div class="clip-menu">${send}<span class="hint">Report this clip</span>
