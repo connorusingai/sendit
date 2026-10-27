@@ -801,6 +801,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opa
 .b2-empty{margin:6px 0 0;color:var(--muted);font-size:13.5px}
 .b2-next .b2-mini{color:var(--muted)}
 .b2-try{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--hot);padding:5px 9px;border:2px solid var(--hot);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.filmed{margin-bottom:12px;display:grid;gap:10px;padding:14px;border-left:3px solid var(--hot)}.filmed .player,.filmed video{max-height:38svh}.filmed .label{display:flex;align-items:center;gap:6px}
+.filmed .label svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}.filmed .btns .btn{min-height:48px}
 .b2-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .b2-judge{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:var(--b2-panel);clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 .b2-judge b{font-family:var(--display);font-weight:900;font-size:20px;text-transform:uppercase}
@@ -949,7 +951,7 @@ const store = {
 };
 const S = {
   tab: 'lodge', prevTab: 'lodge', session: null, me: null,
-  tricks: [], clips: [], postCombo: [], myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
+  tricks: [], clips: [], postCombo: [], filmedForMe: [], filmers: {}, postRider: '', myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
   get totd(){ return this.totds[this.sport] || null; },   // Trick of the Day for the sport you're on now
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
@@ -1499,7 +1501,7 @@ async function loadAll(){
   const before = S.me;
   S.landed = landed;
   S.me = mustOk(me);
-  S.clips = mustOk(clips).filter(c => !c.hidden);   // removed or reported clips (011) stay out of sight, yours too
+  S.clips = mustOk(clips).filter(shownClip);   // removed or reported clips (011) and clips waiting on their rider (017) stay out of sight
   S.myVotes = new Set(mustOk(votes).map(v => v.clip_id));
   S.myLikes = new Set(mustOk(likes).map(l => l.clip_id));
   S.totds = totd;
@@ -1509,6 +1511,8 @@ async function loadAll(){
   });
   S.duels = mustOk(duels).map(d => ({...d, other: d.challenger === myId() ? d.op : d.ch}));
   await loadCrew();
+  await loadFilmedForMe();
+  await loadFilmers(S.clips);
   loadSeenStatus();
   noticeResults(before);
 }
@@ -1545,13 +1549,38 @@ async function loadBoard(){
   const ids = S.board.scope === 'friends' ? [myId(), ...acceptedFriends().map(f => f.other.id)] : null;
   S.board.rows = mustOk(await db.rpc('leaderboard', {p_period: S.board.period, p_resort: S.board.resort || null, p_ids: ids}));
 }
+// ----- Film a friend (017) -----
+// A clip a friend filmed of you waits (rider_ok = false) until you tap Keep. Both loaders are best effort,
+// so the app still works if 017 hasn't been run yet (the columns just aren't there).
+const shownClip = c => !c.hidden && c.rider_ok !== false;
+async function loadFilmedForMe(){
+  const r = await db.from('clips').select(CLIP_SELECT).eq('user_id', myId()).eq('rider_ok', false).order('created_at', {ascending: false});
+  S.filmedForMe = r.error ? [] : r.data.filter(c => !c.hidden);
+  await loadFilmers(S.filmedForMe);
+}
+// Usernames of whoever filmed these clips, kept in S.filmers (id -> username).
+async function loadFilmers(rows){
+  const ids = [...new Set(rows.map(c => c.filmed_by).filter(id => id && !S.filmers[id]))];
+  if (!ids.length) return;
+  const r = await db.from('profiles').select('id, username').in('id', ids);
+  if (!r.error) for (const p of r.data) S.filmers[p.id] = p.username;
+}
+async function answerFilmed(id, keep){
+  const c = S.filmedForMe.find(x => x.id === id); if (!c) return;
+  const r = await db.rpc('answer_filmed_clip', {p_clip: id, p_keep: keep});
+  if (r.error){ toast("Couldn't save that: " + r.error.message); return; }
+  toast(keep ? 'Kept. Riders are judging it now.' : 'Removed.');
+  await refresh(true);
+}
+
 async function loadProfile(id){
   const [p, clips, landed] = await Promise.all([
     db.from('profiles').select('*').eq('id', id).single(),
     db.from('clips').select(CLIP_SELECT).eq('user_id', id).order('created_at', {ascending: false}).limit(60),
     landedTricks(id),
   ]);
-  const all = mustOk(clips).filter(c => !c.hidden);
+  const all = mustOk(clips).filter(shownClip);
+  await loadFilmers(all);
   S.profile = {id, data: mustOk(p), landed, clips: id === myId() ? all : all.filter(c => c.status !== 'pending' || S.myVotes.has(c.id))};
 }
 async function loadComments(clipId){
@@ -1581,7 +1610,8 @@ async function loadFeed(){
   const rows = mustOk(await q.order('created_at', {ascending: false}).range(0, want));  // asks for one extra to see if more exist
   F.more = rows.length > want;
   const known = new Map(S.clips.map(c => [c.id, c]));   // reuse the same objects, so a like shows everywhere at once
-  let list = rows.slice(0, want).filter(r => !r.hidden).map(r => known.get(r.id) || r);
+  let list = rows.slice(0, want).filter(shownClip).map(r => known.get(r.id) || r);
+  await loadFilmers(list);
   if (F.sort === 'hot'){ list = rankHot(list, friends); if (list.length > F.limit) F.more = true; list = list.slice(0, F.limit); }
   if (F.pin) list = [F.pin, ...list.filter(c => c.id !== F.pin.id)];   // a clip someone sent you stays on top
   F.rows = list;
@@ -1748,6 +1778,7 @@ function clipStatus(c){
   return {status, shown};
 }
 // One full-screen clip in the Feed: video behind, buttons down the right, who + what bottom-left
+const filmedBy = c => c.filmed_by && S.filmers[c.filmed_by] ? '🎥 filmed by @' + esc(S.filmers[c.filmed_by]) : '';
 function feedItem(c){
   const t = trickById(c.trick_id), sp = SPORTS[sportOf(t)], mine = c.user_id === myId();
   const who = c.profiles ? c.profiles.username : 'Rider', {status, shown} = clipStatus(c);
@@ -1767,7 +1798,7 @@ function feedItem(c){
     <div class="fi-info">
       <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? rankTag(c.profiles.points) : ''}</div>
       <div class="trick">${esc(clipName(c))}</div>
-      <div class="meta">${sp.icon} ${dots(esc(c.grab), esc(t.category), esc(c.resort || ''), ago(c.created_at) + ' ago')}</div>
+      <div class="meta">${sp.icon} ${dots(esc(c.grab), esc(t.category), esc(c.resort || ''), ago(c.created_at) + ' ago', filmedBy(c))}</div>
       <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' ? '<small> if verified</small>' : ''}</b>${c.totd ? `<span class="pill totd">${ic('fire', 12)} 2×</span>` : ''}</div>
     </div>
     ${S.menuFor === c.id ? clipMenu(c, mine) : ''}
@@ -1788,7 +1819,7 @@ function clipCard(c){
       <button class="avatar linkname ${mine ? 'you' : ''}" ${mine ? '' : avStyle(who)} data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s profile">${esc(initials(who))}</button>
       <div class="who"><div class="name"><button class="linkname" data-act="profile" data-id="${c.user_id}">${esc(who)}</button>
         ${c.profiles ? miniBadge(c.profiles.points) : ''}</div>
-        <div class="meta">${dots(esc(c.resort || ''), ago(c.created_at) + ' ago')}</div></div>
+        <div class="meta">${dots(esc(c.resort || ''), ago(c.created_at) + ' ago', filmedBy(c))}</div></div>
       ${status}
     </div>
     ${media}
@@ -2090,6 +2121,18 @@ async function shareCard(clipId){
 
 // ---------- views ----------
 // First moves for a new rider, ticked off as they go. Disappears once they're all done or the rider is past Bronze.
+// A clip a friend filmed of you, waiting on Base for Keep / Not me.
+function filmedCard(c){
+  const t = trickById(c.trick_id), by = S.filmers[c.filmed_by] || 'A friend';
+  return `<section class="card filmed" id="filmed-${c.id}">
+    <div class="label">${ICON.cam} @${esc(by)} filmed you</div>
+    <div class="trick">${esc(t ? clipName(c) : c.trick_id)} <small>· ${esc(dots(c.grab, c.resort, ago(c.created_at) + ' ago'))}</small></div>
+    ${c.video_path ? player(videoUrl(c.video_path), false) : ''}
+    <div class="btns"><button class="btn" data-act="filmed-nope" data-id="${c.id}">Not me</button>
+      <button class="btn primary" data-act="filmed-keep" data-id="${c.id}">Keep it</button></div>
+    <span class="hint">Keep it and it goes to judging. Points go to you.</span>
+  </section>`;
+}
 function startHere(){
   const steps = [
     ['Pick your home mountain', 'Snow report and local leaderboard', 'ranks', !!S.me.home_resort, 'home-resort'],
@@ -2344,6 +2387,7 @@ const views = {
     const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length;
     const totds = ridesSports().filter(k => S.totds[k] && trickById(S.totds[k])), two = totds.length > 1;
     return `<section class="lodge base2">
+      ${S.filmedForMe.map(filmedCard).join('')}
       <button class="b2-hero" data-act="me" aria-label="Your profile: ${esc(r.label)}">
         <span class="b2-badge">${badgeSVG(r.tier.key, 96, r.div)}</span>
         <span class="b2-rank"><small>Rank · @${esc(S.me.username)}</small>
@@ -2997,7 +3041,13 @@ function resetRecorder(keepContext){
 }
 function postForm(){
   const sp = SPORTS[S.sport];
+  const pals = acceptedFriends().map(f => f.other).filter(Boolean);
+  if (!pals.some(p => p.id === S.postRider)) S.postRider = '';
   return `<form class="card form" id="post-form" style="margin-top:14px">
+    ${pals.length ? `<div class="field"><label class="label" for="post-rider">Who's riding?</label>
+      <select id="post-rider"><option value="">Me (@${esc(S.me.username)})</option>${
+        pals.map(p => `<option value="${p.id}" ${S.postRider === p.id ? 'selected' : ''}>@${esc(p.username)} (I filmed it)</option>`).join('')}</select>
+      <span class="hint" id="post-rider-hint">${riderHint(pals.find(p => p.id === S.postRider))}</span></div>` : ''}
     ${sportSwitch(S.sport, 'sport')}
     <div class="two">
       <div class="field"><label class="label" for="post-cat">Category</label>
@@ -3016,6 +3066,8 @@ function postForm(){
       <button class="btn primary" type="submit" id="post-btn">Post</button></div>
   </form>`;
 }
+const riderHint = p => p ? `It goes to @${esc(p.username)}'s Base. Once they tap Keep, it's theirs: their points, their profile.`
+  : 'Filming a friend? Pick them here.';
 function duelReviewForm(ctx){
   return `<div class="card form" style="margin-top:14px">
     <div class="trick">${esc(trickById(ctx.trickId).name)}</div>
@@ -3124,7 +3176,11 @@ async function uploadClip(fields, blob = S.rec.blob, mot = S.rec.motion){
   const path = `${myId()}/${crypto.randomUUID()}.${ext}`;  // must start with my user id (storage rule)
   const up = await db.storage.from('clips').upload(path, blob, {contentType: type});
   if (up.error) throw up.error;
-  const ins = await db.from('clips').insert({...fields, video_path: path}).select('id').single();
+  const {rider, ...cols} = fields;
+  const ins = rider   // filmed a friend: the database checks you're friends and files it under them (017)
+    ? await db.rpc('post_for_friend', {p_rider: rider, p_trick: cols.trick_id, p_grab: cols.grab, p_resort: cols.resort,
+                                       p_video_path: path, p_combo: cols.combo || []}).then(r => ({...r, data: r.data && {id: r.data}}))
+    : await db.from('clips').insert({...cols, video_path: path}).select('id').single();
   if (ins.error){ await db.storage.from('clips').remove([path]); throw ins.error; }
   // The motion log sits next to the video (abc.mp4 -> abc.motion.json). Best effort: storage
   // refuses JSON until supabase/015_motion.sql has run, and the clip is already posted either way.
@@ -3141,7 +3197,7 @@ const TABS = [
   ['duels','Squad','<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6M15 14.6c3.2-.4 6 1.6 6 5.4"/>'],
   ['me','Profile','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>'],
 ];  // 5 tabs so Record sits in the middle (Connor 10/27). 'me' opens your own profile.  // tab id stays 'duels' (lots of links use it); the screen is Squad: Friends / Ranks / Crew / Duels. Your profile opens from Base's rank card and the badge up top.
-const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
+const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && c.filmed_by !== myId() && !S.myVotes.has(c.id));
 // Shown as a judge card in the feed: someone else's clip still being judged that you haven't voted on (or just voted on, stamp showing)
 const judgeable = c => c.status === 'pending' && c.user_id !== myId() && (!S.myVotes.has(c.id) || c.id in S.judge.voted);
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
@@ -3157,7 +3213,7 @@ function render(force = false){
   const duelCount = S.duels.filter(d => d.status === 'active' && d.turn === myId()).length
     + S.friends.filter(f => f.status === 'pending' && f.incoming).length;
   $('tabs').innerHTML = TABS.map(([id, label, icon]) => {
-    const badge = id === 'feed' ? judgeCount : id === 'duels' ? duelCount : 0;
+    const badge = id === 'feed' ? judgeCount : id === 'duels' ? duelCount : id === 'lodge' ? S.filmedForMe.length : 0;
     if (id === 'record') return `<button class="rec-tab ${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="record" aria-label="Record">
       <span class="dot"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></span>${label}</button>`;
     if (id === 'me'){
@@ -3465,12 +3521,18 @@ async function deleteClip(id){
 async function submitPost(){
   const fields = {trick_id: $('post-trick').value, grab: $('post-grab').value, resort: $('post-resort').value};
   if (S.postCombo.length) fields.combo = [...S.postCombo];   // only sent for combos, so plain posts work without 014
+  const rider = S.postRider && acceptedFriends().map(f => f.other).find(p => p && p.id === S.postRider);
+  if (rider) fields.rider = rider.id;
   const blob = S.rec.blob, mot = S.rec.motion;
   S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
   try {
     if (!navigator.onLine) throw new Error('offline');
     await uploadClip(fields, blob);
     resetRecorder(); S.postCombo = [];
+    if (rider){   // stay on the camera: you're probably filming the next run too
+      toast(`Sent to @${rider.username}. It shows up once they tap Keep.`, 4000);
+      render(true); return;
+    }
     toast('Posted. Riders are judging it now.');
     S.tab = 'feed'; await refresh(true); window.scrollTo(0, 0);
   } catch (err){
@@ -3703,6 +3765,8 @@ document.addEventListener('click', async e => {
     case 'report': return report({clip_id: id}, b.dataset.k);
     case 'report-comment': return report({comment_id: id}, 'inappropriate', b.dataset.clip);
     case 'remove-clip': return removeClip(id);
+    case 'filmed-keep': return answerFilmed(id, true);
+    case 'filmed-nope': return answerFilmed(id, false);
     case 'feedback': S.feedbackOpen = !S.feedbackOpen; return render(true);
     case 'feedback-send': return sendFeedback(b);
     case 'delete-account': S.confirmDelete = !S.confirmDelete; return render(true);
@@ -3760,6 +3824,10 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', async e => {
   const id = e.target.id;
   if (['post-cat','post-trick','post-grab'].includes(id)) syncPost();
+  if (id === 'post-rider'){
+    S.postRider = e.target.value;
+    $('post-rider-hint').innerHTML = riderHint(acceptedFriends().map(f => f.other).find(p => p && p.id === S.postRider));
+  }
   if (id === 'post-combo-add' && e.target.value){ S.postCombo.push(e.target.value); syncPost(); }
   if (id === 'duel-trick') S.duelTrick = e.target.value;
   if (id === 'ride-pref'){ setRides(e.target.value); toast('Saved'); render(true); }
@@ -3871,7 +3939,8 @@ async function openPendingClip(){
   store.set('pending-clip', '');
   const r = await db.from('clips').select(CLIP_SELECT).eq('id', id).maybeSingle();
   if (r.error){ toast("Couldn't open that clip. Check your signal and tap the link again.", 4500); return; }
-  if (!r.data || r.data.hidden){ toast("That clip was removed, so it can't be shown.", 4500); return; }
+  if (!r.data || !shownClip(r.data)){ toast("That clip was removed, so it can't be shown.", 4500); return; }
+  await loadFilmers([r.data]);
   S.feed.pin = findClip(id) || r.data;
   await openTab('feed');
   try { await loadFeed(); } catch (e) {}

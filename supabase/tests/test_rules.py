@@ -308,6 +308,31 @@ def main():
     b = user("beginner")
     check("Straight Air pays 5", land(b, "straightair"), 5 if totd != "straightair" else 10)
 
+    print("\n-- Film a friend (017) --")
+    rider, filmer, stranger = user("rider"), user("filmer"), user("stranger")
+    q("insert into public.friendships (requester, addressee, status) values (%s, %s, 'accepted')", filmer, rider)
+    film = lambda who, for_whom, path=None: as_user(who, "select public.post_for_friend(%s, '180', 'No grab', 'Eldora', %s)",
+                                                     for_whom, path or f"{who}/x.mp4")[0][0]
+    fc = film(filmer, rider)
+    seen = lambda who: one("select count(*) from (select 1 from public.clips where id = %s) s", fc) if who is None else \
+        len(as_user(who, "select id from public.clips where id = %s", fc))
+    check("friend can film you: clip is yours, waiting", conn.execute(
+          "select user_id::text, filmed_by::text, rider_ok from public.clips where id = %s", (fc,)).fetchone(), (rider, filmer, False))
+    check("waiting clip: rider and filmer see it, others don't", (seen(rider), seen(filmer), seen(stranger)), (1, 1, 0))
+    check("can't film a stranger", blocked(stranger, "select public.post_for_friend(%s, '180', 'No grab', null, %s)", rider, f"{stranger}/x.mp4"), True)
+    check("can't post a video from someone else's folder", blocked(filmer, "select public.post_for_friend(%s, '180', 'No grab', null, %s)", rider, f"{rider}/x.mp4"), True)
+    check("can't 'film' yourself this way", blocked(filmer, "select public.post_for_friend(%s, '180', 'No grab', null, %s)", filmer, f"{filmer}/x.mp4"), True)
+    check("nobody can judge a clip before the rider keeps it", blocked(voters[0], "insert into public.votes (clip_id, landed) values (%s, true)", fc), True)
+    check("filmer can't answer for the rider", blocked(filmer, "select public.answer_filmed_clip(%s, true)", fc), True)
+    as_user(rider, "select public.answer_filmed_clip(%s, true)", fc)
+    check("rider keeps it: everyone sees it", seen(stranger), 1)
+    check("filmer still can't judge a clip they filmed", blocked(filmer, "insert into public.votes (clip_id, landed) values (%s, true)", fc), True)
+    check("kept clip verifies and pays the RIDER", (judge(fc)[0], one("select points from public.profiles where id = %s", rider) > 0,
+          one("select points from public.profiles where id = %s", filmer)), ("verified", True, 0))
+    nope = film(filmer, rider)
+    check("'Not me' deletes it and returns the video path", as_user(rider, "select public.answer_filmed_clip(%s, false)", nope)[0][0], f"{filmer}/x.mp4")
+    check("...and it's gone", one("select count(*) from public.clips where id = %s", nope), 0)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)
