@@ -263,6 +263,22 @@ select:focus,input:focus{border-color:var(--ice)}
 .skel-prof{display:flex;flex-direction:column;gap:12px;margin-block:10px}.skel-prof .skel.card-h{height:120px}
 @keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion: reduce){.skel{animation:none}}
+/* First-time setup (2 taps) and the one-time Record hint */
+.onboard{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:24px;
+  background:rgba(4,6,10,.97);max-width:480px;margin:0 auto}
+.onboard h2{font-family:var(--display);font-style:italic;text-transform:uppercase;font-size:34px;line-height:1;margin:0}
+.onboard .ob-step{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.onboard .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.onboard .ob-grid .btn{min-height:64px;font-size:16px;font-weight:700}
+.onboard .ob-grid .btn.big{min-height:110px;font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.onboard .ob-grid .btn.big svg{width:34px;height:34px}
+.rec-hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:12;
+  background:var(--accent);color:var(--accent-ink);font-weight:700;padding:10px 14px;border-radius:10px;max-width:260px;text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);cursor:pointer}
+.rec-hint::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);border:8px solid transparent;border-bottom:0;border-top-color:var(--accent)}
+.rec-hint small{display:block;font-weight:500;opacity:.8}
+@media (prefers-reduced-motion:no-preference){.rec-hint{animation:hintbob 1.6s ease-in-out infinite}}
+@keyframes hintbob{50%{transform:translateX(-50%) translateY(-4px)}}
 .sent-you{display:block;padding:12px 14px;margin-block:0 14px;border-color:var(--accent);color:var(--ink);text-decoration:none}
 .sent-you b{color:var(--accent)}
 .medals .card{padding:14px 10px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
@@ -446,7 +462,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(10,13,19,.85);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);align-items:end}
+.tabs nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
 .tabs button{border:0;background:none;padding:10px 2px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;
   font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;position:relative}
 .tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -2128,7 +2144,7 @@ const views = {
         <button class="b2-judge${jq ? ' hot' : ''}" data-act="tab" data-tab="judge"><small>Judge</small><b>${jq ? jq + ' waiting' : 'All caught up'}</b></button>
         <button class="b2-judge" data-act="book" data-id="${S.me.id}" data-name="${esc(S.me.username)}"><small>Trick book</small><b>${S.landed.size}/${S.tricks.length}</b></button>
       </div>
-      ${nextToLand()}
+      ${startHere() || nextToLand()}
     </section>`;
   },
   auth(){
@@ -2194,7 +2210,7 @@ const views = {
       <div class="seg" role="group" aria-label="Order">${seg('feed-sort', 'hot', 'Hot', F.sort === 'hot')}${seg('feed-sort', 'new', 'New', F.sort === 'new')}</div>
       <div class="seg" role="group" aria-label="Only friends">${seg('feed-scope', F.scope === 'friends' ? 'everyone' : 'friends', 'Friends', F.scope === 'friends')}</div></div>`;
     const seen = new Set(), list = [...waiting, ...F.rows].filter(c => !seen.has(c.id) && seen.add(c.id));
-    const start = startHere();
+    const start = '';   // the Start here list lives on Base now (10/27)
     let end;
     if (!F.loaded) end = '<p class="sub">Loading…</p>';
     else if (F.more) end = '<p class="sub">Loading more…</p>';
@@ -2905,7 +2921,8 @@ const TABS = [
   ['feed','Feed','<path d="M4 5h16M4 12h16M4 19h10"/>'],
   ['record','Record','<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'],
   ['duels','Squad','<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6M15 14.6c3.2-.4 6 1.6 6 5.4"/>'],
-];  // tab id stays 'duels' (lots of links use it); the screen is Squad: Friends / Ranks / Crew / Duels. Your profile opens from Base's rank card and the badge up top.
+  ['me','Profile','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>'],
+];  // 5 tabs so Record sits in the middle (Connor 10/27). 'me' opens your own profile.  // tab id stays 'duels' (lots of links use it); the screen is Squad: Friends / Ranks / Crew / Duels. Your profile opens from Base's rank card and the badge up top.
 const judgeQueue = () => S.clips.filter(c => c.status === 'pending' && c.user_id !== myId() && !S.myVotes.has(c.id));
 // Shown as a judge card in the feed: someone else's clip still being judged that you haven't voted on (or just voted on, stamp showing)
 const judgeable = c => c.status === 'pending' && c.user_id !== myId() && (!S.myVotes.has(c.id) || c.id in S.judge.voted);
@@ -2925,6 +2942,11 @@ function render(force = false){
     const badge = id === 'feed' ? judgeCount : id === 'duels' ? duelCount : 0;
     if (id === 'record') return `<button class="rec-tab ${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="record" aria-label="Record">
       <span class="dot"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></span>${label}</button>`;
+    if (id === 'me'){
+      const on = S.tab === 'profile' && S.profile && S.profile.id === myId();
+      return `<button class="${on ? 'on' : ''}" data-act="me" aria-label="Your profile">
+      <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}</button>`;
+    }
     return `<button class="${S.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}" aria-label="${label}">
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}${badge ? `<span class="badge">${badge}</span>` : ''}</button>`;
   }).join('');
@@ -2949,6 +2971,44 @@ function render(force = false){
   if (S.tab === 'record' && (S.rec.mode === 'live' || S.rec.mode === 'recording')) attachStream();
 }
 
+// First time in: 2 taps (ski or snowboard, home mountain), then the app. Brand-new riders only, once per phone.
+const isNewRider = () => S.me && !S.me.points && !S.me.home_resort && !S.clips.some(c => c.user_id === myId());
+function showOnboarding(){
+  if (store.get('onboarded-' + myId(), '') || !isNewRider()) return false;
+  S.splashDone = true;
+  $('overlay').innerHTML = `<div class="onboard" role="dialog" aria-label="Set up Stomped">
+    <div class="ob-step">1 of 2</div><h2>Ski or<br>snowboard?</h2>
+    <div class="ob-grid">${Object.entries(SPORTS).map(([k, sp]) =>
+      `<button class="btn big" data-act="ob-sport" data-k="${k}">${sp.icon}${sp.label}</button>`).join('')}</div>
+    <p class="hint">You can switch any time when you record.</p></div>`;
+  return true;
+}
+function onboardResort(){
+  $('overlay').innerHTML = `<div class="onboard" role="dialog" aria-label="Pick your home mountain">
+    <div class="ob-step">2 of 2</div><h2>Home<br>mountain?</h2>
+    <div class="ob-grid">${RESORTS.map(r => `<button class="btn" data-act="ob-resort" data-k="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+    <button class="linkish" data-act="ob-resort" data-k="">Somewhere else / skip</button></div>`;
+}
+async function finishOnboarding(resort){
+  store.set('onboarded-' + myId(), '1');
+  $('overlay').innerHTML = '';
+  if (resort){
+    const r = await db.from('profiles').update({home_resort: resort}).eq('id', myId());
+    if (r.error) toast('Could not save your mountain. Pick it later in Ranks.'); else await refresh(true);
+  }
+  if (!S.feed.pin) S.tab = 'lodge';   // a clip a friend sent wins over Base
+  render(true); showRecHint();
+}
+// One bubble over the Record button until you've posted once. Any tap hides it for good.
+function showRecHint(){
+  if (store.get('rec-hint-' + myId(), '') || !S.me || S.clips.some(c => c.user_id === myId()) || $('rec-hint')) return;
+  const h = document.createElement('div');
+  h.id = 'rec-hint'; h.className = 'rec-hint'; h.setAttribute('role', 'status');
+  h.innerHTML = 'Film your first trick<small>Even a 180 counts.</small>';
+  document.body.appendChild(h);
+  const off = () => { store.set('rec-hint-' + myId(), '1'); h.remove(); document.removeEventListener('pointerdown', off, true); };
+  setTimeout(() => document.addEventListener('pointerdown', off, true), 300);
+}
 function showSplash(){
   if (S.splashDone) return;
   S.splashDone = true;
@@ -2976,7 +3036,7 @@ function showRankUp(r){
 }
 function closeSplash(){
   const s = $('splash'); if (!s) return;
-  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; }, 350);
+  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; showRecHint(); }, 350);
 }
 
 async function refresh(force = false){
@@ -3336,6 +3396,8 @@ document.addEventListener('click', async e => {
       return;
     }
     case 'close-splash': return closeSplash();
+    case 'ob-sport': S.sport = b.dataset.k; store.set('sport', S.sport); return onboardResort();
+    case 'ob-resort': return finishOnboarding(b.dataset.k);
     case 'reward-collect': { $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r); return; }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
     case 'mute': {
@@ -3589,7 +3651,7 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
-    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); } }
+    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ if (!showOnboarding()) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); } }
   }, 0);
 });
 </script>
