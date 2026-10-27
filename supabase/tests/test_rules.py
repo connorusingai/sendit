@@ -351,6 +351,21 @@ def main():
     check("nobody can read the scores from the app", blocked(joker, "select * from public.judge_stats"), True)
     check("nobody can call judge_trust from the app", blocked(joker, "select public.judge_trust(auth.uid())"), True)
 
+    print("\n-- Wrong rider (019) --")
+    give = "select public.give_clip_to_friend(%s, %s)"
+    oops = as_user(filmer, "insert into public.clips (trick_id, video_path) values ('180', %s) returning id", f"{filmer}/y.mp4")[0][0]
+    q("insert into public.votes (clip_id, voter_id, landed) values (%s, %s, true)", oops, voters[0])
+    check("can't give your clip to a stranger", blocked(filmer, give, oops, stranger), True)
+    check("someone else can't give your clip away", blocked(stranger, give, oops, rider), True)
+    as_user(filmer, give, oops, rider)
+    check("given to the friend: theirs, filmed by you, waiting", conn.execute(
+          "select user_id::text, filmed_by::text, rider_ok from public.clips where id = %s", (oops,)).fetchone(), (rider, filmer, False))
+    check("...and the old votes are cleared", one("select count(*) from public.votes where clip_id = %s", oops), 0)
+    check("rider can't pass a friend-filmed clip on", blocked(rider, give, oops, filmer), True)
+    done = as_user(filmer, "insert into public.clips (trick_id) values ('180') returning id")[0][0]
+    judge(done)
+    check("verified clips can't change hands", blocked(filmer, give, done, rider), True)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)

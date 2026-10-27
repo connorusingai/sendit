@@ -1781,8 +1781,7 @@ function feedItem(c){
       <button class="icon-btn ${liked ? 'lit' : ''}" data-act="like" data-id="${c.id}" aria-pressed="${liked}" aria-label="Fire">${ICON.fire}${count(c.likes)}</button>
       <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
       <button class="icon-btn" data-act="share-link" data-id="${c.id}" aria-label="Send this clip">${ICON.share}Share</button>
-      ${mine && c.status === 'pending' ? `<button class="icon-btn" data-act="delete" data-id="${c.id}" aria-label="Delete">${ICON.trash}</button>`
-        : `<button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-label="More options">${ICON.more}</button>`}
+      <button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-label="More options">${ICON.more}</button>
       <button class="icon-btn" data-act="mute" aria-label="Turn sound on">${ICON.mute}</button>
     </div>
     <div class="fi-info">
@@ -1824,10 +1823,9 @@ function clipCard(c){
           <button class="icon-btn ${liked ? 'lit' : ''}" data-act="like" data-id="${c.id}" aria-pressed="${liked}" aria-label="Fire">${ICON.fire}${count(c.likes)}</button>
           <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
         </div>
-        ${mine && c.status === 'pending' ? `<button class="linkish" data-act="delete" data-id="${c.id}">Delete</button>` : ''}
         <div class="social">
           ${mine && c.status === 'verified' ? `<button class="icon-btn" data-act="share-card" data-id="${c.id}" aria-label="Share this trick">↗ Share</button>` : ''}
-          ${mine && c.status === 'pending' ? '' : `<button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-expanded="${S.menuFor === c.id}" aria-label="More options">⋯</button>`}</div>
+          <button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-expanded="${S.menuFor === c.id}" aria-label="More options">⋯</button></div>
       </div>
       ${S.menuFor === c.id ? clipMenu(c, mine) : ''}
     </div>
@@ -1839,6 +1837,13 @@ function clipCard(c){
 function clipMenu(c, mine){
   const send = `<button class="btn small" data-act="share-link" data-id="${c.id}">${c.status === 'pending' ? 'Send it to friends to judge' : 'Send this clip'}</button>`
     + (mine && c.status === 'verified' ? `<button class="btn small" data-act="share-card" data-id="${c.id}">Share as an image (for stories)</button>` : '');
+  if (mine && c.status === 'pending'){
+    const pals = c.filmed_by ? [] : acceptedFriends().map(f => f.other).filter(Boolean);
+    return `<div class="clip-menu">${send}
+      ${pals.length ? `<span class="hint">Filmed a friend by mistake? Give it to them (votes so far are cleared):</span>
+        ${pals.map(p => `<button class="btn small" data-act="give-clip" data-id="${c.id}" data-k="${p.id}">Wrong rider: it's @${esc(p.username)}</button>`).join('')}` : ''}
+      <button class="btn small bad" data-act="delete" data-id="${c.id}">Delete</button></div>`;
+  }
   if (mine) return `<div class="clip-menu">${send}<button class="btn small bad" data-act="remove-clip" data-id="${c.id}">Remove this clip</button>
     <span class="hint">The video is deleted for good. Your points stay.</span></div>`;
   return `<div class="clip-menu">${send}<span class="hint">Report this clip</span>
@@ -3533,6 +3538,15 @@ async function openProfile(id){
   render(true);
 }
 
+// Filmed a friend but posted it as yours: hand it over while it's still being judged (019).
+async function giveClip(id, riderId){
+  const p = acceptedFriends().map(f => f.other).find(x => x && x.id === riderId); if (!p) return;
+  const r = await db.rpc('give_clip_to_friend', {p_clip: id, p_rider: riderId});
+  if (r.error){ toast("Couldn't move it: " + r.error.message, 4500); return; }
+  S.menuFor = null;
+  toast(`Sent to @${p.username}. It shows up once they tap Keep.`, 4000);
+  await refresh(true);
+}
 async function deleteClip(id){
   const c = findClip(id); if (!c) return;
   if (!confirm('Delete this clip? This cannot be undone.')) return;
@@ -3725,6 +3739,7 @@ document.addEventListener('click', async e => {
     case 'skip': return nextReel(id);
     // feed
     case 'delete': return deleteClip(id);
+    case 'give-clip': return giveClip(id, b.dataset.k);
     case 'share-card': return shareCard(id);
     case 'session-card': return sessionCard();
     case 'like': return toggleLike(id);
