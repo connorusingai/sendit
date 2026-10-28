@@ -2482,6 +2482,7 @@ const views = {
           <span>I'm 13 or older and agree to the <a href="terms.html" target="_blank">Terms</a> and <a href="privacy.html" target="_blank">Privacy</a>.</span></label>` : ''}
         <button class="btn primary" type="submit">${up ? 'Create account' : 'Sign in'}</button>
         <button class="btn ghost" type="button" data-act="authmode">${up ? 'I already have an account' : 'Create an account'}</button>
+        ${up ? '' : '<button class="linkish" type="button" data-act="forgot" style="align-self:center">Forgot password?</button>'}
       </form>
       <footer class="foot">Stomped · made in Colorado for riders everywhere<br>
         <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>`;
@@ -3778,6 +3779,36 @@ async function submitAuth(){
   }
 }
 
+// Forgot password: Supabase emails a link back to this page, which then fires PASSWORD_RECOVERY.
+// Same message either way, so nobody can use this to find out who has an account.
+async function sendReset(b){
+  const email = $('auth-email').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)){ toast('Type your email above, then tap Forgot password.'); $('auth-email').focus(); return; }
+  b.disabled = true;
+  const r = await db.auth.resetPasswordForEmail(email, {redirectTo: location.origin + location.pathname});
+  b.disabled = false;
+  if (r.error && /rate|too many|seconds/i.test(r.error.message)){ toast('Too many reset emails right now. Try again in a few minutes.', 6000); return; }
+  toast('If that email has an account, a reset link is on its way. Check spam too.', 8000);
+}
+function showNewPassword(){
+  $('overlay').innerHTML = `<div class="modal"><form class="card form" id="newpass-form">
+    <div class="rank-word t-plat" style="font-size:32px">New password</div>
+    <div class="field"><label class="label" for="newpass">Pick a new password</label>
+      <input id="newpass" type="password" autocomplete="new-password" required minlength="8">
+      <span class="hint">At least 8 characters.</span></div>
+    <button class="btn primary" type="submit">Save password</button>
+  </form></div>`;
+  setTimeout(() => { const f = $('newpass'); if (f) f.focus(); }, 50);
+}
+async function saveNewPassword(){
+  const btn = document.querySelector('#newpass-form button[type=submit]');
+  btn.disabled = true;
+  const r = await db.auth.updateUser({password: $('newpass').value});
+  if (r.error){ btn.disabled = false; toast(/different/i.test(r.error.message) ? 'Pick a password you haven\'t used here before.' : 'Couldn\'t save: ' + r.error.message, 6000); return; }
+  $('overlay').innerHTML = '';
+  toast('Password saved. You\'re signed in.', 5000);
+}
+
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const act = b.dataset.act, id = b.dataset.id;
@@ -3785,6 +3816,7 @@ document.addEventListener('click', async e => {
     case 'tab': return openTab(b.dataset.tab, b.dataset.focus);
     case 'rider': return openGear();
     case 'authmode': S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; return render(true);
+    case 'forgot': return sendReset(b);
     case 'join': {
       S.authMode = b.dataset.mode; render(true);
       $('auth-top').scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -3960,6 +3992,7 @@ document.addEventListener('submit', async e => {
   const f = e.target;
   if (f.id === 'post-form' && !S.busy) submitPost();
   else if (f.id === 'auth-form' && !S.busy) submitAuth();
+  else if (f.id === 'newpass-form') saveNewPassword();
   else if (f.classList.contains('comment-form')) sendComment(f.dataset.clip, f.querySelector('input'));
   else if (f.id === 'crew-join' && !S.busy){
     const code = $('crew-code').value.trim().toUpperCase();
@@ -4080,7 +4113,9 @@ db.auth.onAuthStateChange((event, session) => {
     const was = S.session && S.session.user.id, now = session && session.user.id;
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
+    if (event === 'PASSWORD_RECOVERY') S.splashDone = true;   // the new-password box beats the rank splash
     if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ const setup = showOnboarding(); if (!setup) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); if (!setup){ offerInviter(); setTimeout(offerInstall, 6000); } } }
+    if (event === 'PASSWORD_RECOVERY') showNewPassword();
   }, 0);
 });
 </script>
