@@ -246,6 +246,24 @@ select:focus,input:focus{border-color:var(--ice)}
 /* profile */
 .prof-head{display:flex;align-items:center;gap:14px;margin-block:6px 16px}
 .prof-head h2{margin:0}
+/* The creator (rider #001): gold crown over the badge, a gold plate with a light sweep, a crown by his name on clips */
+.prof-head.creator{position:relative;padding-top:16px}
+.prof-head .crown{position:absolute;left:25px;top:-2px;z-index:1;color:#FFD86B;filter:drop-shadow(0 0 6px rgba(255,200,60,.9));animation:crownBob 3s ease-in-out infinite}
+.prof-head .crown .ic-line{stroke-width:2.2}
+.prof-head.creator h2{background:linear-gradient(100deg,#FFF3C4,#FFD86B 40%,#E09A2B 70%,#FFF3C4);-webkit-background-clip:text;background-clip:text;color:transparent}
+@keyframes crownBob{50%{transform:translateY(-3px) rotate(-4deg)}}
+.founder-plate{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;margin:-4px 0 16px;padding:12px 16px;
+  border:1px solid rgba(255,216,107,.7);background:linear-gradient(115deg,#1d1404,#4a3410 45%,#2b1d06 70%,#1d1404);
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:inset 0 0 24px rgba(255,190,60,.25)}
+.founder-plate::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,245,200,.45) 50%,transparent 65%);
+  transform:translateX(-110%);animation:plateSweep 3.6s ease-in-out infinite 1s;pointer-events:none}
+@keyframes plateSweep{40%,100%{transform:translateX(110%)}}
+.founder-plate .fp-crown{color:#FFD86B;filter:drop-shadow(0 0 8px rgba(255,200,60,.8))}
+.founder-plate b{display:block;font-family:var(--display);font-weight:900;font-style:italic;font-size:30px;line-height:1;text-transform:uppercase;
+  letter-spacing:.02em;padding-right:.12em;background:linear-gradient(100deg,#FFF3C4,#FFD86B 40%,#E09A2B 75%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.founder-plate .mono{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E9C98A}
+.crown-tag{display:inline-flex;margin:0 2px 0 -2px;color:#FFD86B;filter:drop-shadow(0 0 4px rgba(255,200,60,.8));vertical-align:-2px}
+@media (prefers-reduced-motion:reduce){.prof-head .crown,.founder-plate::after{animation:none}}
 .friend-rank{display:flex;align-items:center;gap:5px}
 .squad-seg{display:flex;width:100%;margin:4px 0 14px}
 .squad-seg button{flex:1;padding:8px 4px}
@@ -1415,6 +1433,8 @@ const hasName = (L, re) => [...L.keys()].filter(id => re.test(trickById(id).name
 const inCat = (L, cat) => [...L.keys()].filter(id => trickById(id).category === cat).length;
 // Founder: everyone who joins before the first season's launch deadline keeps it forever (Connor, 10/27)
 const FOUNDER_UNTIL = '2026-12-16T07:00:00Z';   // end of Dec 15 in Colorado
+const CREATOR_ID = '713e0c5f-7de1-4842-b845-d1679b4eb7b3';   // rider #001, the guy who built Stomped: gold plate + crown
+const riderNo = n => '#' + String(n).padStart(3, '0');
 const ACHIEVEMENTS = [
   {icon: 'shield', name: 'Founder',  desc: 'Joined before Dec 15, 2026', test: (L, u) => !!u && !!u.created_at && u.created_at < FOUNDER_UNTIL},
   {icon: 'flag', name: 'First Send',    desc: 'Land any trick',        test: L => L.size >= 1},
@@ -1436,8 +1456,9 @@ const ACHIEVEMENTS = [
 function achievementsHtml(L, u){
   const earned = ACHIEVEMENTS.filter(a => a.test(L, u)), locked = ACHIEVEMENTS.filter(a => !a.test(L, u));
   const shown = S.achAll ? [...earned, ...locked] : earned.length ? earned : locked.slice(0, 4);
-  const tile = a => `<div class="ach ${earned.includes(a) ? 'got' : ''}" title="${esc(a.desc)}">
-    <div class="emb">${ic(a.icon, 26)}</div><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></div>`;
+  const desc = a => a.name === 'Founder' && u && u.founderNo && a.test(L, u) ? `Rider ${riderNo(u.founderNo)}` : a.desc;
+  const tile = a => `<div class="ach ${earned.includes(a) ? 'got' : ''}" title="${esc(desc(a))}">
+    <div class="emb">${ic(a.icon, 26)}</div><b>${esc(a.name)}</b><span>${esc(desc(a))}</span></div>`;
   const more = locked.length && !S.achAll ? `<button class="linkish ach-more" data-act="ach-all">See all ${ACHIEVEMENTS.length} badges ›</button>` : '';
   return `<div class="row" style="margin-bottom:10px"><div class="label">Badges</div><span class="hint mono">${earned.length}/${ACHIEVEMENTS.length}</span></div>
   <div class="achs">${shown.map(tile).join('')}${more}</div>`;
@@ -1667,9 +1688,14 @@ async function loadProfile(id){
     db.from('clips').select(CLIP_SELECT).eq('user_id', id).order('created_at', {ascending: false}).limit(60),
     landedTricks(id),
   ]);
-  const all = mustOk(clips).filter(shownClip);
+  const all = mustOk(clips).filter(shownClip), data = mustOk(p);
   await loadFilmers(all);
-  S.profile = {id, data: mustOk(p), landed, clips: id === myId() ? all : all.filter(c => c.status !== 'pending' || S.myVotes.has(c.id))};
+  // Founder number = how many riders joined before you, plus one (only for Founders, before Dec 15)
+  if (data && data.created_at && data.created_at < FOUNDER_UNTIL){
+    const n = await db.from('profiles').select('id', {count: 'exact', head: true}).lt('created_at', data.created_at);
+    if (!n.error && typeof n.count === 'number') data.founderNo = n.count + 1;
+  }
+  S.profile = {id, data, landed, clips: id === myId() ? all : all.filter(c => c.status !== 'pending' || S.myVotes.has(c.id))};
 }
 async function loadComments(clipId){
   S.comments[clipId] = mustOk(await db.from('comments').select('*, profiles(username)')
@@ -1842,6 +1868,7 @@ const ICO = {
   pipe: 'M3 5v4a9 9 0 0 0 18 0V5',
   burst: 'M12 3l2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1z',
   shield: 'M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6zM9 12l2 2 4-4',
+  crown: 'M3 18h18M4 15l-1-9 5 4 4-6 4 6 5-4-1 9z',
   both: 'M4 20L20 4M9 21L21 9',
 };
 const ic = (name, size = 18) => `<svg class="ic-line" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICO[name]}"/></svg>`;
@@ -1916,7 +1943,7 @@ function feedItem(c){
       <button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-label="More options">${ICON.more}</button>
     </div>
     <div class="fi-info">
-      <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? rankTag(c.profiles.points) : ''}</div>
+      <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.user_id === CREATOR_ID ? `<span class="crown-tag" title="Founder">${ic('crown', 13)}</span>` : ''}${c.profiles ? rankTag(c.profiles.points) : ''}</div>
       <div class="trick">${esc(clipName(c))}</div>
       <div class="meta">${sp.icon} ${dots(esc(c.grab), esc(t.category), esc(c.resort || ''), ago(c.created_at) + ' ago', filmedBy(c))}</div>
       <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' && shown !== 'repeat' ? '<small> if verified</small>' : ''}</b>${c.totd ? `<span class="pill totd">${ic('fire', 12)} 2×</span>` : ''}</div>
@@ -2812,8 +2839,10 @@ const views = {
       : f ? '<span class="pill wait" style="display:inline-block;margin-top:6px">Request pending</span>'
       : `<button class="btn small" style="margin-top:8px" data-act="add-friend" data-id="${u.id}">+ Add friend</button>`;
     return `${mine ? '' : '<button class="linkish back" data-act="back">← Back</button>'}
-    <div class="prof-head">${badgeSVG(tr.tier.key, 72, tr.div, {glow: true})}
+    <div class="prof-head ${u.id === CREATOR_ID ? 'creator' : ''}">${u.id === CREATOR_ID ? `<span class="crown" aria-hidden="true">${ic('crown', 22)}</span>` : ''}${badgeSVG(tr.tier.key, 72, tr.div, {glow: true})}
       <div><h2>${esc(u.username)}</h2><div class="hint">${u.home_resort ? ic('mountain', 13) + ' ' + esc(u.home_resort) : 'No home mountain yet'}</div>${friendBit}</div></div>
+    ${u.id === CREATOR_ID ? `<div class="founder-plate" role="img" aria-label="The Founder, rider number 1, built Stomped">
+      <span class="fp-crown">${ic('crown', 30)}</span><div><b>The Founder</b><span class="mono">Rider #001 · built Stomped</span></div></div>` : ''}
     <section class="card prof-rank">
       <div class="row">${rankWord(tr, 26)}<span class="mono hint">${u.points} pts</span></div>
       <div class="bar"><i style="width:${Math.max(4, tr.pct)}%"></i></div>
