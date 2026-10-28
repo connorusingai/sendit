@@ -396,6 +396,24 @@ def main():
     as_user(rider21, "select public.delete_my_account()")
     check("deleting your account deletes your events", one("select count(*) from public.events where user_id = %s", rider21), 0)
 
+    print("\n-- Trick AI guesses (022) --")
+    ai_r, ai_x = user("airider"), user("aistranger")
+    ai_clip = as_user(ai_r, "insert into public.clips (trick_id) values ('360') returning id")[0][0]
+    guess = "insert into public.clip_ai (clip_id, spin, axis, landed, sure, seen) values (%s, %s, 'flat', true, 0.7, 0.9)"
+    check("someone else can't add a guess to your clip", blocked(ai_x, guess, ai_clip, 360), True)
+    check("the AI can't claim a spin that isn't a trick (370)", blocked(ai_r, guess, ai_clip, 370), True)
+    check("your phone adds the AI guess to your clip", blocked(ai_r, guess, ai_clip, 360), False)
+    check("...only once", blocked(ai_r, guess, ai_clip, 360), True)
+    check("...and nobody can change it", blocked(ai_r, "update public.clip_ai set spin = 720 where clip_id = %s", ai_clip), True)
+    check("other riders see the guess", as_user(ai_x, "select spin from public.clip_ai where clip_id = %s", ai_clip), [(360,)])
+    judge(ai_clip)
+    check("riders can't open the AI scorecard", blocked(ai_x, "select public.founder_ai_stats()"), True)
+    sc = as_user(creator, "select public.founder_ai_stats()")[0][0]
+    check("rider #001's scorecard: AI was right on the verified 360", (sc["spin_calls"], sc["spin_right"], sc["landed_right"]), (1, 1, 1))
+    late = as_user(ai_r, "insert into public.clips (trick_id) values ('180') returning id")[0][0]
+    judge(late)
+    check("no guesses added after riders decided", blocked(ai_r, guess, late, 180), True)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)

@@ -371,6 +371,9 @@ select:focus,input:focus{border-color:var(--ice)}
 .reel-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
 .reel-item video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
 .reel-info{position:absolute;left:14px;right:14px;bottom:118px;text-shadow:0 1px 8px #000}
+.ai-chip{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 10px;border-radius:999px;font-size:13px;text-shadow:none;background:rgba(6,8,12,.72);border:1px solid rgba(110,200,255,.45);color:#d8f0ff;backdrop-filter:blur(6px)}
+.ai-chip b{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#6ec8ff}.ai-chip span{color:var(--muted);font-size:12px}
+.ai-chip.unsure{border-color:var(--line)}.ai-chip.unsure b{color:var(--muted)}
 .reel-info .trick{font-size:30px}
 .reel-actions{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:flex-end;gap:28px}
 .reel-actions > div{display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -1099,7 +1102,7 @@ const store = {
 };
 const S = {
   tab: 'lodge', prevTab: 'lodge', session: null, me: null,
-  tricks: [], clips: [], postCombo: [], filmedForMe: [], filmers: {}, postRider: '', myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
+  tricks: [], clips: [], ai: {}, postCombo: [], filmedForMe: [], filmers: {}, postRider: '', myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
   get totd(){ return this.totds[this.sport] || null; },   // Trick of the Day for the sport you're on now
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
@@ -1660,6 +1663,7 @@ async function loadAll(){
   S.landed = landed;
   S.me = mustOk(me);
   S.clips = mustOk(clips).filter(shownClip);   // removed or reported clips (011) and clips waiting on their rider (017) stay out of sight
+  await loadAI(S.clips.filter(c => c.status === 'pending').map(c => c.id)).catch(() => {});   // AI hints for clips still being judged
   S.myVotes = new Set(mustOk(votes).map(v => v.clip_id));
   S.myLikes = new Set(mustOk(likes).map(l => l.clip_id));
   S.totds = totd;
@@ -1887,6 +1891,7 @@ const ICON = {
 };
 // Line icons, one stroke weight (DESIGN.md: no emoji as icons). ic('book') -> inline SVG that takes the text color.
 const ICO = {
+  spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20',
   fire: 'M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z',
   book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7',
@@ -3065,7 +3070,7 @@ function reelItem(c){
     ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
     <div class="reel-top"><span class="pill wait">${sp.icon} Judge this · name shows after</span><span class="hint">${dots(esc(c.resort || ''), ago(c.created_at))}</span></div>
     ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(clipName(c))}</div>
-      <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · Trick of the Day' : ''}</div></div>`}
+      <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · Trick of the Day' : ''}</div>${aiChip(c)}</div>`}
     ${actions}
   </section>`;
 }
@@ -3392,8 +3397,179 @@ async function uploadClip(fields, blob = S.rec.blob, mot = S.rec.motion){
   // refuses JSON until supabase/015_motion.sql has run, and the clip is already posted either way.
   if (mot) await db.storage.from('clips').upload(motionPath(path),
     new Blob([JSON.stringify(mot)], {type: 'application/json'}), {contentType: 'application/json'}).catch(() => {});
+  runTrickAI(ins.data.id, blob, trickById(cols.trick_id));   // in the background: the clip is already posted
   return ins.data.id;
 }
+
+// ---------- trick AI (runs on the filming phone) ----------
+// A JavaScript copy of the laptop AI in sendit-ai/src (spin.py v0.1, spin3d.py v0.5, landed.py v2, verdict.py).
+// Input: world = one entry per video frame, each 33 body points [x, y, z] in metres from MediaPipe (null = rider not found).
+// It only says a spin when two different counters agree, and says "can't tell" instead of guessing.
+const TrickAI = (() => {
+  const LS = 11, RS = 12, LH = 23, RH = 24, D = 180 / Math.PI;
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+  const norm = a => Math.hypot(a[0], a[1], a[2]);
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const wrap = t => ((t + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+  const median = xs => { const s = xs.slice().sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  // 3x3 matrices as rows. R @ S.T
+  const mulT = (R, S) => R.map(r => S.map(s => dot(r, s)));
+  const ok = p => p && [LS, RS, LH, RH].every(i => p[i] && p[i].every(Number.isFinite));
+
+  // The body's own compass each frame: columns across (left->right), up (hips->shoulders), facing
+  function bodyFrames(world){
+    return world.map(p => {
+      if (!ok(p)) return null;
+      const across = add(sub(p[RS], p[LS]), sub(p[RH], p[LH]));
+      const up = sub(mul(add(p[LS], p[RS]), .5), mul(add(p[LH], p[RH]), .5));
+      const x = mul(across, 1 / (norm(across) || 1));
+      let u = sub(up, mul(x, dot(up, x))); const n = norm(u);
+      if (n < 1e-6) return null;
+      u = mul(u, 1 / n); const f = cross(x, u);
+      return [[x[0], u[0], f[0]], [x[1], u[1], f[1]], [x[2], u[2], f[2]]];
+    });
+  }
+  function rotationVector(R){
+    const angle = Math.acos(Math.min(1, Math.max(-1, (R[0][0] + R[1][1] + R[2][2] - 1) / 2)));
+    if (angle < 1e-6) return [0, 0, 0];
+    if (Math.PI - angle < 1e-3){
+      const ax = [0, 1, 2].map(i => Math.sqrt(Math.max(0, (R[i][i] + 1) / 2)));
+      return mul(ax, angle / (norm(ax) || 1));
+    }
+    const s = 2 * Math.sin(angle);
+    return mul([(R[2][1] - R[1][2]) / s, (R[0][2] - R[2][0]) / s, (R[1][0] - R[0][1]) / s], angle);
+  }
+  function quaternion(R){
+    const w = Math.sqrt(Math.max(0, 1 + R[0][0] + R[1][1] + R[2][2])) / 2;
+    const x = Math.sign(R[2][1] - R[1][2] || 1) * Math.sqrt(Math.max(0, 1 + R[0][0] - R[1][1] - R[2][2])) / 2;
+    const y = Math.sign(R[0][2] - R[2][0] || 1) * Math.sqrt(Math.max(0, 1 - R[0][0] + R[1][1] - R[2][2])) / 2;
+    const z = Math.sign(R[1][0] - R[0][1] || 1) * Math.sqrt(Math.max(0, 1 - R[0][0] - R[1][1] + R[2][2])) / 2;
+    return [w, x, y, z];
+  }
+  // Main direction of a set of turn vectors (largest eigenvector of V^T V, by power iteration)
+  function mainAxis(V){
+    const M = [0, 1, 2].map(i => [0, 1, 2].map(j => V.reduce((s, v) => s + v[i] * v[j], 0)));
+    let a = [1, 1, 1].map((v, i) => v + i * .1);
+    for (let k = 0; k < 200; k++){ const b = M.map(r => dot(r, a)), n = norm(b); if (n < 1e-12) break; a = mul(b, 1 / n); }
+    if (V.reduce((s, v) => s + dot(v, a), 0) < 0) a = mul(a, -1);
+    return a;
+  }
+  // v0.5: twist around the 3D spin axis, relative to the first frame; short gaps filled at the rider's own speed
+  function spinTwist(world, lag = 4, maxGap = 10, minSeen = .5){
+    const frames = bodyFrames(world), idx = frames.map((R, i) => R ? i : -1).filter(i => i >= 0);
+    if (idx.length < 3) return {deg: 0, tilt: NaN, axis: 'unknown', seen: idx.length / Math.max(1, frames.length), confident: false};
+    let V = [];
+    for (let k = 0; k + lag < idx.length; k++){
+      const v = rotationVector(mulT(frames[idx[k + lag]], frames[idx[k]])); if (norm(v) > 10 / D) V.push(v);
+    }
+    if (V.length < 2) V = idx.slice(1).map((b, k) => rotationVector(mulT(frames[b], frames[idx[k]])));
+    const axis = mainAxis(V), R0 = frames[idx[0]];
+    const tw = idx.map(i => { const q = quaternion(mulT(frames[i], R0)); return wrap(2 * Math.atan2(dot(q.slice(1), axis), q[0])); });
+    const gaps = idx.slice(1).map((b, k) => b - idx[k]), deltas = tw.slice(1).map((t, k) => wrap(t - tw[k]));
+    let total = 0;
+    gaps.forEach((g, i) => {
+      let d = deltas[i];
+      if (g > 1 && g <= maxGap){
+        const near = []; for (let j = Math.max(0, i - 4); j < Math.min(deltas.length, i + 5); j++) if (j !== i && gaps[j] === 1) near.push(deltas[j]);
+        if (near.length){ const want = median(near) * g; let best = d;
+          for (let t = -3; t <= 3; t++){ const c = d + 2 * Math.PI * t; if (Math.abs(c - want) < Math.abs(best - want)) best = c; } d = best; }
+      }
+      total += d;
+    });
+    const tilt = Math.acos(Math.min(1, Math.abs(axis[1]))) * D, seen = idx.length / frames.length;
+    return {deg: total * D, tilt, axis: tilt < 25 ? 'flat' : tilt < 65 ? 'off-axis' : 'flip', seen,
+            confident: seen >= minSeen && Math.max(...gaps) <= maxGap * 2};
+  }
+  // v0.1: the shoulder + hip line seen from above, unwrapped
+  function flatTotal(world){
+    const a = world.filter(ok).map(p => { const c = add(sub(p[RS], p[LS]), sub(p[RH], p[LH])); return Math.atan2(c[2], c[0]); });
+    let t = 0; for (let i = 1; i < a.length; i++) t += wrap(a[i] - a[i - 1]);
+    return t * D;
+  }
+  const nearest = d => Math.round(Math.abs(d) / 180) * 180;
+  // landed.py v2: riding away leaned much more than riding in = fell
+  function landed(world, tail = .3, extra = 15, head = .25){
+    const lean = world.map(p => { if (!ok(p)) return NaN;
+      const t = sub(mul(add(p[LS], p[RS]), .5), mul(add(p[LH], p[RH]), .5)); return Math.atan2(Math.hypot(t[0], t[2]), -t[1]) * D; });
+    const n = lean.length, startAll = lean.slice(0, Math.max(3, Math.floor(n * head))), endAll = lean.slice(Math.floor(n * (1 - tail)));
+    const s = startAll.filter(Number.isFinite), e = endAll.filter(Number.isFinite);
+    if (s.length < 2 || e.length < 3) return {landed: null, sure: 0};
+    const diff = median(e) - median(s);
+    return {landed: diff < extra, sure: +(Math.min(1, Math.abs(diff - extra) / 30) * e.length / Math.max(1, endAll.length)).toFixed(2), diff};
+  }
+  // The one answer the app shows. category 'Rails' -> the AI stays out of it.
+  function judge(world, category){
+    if (category === 'Rails') return null;
+    const s = spinTwist(world), v05 = Math.abs(s.deg), v01 = Math.abs(flatTotal(world)), L = landed(world);
+    let spin = null, note = null;
+    if (!s.confident) note = s.seen < .5 ? 'rider too small or out of frame' : 'lost the rider mid-air';
+    else if (nearest(v05) !== nearest(v01)) note = 'spin unclear from this angle';
+    else spin = Math.min(2160, nearest(v05));
+    // "both counters agree" was right 67-75% of the time on Connor's labels, so that's the most it claims
+    const parts = [spin != null ? .7 * s.seen : null, L.landed != null ? L.sure : null].filter(x => x != null);
+    const sure = parts.length ? +(parts.reduce((a, b) => a + b, 0) / parts.length).toFixed(2) : 0;
+    if (spin == null && L.landed == null) note = note || "couldn't see the rider";
+    return {spin, axis: spin != null && s.axis !== 'unknown' ? s.axis : null, landed: L.landed, sure, note,
+            seen: +s.seen.toFixed(2), raw: {v05: Math.round(v05), v01: Math.round(v01), tilt: Math.round(s.tilt)}};
+  }
+  return {judge, spinTwist, flatTotal, landed, nearest};
+})();
+// ---------- end trick AI ----------
+
+// Body points from the recorded video, on the phone. MediaPipe's pose model (same one the laptop AI uses)
+// loads the first time it's needed (~9 MB, then cached). 15 frames a second is enough for spins up to ~1440.
+const AI_LIB = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const AI_MODEL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
+let poseP = null, poseClock = 0;   // the model wants ever-increasing timestamps, across clips too
+function poseFinder(){
+  const make = async delegate => { const v = await import(AI_LIB + '/vision_bundle.mjs'), fs = await v.FilesetResolver.forVisionTasks(AI_LIB + '/wasm');
+    return v.PoseLandmarker.createFromOptions(fs, {baseOptions: {modelAssetPath: AI_MODEL, delegate}, runningMode: 'VIDEO', numPoses: 1}); };
+  return poseP || (poseP = make('GPU').catch(() => make('CPU')).catch(e => { poseP = null; throw e; }));
+}
+async function poseFromVideo(blob, fps = 15, maxFrames = 330){
+  const finder = await poseFinder(), url = URL.createObjectURL(blob), v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+  const once = ev => new Promise((ok, no) => { v.addEventListener(ev, ok, {once: true}); v.addEventListener('error', no, {once: true}); });
+  try {
+    await once('loadeddata');
+    if (!isFinite(v.duration)){ v.currentTime = 1e6; await once('seeked'); }   // recorded WebM has no length until you seek to the end
+    const dur = Math.min(v.duration || 0, MAX_SECONDS + 1), world = [];
+    for (let i = 0, t = 0; t < dur && i < maxFrames; i++, t = i / fps){
+      v.currentTime = t; await once('seeked');
+      const r = finder.detectForVideo(v, poseClock += 1 + Math.round(1000 / fps));
+      world.push(r.worldLandmarks && r.worldLandmarks[0] ? r.worldLandmarks[0].map(p => [p.x, p.y, p.z]) : null);
+      await new Promise(ok => setTimeout(ok));     // let the app breathe between frames
+    }
+    return world;
+  } finally { URL.revokeObjectURL(url); v.removeAttribute('src'); }
+}
+// After a clip posts: look at it, save ONE guess (022). Never blocks posting, never changes votes or points.
+async function runTrickAI(clipId, blob, trick){
+  if (!blob || !trick || trick.category === 'Rails' || !db) return;
+  try {
+    const g = TrickAI.judge(await poseFromVideo(blob), trick.category); if (!g) return;
+    const row = {clip_id: clipId, spin: g.spin, axis: g.axis, landed: g.landed, sure: g.sure, note: g.note, seen: g.seen, ver: 'web-0.5'};
+    const r = await db.from('clip_ai').insert(row);   // fails quietly until supabase/022 is pasted
+    if (!r.error){ S.ai[clipId] = row; refreshReelItem(clipId); }
+  } catch (e) { console.warn('trick AI skipped:', e && e.message); }
+}
+async function loadAI(ids){
+  if (!ids.length) return;
+  const r = await db.from('clip_ai').select('clip_id, spin, axis, landed, sure, note').in('clip_id', ids);
+  if (!r.error) for (const a of r.data) S.ai[a.clip_id] = a;
+}
+// The hint judges see: "AI · 360 · landed · 70% sure", or why it can't tell
+function aiChip(c){
+  const a = S.ai[c.id]; if (!a) return '';
+  const said = [a.spin != null ? (a.axis === 'flip' && a.spin === 360 ? 'flip' : a.axis === 'off-axis' ? 'cork ' + a.spin : String(a.spin)) : null,
+    a.landed == null ? null : a.landed ? 'landed' : 'looks like a fall'].filter(Boolean);
+  return `<div class="ai-chip${said.length ? '' : ' unsure'}" title="The trick AI's guess. You decide.">${ic('spark', 13)}<b>AI</b>${
+    said.length ? esc(said.join(' · ')) + ` <span>${Math.round(a.sure * 100)}% sure</span>` : "can't tell" + (a.note ? ` <span>${esc(a.note)}</span>` : '')}</div>`;
+}
+
+// Local test runs only (tests/ai_walk.py): reach the AI pieces from outside the module
+if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__ai = {S, TrickAI, poseFromVideo, runTrickAI, reelItem: c => reelItem(c)};
 
 // ---------- render ----------
 const TABS = [
