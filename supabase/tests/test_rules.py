@@ -376,6 +376,26 @@ def main():
     check("film a friend can't sneak out with ../ either", blocked(filmer, "select public.post_for_friend(%s, '180', 'No grab', null, %s)",
           rider, f"{filmer}/../{stranger}/x.mp4"), True)
 
+    print("\n-- Event log + Founder dashboard (021) --")
+    rider21, nosy = user("rider21"), user("nosy21")
+    creator = "713e0c5f-7de1-4842-b845-d1679b4eb7b3"
+    q("insert into auth.users (id, email, raw_user_meta_data) values (%s, 'c@test', jsonb_build_object('username', 'cdoraz', 'src', 'ig'))", creator)
+    log = "insert into public.events (name, detail) values (%s, %s)"
+    check("a rider can log their own event", blocked(rider21, log, "tab", "feed"), False)
+    check("...but not one for someone else", blocked(rider21, "insert into public.events (user_id, name) values (%s, 'tab')", nosy), True)
+    check("names are plain words only", blocked(rider21, log, "drop table;", None), True)
+    check("nobody can read the log from the app", blocked(nosy, "select count(*) from public.events"), True)
+    check("nobody can erase the log from the app", blocked(rider21, "delete from public.events"), True)
+    for _ in range(130):
+        as_user(rider21, log, "record_start", None)
+    check("spam: 120 a minute max, the rest dropped", one("select count(*) from public.events where user_id = %s", rider21), 120)
+    check("riders can't open the Founder dashboard", blocked(nosy, "select public.founder_stats()"), True)
+    st = as_user(creator, "select public.founder_stats()")[0][0]
+    check("rider #001 can", (st["riders"] > 0, st["funnel"]["filmed"] >= 1, any(r["username"] == "rider21" for r in st["riders_list"])), (True, True, True))
+    check("...and sees where sign-ups came from", any(x["src"] == "ig" for x in st["by_src"]), True)
+    as_user(rider21, "select public.delete_my_account()")
+    check("deleting your account deletes your events", one("select count(*) from public.events where user_id = %s", rider21), 0)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)
