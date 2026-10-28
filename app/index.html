@@ -92,7 +92,9 @@ h3{font-family:var(--display);font-weight:900;font-size:22px;text-transform:uppe
   .badge-svg.float{animation:float 3s ease-in-out infinite}
   @keyframes float{50%{transform:translateY(-4px) rotate(-2deg)}}
 }
-.rank-word{font-family:var(--display);font-weight:900;font-style:italic;text-transform:uppercase;line-height:.9;
+/* the display font has no real italic, so Safari fakes the slant and can clip the letter edges: give them room */
+.rank-word{font-family:var(--display);font-weight:900;font-style:italic;text-transform:uppercase;line-height:1;
+  display:inline-block;padding:.06em .14em .04em .04em;
   -webkit-text-stroke:1.5px #0A0D14;paint-order:stroke fill;text-shadow:0 3px 0 #0A0D14}
 .t-bronze{color:#F2A36A} .t-silver{color:#E3EAF1} .t-gold{color:#FFD23F}
 .t-plat{color:#6FF0DE} .t-diamond{color:#8CC0FF} .t-legend{color:#FF8A3D}
