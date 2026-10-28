@@ -292,9 +292,16 @@ select:focus,input:focus{border-color:var(--ice)}
 .onboard .ob-step{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
 .onboard .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .onboard{overflow-y:auto;justify-content:safe center}   /* 15 Northeast mountains: the list scrolls, and Skip stays reachable */
-.onboard .ob-reg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.onboard .ob-reg button{min-height:44px;border:1px solid var(--line);background:none;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
-.onboard .ob-reg button.on{border-color:var(--accent);color:var(--ink);background:rgba(255,107,26,.12)}
+.onboard .ob-search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:rgba(255,255,255,.04);color:var(--muted)}
+.onboard .ob-search:focus-within{border-color:var(--accent)}
+.onboard .ob-search{background:#070a10}
+.onboard .ob-search input{flex:1;min-width:0;min-height:48px;border:0;background:none;box-shadow:none;padding:0;color:var(--ink);font-size:16px;outline:none}
+.onboard .ob-list{display:flex;flex-direction:column;gap:6px;min-height:200px}
+.onboard .ob-hd{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.onboard .ob-mt{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-height:48px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0a0e15;color:var(--ink);text-align:left;cursor:pointer;font-size:16px}
+.onboard .ob-mt span{font-size:12px;color:var(--muted);white-space:nowrap}
+.onboard .ob-mt:active,.onboard .ob-mt:hover{border-color:var(--accent)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .onboard .ob-grid .btn{min-height:64px;font-size:16px;font-weight:700}
 .onboard .ob-grid .btn.big{min-height:110px;font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .onboard .ob-grid .btn.big svg{width:34px;height:34px}
@@ -1021,16 +1028,49 @@ const SPORTS = {
   snowboard: {label: 'Snowboard', icon: IC.board, cats: ['Park','Rails','Pipe','Backcountry'],
               grabs: ['No grab','Indy','Melon','Method','Mute','Stalefish','Tail','Nose']},
 };
-// Mountains by region. Northeast added 10/28 for the Boston riders (they were stuck with Colorado only).
-const REGIONS = {
-  'Colorado': ['Eldora','Winter Park','Copper','Arapahoe Basin','Breckenridge','Keystone'],
-  'Northeast': ['Wachusett','Nashoba Valley','Loon','Waterville Valley','Bretton Woods','Cannon','Killington','Stowe',
-    'Okemo','Mount Snow','Stratton','Sugarbush','Jay Peak','Sunday River','Sugarloaf'],
+// Every mountain riders can pick (197, US + Canada), by state or region: "Name lat lon|Name lat lon".
+// The coordinates feed the snow report. Names are what profiles store, so never rename one (add instead).
+const MOUNTAIN_DATA = {
+  'Colorado': 'Eldora 39.9372 -105.5827|Winter Park 39.8868 -105.7625|Copper 39.5022 -106.1511|Arapahoe Basin 39.6425 -105.8719|Breckenridge 39.4817 -106.0384|Keystone 39.6045 -105.9540|Loveland 39.6800 -105.8979|Vail 39.6061 -106.3550|Beaver Creek 39.6042 -106.5165|Steamboat 40.4572 -106.8045|Snowmass 39.2084 -106.9490|Aspen Mountain 39.1864 -106.8182|Aspen Highlands 39.1820 -106.8556|Buttermilk 39.2055 -106.8606|Crested Butte 38.8991 -106.9658|Telluride 37.9375 -107.8123|Purgatory 37.6303 -107.8140|Wolf Creek 37.4722 -106.7930|Monarch 38.5120 -106.3320|Ski Cooper 39.3606 -106.3017|Sunlight 39.3997 -107.3381|Powderhorn 39.0694 -108.1507|Echo Mountain 39.6847 -105.5194|Granby Ranch 40.0447 -105.9064',
+  'Utah': 'Park City 40.6514 -111.5080|Deer Valley 40.6374 -111.4783|Alta 40.5884 -111.6386|Snowbird 40.5830 -111.6508|Brighton 40.5980 -111.5832|Solitude 40.6199 -111.5919|Snowbasin 41.2160 -111.8569|Powder Mountain 41.3790 -111.7807|Sundance 40.3934 -111.5880|Woodward Park City 40.7470 -111.5650|Nordic Valley 41.3104 -111.8646|Beaver Mountain 41.9682 -111.5437|Brian Head 37.7021 -112.8499|Eagle Point 38.3200 -112.3840',
+  'California': 'Mammoth 37.6308 -119.0326|June Mountain 37.7680 -119.0900|Palisades Tahoe 39.1970 -120.2357|Northstar 39.2746 -120.1210|Heavenly 38.9353 -119.9400|Kirkwood 38.6850 -120.0650|Sierra-at-Tahoe 38.7997 -120.0806|Sugar Bowl 39.3046 -120.3355|Boreal 39.3367 -120.3500|Homewood 39.0856 -120.1600|Bear Valley 38.4925 -120.0440|Dodge Ridge 38.1900 -119.9550|Bear Mountain 34.2270 -116.8600|Snow Summit 34.2364 -116.8892|Mountain High 34.3767 -117.6911',
+  'Nevada': 'Mt. Rose 39.3289 -119.8853|Diamond Peak 39.2540 -119.9190',
+  'Wyoming': 'Jackson Hole 43.5875 -110.8279|Grand Targhee 43.7903 -110.9580|Snow King 43.4708 -110.7600',
+  'Montana': 'Big Sky 45.2857 -111.4017|Whitefish 48.4820 -114.3557|Bridger Bowl 45.8174 -110.8965|Red Lodge 45.1900 -109.3400|Discovery 46.2510 -113.2380',
+  'Idaho': 'Sun Valley 43.6710 -114.3640|Schweitzer 48.3678 -116.6228|Tamarack 44.6710 -116.1230|Bogus Basin 43.7640 -116.1030|Brundage 45.0050 -116.1550',
+  'New Mexico + Arizona': 'Taos 36.5960 -105.4545|Angel Fire 36.3870 -105.2730|Ski Santa Fe 35.7960 -105.8040|Arizona Snowbowl 35.3300 -111.7110',
+  'Washington': 'Crystal Mountain (WA) 46.9282 -121.5045|Stevens Pass 47.7448 -121.0890|Mt. Baker 48.8570 -121.6650|Summit at Snoqualmie 47.4210 -121.4130|Mission Ridge 47.2920 -120.3990|White Pass 46.6370 -121.3910|49 Degrees North 48.3020 -117.5630',
+  'Oregon': 'Mt. Bachelor 43.9792 -121.6886|Mt. Hood Meadows 45.3310 -121.6650|Timberline 45.3311 -121.7113|Mt. Hood Skibowl 45.3020 -121.7720',
+  'Alaska': 'Alyeska 60.9700 -149.0980',
+  'Vermont': "Killington 43.6045 -72.8201|Stowe 44.5303 -72.7814|Okemo 43.4017 -72.7170|Mount Snow 42.9602 -72.9204|Stratton 43.1134 -72.9081|Sugarbush 44.1358 -72.8944|Jay Peak 44.9379 -72.5045|Smugglers' Notch 44.5880 -72.7900|Bolton Valley 44.4210 -72.8500|Mad River Glen 44.2030 -72.9170|Bromley 43.2280 -72.9380|Pico 43.6610 -72.8430|Burke 44.5870 -71.9180|Magic Mountain 43.2010 -72.7730",
+  'New Hampshire': 'Loon 44.0364 -71.6214|Waterville Valley 43.9650 -71.5276|Bretton Woods 44.2580 -71.4410|Cannon 44.1567 -71.6987|Attitash 44.0830 -71.2290|Wildcat 44.2640 -71.2390|Cranmore 44.0560 -71.1100|Gunstock 43.5380 -71.3660|Pats Peak 43.1780 -71.8070|Crotched 42.9990 -71.8740|Ragged Mountain 43.4790 -71.8460|Mount Sunapee 43.3310 -72.0800|Black Mountain 44.1680 -71.1640',
+  'Maine': 'Sunday River 44.4734 -70.8566|Sugarloaf 45.0314 -70.3131|Saddleback 44.9360 -70.5030|Pleasant Mountain 44.0590 -70.8160|Mt. Abram 44.3790 -70.7360|Lost Valley 44.1270 -70.2830',
+  'Massachusetts': 'Wachusett 42.5031 -71.8867|Nashoba Valley 42.5445 -71.4426|Jiminy Peak 42.5560 -73.2920|Berkshire East 42.6200 -72.8770|Blue Hills 42.2180 -71.1120|Ski Bradford 42.7680 -71.0400|Catamount 42.1700 -73.4770',
+  'Connecticut': 'Mohawk Mountain 41.8390 -73.3110|Ski Sundown 41.8840 -72.9440|Mount Southington 41.5850 -72.9100',
+  'New York': 'Whiteface 44.3650 -73.9030|Gore 43.6720 -74.0050|Hunter 42.2020 -74.2300|Windham 42.2930 -74.2570|Belleayre 42.1360 -74.5050|Holiday Valley 42.2630 -78.6690|Greek Peak 42.5050 -76.1460|Bristol Mountain 42.7450 -77.4010|Thunder Ridge 41.5110 -73.5850',
+  'Pennsylvania': 'Blue Mountain (PA) 40.8100 -75.5130|Camelback 41.0520 -75.3550|Seven Springs 40.0230 -79.2970|Jack Frost 41.1080 -75.6550|Big Boulder 41.0550 -75.6000|Whitetail 39.7420 -77.9330|Liberty 39.7630 -77.3750|Roundtop 40.1120 -76.9270',
+  'Mid-Atlantic + South': 'Snowshoe 38.4030 -79.9940|Wisp 39.5570 -79.3640|Wintergreen 37.9070 -78.9450|Massanutten 38.4090 -78.7410|Sugar Mountain 36.1300 -81.8600|Beech Mountain 36.1880 -81.8840|App Ski Mtn 36.1750 -81.6640',
+  'Midwest': "Boyne Mountain 45.1640 -84.9330|Boyne Highlands 45.4680 -84.9300|Crystal Mountain (MI) 44.5200 -85.9940|Nub's Nob 45.4690 -84.9150|Mount Bohemia 47.3920 -88.0120|Granite Peak 44.9330 -89.6820|Cascade Mountain 43.5000 -89.5160|Wilmot 42.5070 -88.1830|Lutsen 47.6630 -90.7160|Buck Hill 44.7240 -93.2860|Hyland Hills 44.8530 -93.3670|Afton Alps 44.8580 -92.7880|Perfect North 39.1490 -84.8880|Mad River Mountain 40.3200 -83.6870",
+  'British Columbia': 'Whistler Blackcomb 50.1150 -122.9486|Revelstoke 50.9580 -118.1630|Sun Peaks 50.8840 -119.8820|Big White 49.7220 -118.9290|Silver Star 50.3590 -119.0610|Red Mountain 49.1030 -117.8460|Whitewater 49.4430 -117.1440|Fernie 49.4630 -115.0870|Kicking Horse 51.2980 -117.0480|Panorama 50.4600 -116.2380|Cypress 49.3960 -123.2040|Grouse 49.3800 -123.0820|Mt. Seymour 49.3660 -122.9490',
+  'Alberta': 'Lake Louise 51.4410 -116.1620|Sunshine Village 51.0790 -115.7820|Banff Norquay 51.2040 -115.5980|Marmot Basin 52.8000 -118.0840|Nakiska 50.9420 -115.1510|WinSport 51.0830 -114.2140',
+  'Quebec': 'Mont Tremblant 46.2100 -74.5850|Le Massif 47.2840 -70.5700|Mont-Sainte-Anne 47.0750 -70.9040|Stoneham 47.0280 -71.3780|Bromont 45.3080 -72.6470|Mont Orford 45.3150 -72.2400|Sutton 45.1050 -72.5620|Mont Saint-Sauveur 45.8870 -74.1580',
+  'Ontario + East': 'Blue Mountain (ON) 44.5010 -80.3160|Mount St. Louis Moonstone 44.6230 -79.7290|Horseshoe 44.5500 -79.6720|Calabogie 45.2950 -76.7240|Martock 44.9310 -64.1690',
 };
+const REGIONS = {}, RESORT_GEO = {};
+for (const [reg, txt] of Object.entries(MOUNTAIN_DATA)) REGIONS[reg] = txt.split('|').map(m => {
+  const p = m.split(' '), lon = +p.pop(), lat = +p.pop(), name = p.join(' ');
+  RESORT_GEO[name] = [lat, lon]; return name; });
 const RESORTS = Object.values(REGIONS).flat();
-// <option>s grouped by region, for every mountain dropdown
-const resortOptions = sel => Object.entries(REGIONS).map(([reg, list]) => `<optgroup label="${reg}">${
-  list.map(r => `<option ${sel === r ? 'selected' : ''}>${r}</option>`).join('')}</optgroup>`).join('');
+const regionOf = r => Object.keys(REGIONS).find(k => REGIONS[k].includes(r)) || '';
+// Search: matches the name or the state, ignoring case, accents and punctuation ("smugglers notch" finds Smugglers' Notch)
+const fold = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '');
+const findMountains = q => { q = fold(q).trim(); if (!q) return [];
+  const hits = RESORTS.filter(r => fold(r).includes(q) || fold(regionOf(r)).includes(q) || fold(r).replace(/ /g, '').startsWith(q.replace(/ /g, '')));
+  return hits.sort((a, b) => (fold(b).startsWith(q) ? 1 : 0) - (fold(a).startsWith(q) ? 1 : 0)); };
+// <option>s grouped by region, for every mountain dropdown. A mountain saved before it was on the list stays selectable.
+const resortOptions = sel => (sel && !RESORTS.includes(sel) ? `<option selected>${esc(sel)}</option>` : '') +
+  Object.entries(REGIONS).map(([reg, list]) => `<optgroup label="${reg}">${
+  list.map(r => `<option ${sel === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</optgroup>`).join('');
 const REASONS = [['fell','Fell'],['wrong_trick','Wrong trick'],['cant_see',"Can't see"]];
 const MAX_SECONDS = 20;       // longest recording
 const MAX_MB = 50;            // Supabase free plan limit per file
@@ -1166,15 +1206,6 @@ function avStyle(name){
 }
 
 // ---------- mountain conditions (Open-Meteo: free, no account needed) ----------
-const RESORT_GEO = {
-  'Eldora': [39.9372, -105.5827], 'Winter Park': [39.8868, -105.7625], 'Copper': [39.5022, -106.1511],
-  'Arapahoe Basin': [39.6425, -105.8719], 'Breckenridge': [39.4817, -106.0384], 'Keystone': [39.6045, -105.9540],
-  'Wachusett': [42.5031, -71.8867], 'Nashoba Valley': [42.5445, -71.4426], 'Loon': [44.0364, -71.6214],
-  'Waterville Valley': [43.9650, -71.5276], 'Bretton Woods': [44.2580, -71.4410], 'Cannon': [44.1567, -71.6987],
-  'Killington': [43.6045, -72.8201], 'Stowe': [44.5303, -72.7814], 'Okemo': [43.4017, -72.7170],
-  'Mount Snow': [42.9602, -72.9204], 'Stratton': [43.1134, -72.9081], 'Sugarbush': [44.1358, -72.8944],
-  'Jay Peak': [44.9379, -72.5045], 'Sunday River': [44.4734, -70.8566], 'Sugarloaf': [45.0314, -70.3131],
-};
 // Open-Meteo weather code -> drawn line icon (DESIGN.md: no emoji as icons)
 const WX_ICON = (c, size = 20) => ic(c === 0 ? 'sun' : c <= 2 ? 'partsun' : c === 3 ? 'cloud' : c <= 48 ? 'fog' : c <= 67 ? 'rain'
   : c <= 77 ? 'snow' : c <= 82 ? 'rain' : c <= 86 ? 'snow' : 'storm', size);
@@ -1856,6 +1887,7 @@ const ICON = {
 };
 // Line icons, one stroke weight (DESIGN.md: no emoji as icons). ic('book') -> inline SVG that takes the text color.
 const ICO = {
+  search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20',
   fire: 'M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z',
   book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7',
   trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M10 17h4',
@@ -3436,13 +3468,20 @@ function showOnboarding(){
     <p class="hint">You only see tricks for what you ride. Change it any time on your profile.</p></div>`;
   return true;
 }
-function onboardResort(reg = 'Colorado'){
+// Popular picks before you type: CU's Front Range spots, then the Boston riders' mountains
+const OB_POPULAR = ['Eldora','Winter Park','Copper','Arapahoe Basin','Breckenridge','Keystone','Wachusett','Loon','Killington','Sunday River'];
+function onboardResort(){
   $('overlay').innerHTML = `<div class="onboard" role="dialog" aria-label="Pick your home mountain">
     <div class="ob-step">2 of 2</div><h2>Home<br>mountain?</h2>
-    <div class="seg ob-reg">${Object.keys(REGIONS).map(k =>
-      `<button class="${k === reg ? 'on' : ''}" data-act="ob-region" data-k="${k}" aria-pressed="${k === reg}">${k}</button>`).join('')}</div>
-    <div class="ob-grid">${REGIONS[reg].map(r => `<button class="btn" data-act="ob-resort" data-k="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+    <label class="ob-search"><span class="sr">Search mountains</span>${ic('search', 18)}
+      <input id="ob-search" type="search" placeholder="Search ${RESORTS.length} mountains or a state" autocomplete="off" enterkeyhint="search"></label>
+    <div class="ob-list" id="ob-list" aria-live="polite"></div>
     <button class="linkish" data-act="ob-resort" data-k="">Somewhere else / skip</button></div>`;
+  const list = $('ob-list'), row = r => `<button class="ob-mt" data-act="ob-resort" data-k="${esc(r)}"><b>${esc(r)}</b><span>${esc(regionOf(r))}</span></button>`;
+  const show = () => { const q = $('ob-search').value, hits = findMountains(q);
+    list.innerHTML = !q.trim() ? `<div class="ob-hd">Popular</div>${OB_POPULAR.map(row).join('')}`
+      : hits.length ? hits.slice(0, 40).map(row).join('') : `<p class="hint">No mountain called "${esc(q)}" yet. Pick one nearby, or skip and tell us in Send feedback.</p>`; };
+  $('ob-search').oninput = show; show();
 }
 async function finishOnboarding(resort){
   store.set('onboarded-' + myId(), '1');
@@ -4042,7 +4081,6 @@ document.addEventListener('click', async e => {
     }
     case 'close-splash': return closeSplash();
     case 'ob-sport': setRides(b.dataset.k); return onboardResort();
-    case 'ob-region': return onboardResort(b.dataset.k);
     case 'ob-resort': return finishOnboarding(b.dataset.k);
     case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
     case 'rankup-tap': { const el = $('splash'); if (el.classList.contains('done')) return closeSplash(); el.classList.add('done'); return; }
