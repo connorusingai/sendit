@@ -857,6 +857,58 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opa
 @keyframes screenShake{20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}}
 @media (prefers-reduced-motion:reduce){body.on-base .tabs button.rec-tab .dot,.reward-card,.shake{animation:none}}
 
+/* Rank up (game style): dark screen + banner, old badge charges and shatters, new badge slams in under spinning rays.
+   Base styles are the END state; animations play in from hidden. --hit = when the old badge breaks. Tap once = skip to the end. */
+.rankup{position:fixed;inset:0;z-index:62;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  padding:24px 16px;text-align:center;overflow:hidden;cursor:pointer;--hit:1.5s;
+  background:radial-gradient(55% 40% at 50% 40%, color-mix(in srgb, var(--c2) 35%, transparent), transparent 70%),rgba(2,3,7,.97);
+  animation:fade-in .3s both}
+#rankup-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ru-rays{position:absolute;left:50%;top:40%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;pointer-events:none;opacity:.5;
+  -webkit-mask:radial-gradient(circle, #000 0 8%, transparent 42%);mask:radial-gradient(circle, #000 0 8%, transparent 42%);
+  animation:ruRaysIn .6s calc(var(--hit) + .05s) both}
+.ru-rays i{position:absolute;inset:0;background:repeating-conic-gradient(from 0deg, var(--c2) 0 7deg, transparent 7deg 22deg);animation:ruSpin 16s linear infinite}
+.ru-banner{position:relative;z-index:2;margin-bottom:6px;padding:8px 34px;background:var(--c2);color:#0A0D14;transform:skewX(-14deg);
+  box-shadow:6px 6px 0 #0A0D14, 0 0 30px color-mix(in srgb, var(--c2) 70%, transparent);animation:ruBanner .5s .1s cubic-bezier(.2,1.4,.4,1) both}
+.ru-banner span{display:block;transform:skewX(14deg);font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.24em;text-transform:uppercase}
+.ru-stage{position:relative;z-index:2;width:220px;height:220px;display:grid;place-items:center}
+.ru-stage > *{grid-area:1/1}
+.ru-old{opacity:0;animation:ruCharge calc(var(--hit) - .2s) .2s ease-in both}
+.ru-new{animation:ruSlam .6s var(--hit) cubic-bezier(.2,1.6,.35,1) both}
+.ru-new .ru-float{animation:ruFloat 2.6s calc(var(--hit) + .8s) ease-in-out infinite}
+.ru-ring{width:200px;height:200px;border-radius:50%;border:5px solid var(--c1);box-shadow:0 0 24px var(--c2);opacity:0;pointer-events:none;
+  animation:ruRing .7s var(--hit) ease-out both}
+.ru-ring.r2{border-color:var(--c2);animation-delay:calc(var(--hit) + .14s)}
+.ru-flash{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%, #fff, color-mix(in srgb, var(--c1) 60%, transparent) 45%, transparent 75%);
+  opacity:0;pointer-events:none;animation:ruFlash .45s var(--hit) ease-out both}
+.ru-word{position:relative;z-index:2;font-family:var(--display);font-weight:900;font-style:italic;font-size:clamp(44px,15vw,68px);line-height:1;
+  text-transform:uppercase;color:var(--c1);-webkit-text-stroke:2px #0A0D14;paint-order:stroke fill;padding:0 .14em 0 .04em;
+  text-shadow:0 4px 0 #0A0D14, 0 0 28px color-mix(in srgb, var(--c2) 80%, transparent);white-space:nowrap}
+.ru-word b{display:inline-block;font-weight:inherit;animation:ruLetter .42s calc(var(--hit) + .45s + var(--i) * .05s) cubic-bezier(.2,1.7,.4,1) both}
+.ru-sub{position:relative;z-index:2;color:var(--muted);animation:ruUp .4s calc(var(--hit) + 1s) both}
+.ru-sub b{color:var(--ink)}
+.ru-next{position:relative;z-index:2;font-weight:700;animation:ruUp .4s calc(var(--hit) + 1.15s) both}
+.rankup .ru-go{position:relative;z-index:2;margin-top:14px;min-width:220px;animation:ruUp .4s calc(var(--hit) + 1.4s) both}
+.rankup.shake{animation:screenShake .4s}
+.rankup.done, .rankup.done *:not(.ru-rays i):not(.ru-float){animation:none!important}
+.rankup.done .ru-old, .rankup.done .ru-ring, .rankup.done .ru-flash{display:none}
+.rankup.out{animation:fade .35s ease-in forwards!important}
+@keyframes ruSpin{to{transform:rotate(1turn)}}
+@keyframes ruRaysIn{from{opacity:0;transform:scale(.4)}}
+@keyframes ruBanner{from{opacity:0;transform:skewX(-14deg) translateX(-120vw)}}
+@keyframes ruCharge{
+  0%{opacity:0;transform:scale(.6)} 15%{opacity:1;transform:scale(1)}
+  60%{transform:scale(1.04) rotate(-2deg);filter:brightness(1.4)} 70%{transform:scale(1.06) rotate(3deg)} 80%{transform:scale(1.08) rotate(-4deg);filter:brightness(2)}
+  90%{transform:scale(1.12) rotate(5deg);filter:brightness(2.6)} 99%{opacity:1;transform:scale(1.18);filter:brightness(4)} 100%{opacity:0;transform:scale(1.25)}}
+@keyframes ruSlam{0%{opacity:0;transform:scale(3.2) rotate(-18deg)} 55%{opacity:1} 100%{opacity:1;transform:none}}
+@keyframes ruFloat{50%{transform:translateY(-6px) rotate(1.5deg)}}
+@keyframes ruRing{0%{opacity:.95;transform:scale(.3)} 100%{opacity:0;transform:scale(2.6)}}
+@keyframes ruFlash{0%{opacity:0} 15%{opacity:1} 100%{opacity:0}}
+@keyframes ruLetter{0%{opacity:0;transform:translateY(-40px) scale(2.2) rotate(-10deg)} 100%{opacity:1;transform:none}}
+@keyframes ruUp{from{opacity:0;transform:translateY(12px)}}
+@media (prefers-reduced-motion:reduce){.rankup, .rankup *:not(.ru-float){animation:none!important}
+  .rankup .ru-old, .rankup .ru-ring, .rankup .ru-flash{display:none}}
+
 /* Base (the home tab): your rider stands in the snow in front of the mountains; tap him for the gear sheet */
 #base-bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:none;pointer-events:none}
 body.on-base #base-bg{display:none}   /* parked with the rider (DESIGN.md) */
@@ -1655,7 +1707,7 @@ function noticeResults(before){
       const name = clipName(c);
       if (c.status === 'verified'){
         const a = rankInfo(before ? before.points : 0, TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
-        showReward(c, a.label !== b.label ? b : null);
+        showReward(c, a.label !== b.label ? {from: a, to: b} : null);
       } else toast(`The community didn't verify your ${name}`, 4500);
     }
   }
@@ -3384,15 +3436,81 @@ function showSplash(){
   </div>`;
   setTimeout(closeSplash, 2800);
 }
-// A short, calm celebration when you move up a rank or division.
-function showRankUp(r){
-  $('overlay').innerHTML = `<div class="splash" id="splash" data-act="close-splash" style="--splash-c:${BADGE[r.tier.key][1]}66">
-    <div class="label" style="color:var(--accent-hot)">Rank up</div>
-    ${badgeSVG(r.tier.key, 170, r.div, {glow: true})}
-    ${rankWord(r, 60)}
-    <div class="hint" style="margin-top:14px">Tap to keep riding</div></div>`;
-  if (navigator.vibrate) navigator.vibrate(60);
-  setTimeout(closeSplash, 3500);
+// The big rank-up moment (Connor: like Brawl Stars / Apex). Old badge charges up and shatters, the new one slams in.
+// A whole new tier (Silver -> Gold) says NEW TIER. Waits for a tap: first tap skips to the end, the button closes it.
+function showRankUp(r, from = null){
+  const [c1, c2, c3] = BADGE[r.tier.key], newTier = !from || from.tier.key !== r.tier.key;
+  const hit = from ? 1.5 : .35, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const letters = [...r.label.toUpperCase()].map((ch, i) => ch === ' ' ? ' ' : `<b style="--i:${i}">${esc(ch)}</b>`).join('');
+  $('overlay').innerHTML = `<div class="rankup" id="splash" data-act="rankup-tap" role="dialog" aria-label="Rank up: ${esc(r.label)}"
+      style="--c1:${c1};--c2:${c2};--c3:${c3};--hit:${hit}s">
+    <canvas id="rankup-fx" aria-hidden="true"></canvas>
+    <div class="ru-rays" aria-hidden="true"><i></i></div>
+    <div class="ru-banner"><span>${newTier ? 'New tier' : 'Rank up'}</span></div>
+    <div class="ru-stage" aria-hidden="true">
+      ${from ? `<div class="ru-old">${badgeSVG(from.tier.key, 150, from.div)}</div>` : ''}
+      <div class="ru-ring"></div><div class="ru-ring r2"></div>
+      <div class="ru-new"><div class="ru-float">${badgeSVG(r.tier.key, 200, r.div, {glow: true})}</div></div>
+    </div>
+    <div class="ru-flash" aria-hidden="true"></div>
+    <div class="ru-word">${letters}</div>
+    ${from ? `<div class="ru-sub">${esc(from.label)} → <b>${esc(r.label)}</b></div>` : ''}
+    <div class="ru-next mono">${r.nextLabel ? `${r.toNext} pts to ${esc(r.nextLabel)}` : 'Top of the mountain'}</div>
+    <button class="btn primary ru-go" data-act="close-splash">Let's go</button>
+  </div>`;
+  if (still) return;
+  rankUpFx($('rankup-fx'), [c1, c2, c3, '#ffffff'], from ? hit * 1000 : 0, hit * 1000);
+  setTimeout(() => {
+    const el = $('splash'); if (!el || el.classList.contains('done')) return;
+    el.classList.add('shake');
+    if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) try { navigator.vibrate([30, 40, 90]); } catch (e) {}
+  }, hit * 1000);
+}
+// Canvas for the rank up: sparks get sucked into the old badge (charge), it bursts into shards + sparks (hit),
+// then embers keep rising in the tier colors until the screen closes.
+function rankUpFx(cv, col, chargeMs, hitMs){
+  if (!cv) return;
+  const D = devicePixelRatio || 1, W = cv.width = innerWidth * D, H = cv.height = innerHeight * D, g = cv.getContext('2d');
+  const box = cv.parentElement.querySelector('.ru-stage').getBoundingClientRect();
+  const cx = (box.left + box.width / 2) * D, cy = (box.top + box.height / 2) * D, t0 = performance.now();
+  let bits = [], burst = false, last = t0;
+  const add = b => bits.push(Object.assign({t: 0, life: 60, a: Math.random() * 6, va: (Math.random() - .5) * .3, c: col[bits.length % col.length]}, b));
+  const tick = now => {
+    if (!cv.isConnected) return;
+    const el = cv.parentElement, ms = now - t0, skip = el.classList.contains('done');
+    g.clearRect(0, 0, W, H);
+    if (!skip && ms < chargeMs && now - last > 16){   // charge: sparks fly in from all around
+      last = now;
+      for (let k = 0; k < 3; k++){ const a = Math.random() * 6.28, d = (140 + Math.random() * 160) * D;
+        add({x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, tx: cx, ty: cy, s: (2 + Math.random() * 3) * D, kind: 'in', life: 26}); }
+    }
+    if (!burst && (ms >= hitMs || skip)){
+      burst = true;
+      if (!skip){
+        for (let i = 0; i < 46; i++){ const a = Math.random() * 6.28, v = (6 + Math.random() * 16) * D;   // badge shards
+          add({x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4 * D, s: (8 + Math.random() * 14) * D, kind: 'shard', life: 70}); }
+        for (let i = 0; i < 90; i++){ const a = Math.random() * 6.28, v = (4 + Math.random() * 22) * D;   // sparks
+          add({x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, s: (2 + Math.random() * 3) * D, kind: 'spark', life: 50}); }
+      }
+    }
+    if (burst && Math.random() < .5)   // embers drift up for as long as the screen is open
+      add({x: Math.random() * W, y: H + 10 * D, vx: (Math.random() - .5) * D, vy: -(1.5 + Math.random() * 2.5) * D, s: (1.5 + Math.random() * 2.5) * D, kind: 'ember', life: 260});
+    bits = bits.filter(b => b.t < b.life);
+    for (const b of bits){
+      b.t++;
+      if (b.kind === 'in'){ const k = b.t / b.life; b.x += (b.tx - b.x) * k * .35; b.y += (b.ty - b.y) * k * .35; }
+      else { b.x += b.vx; b.y += b.vy; if (b.kind !== 'ember'){ b.vy += .35 * D; b.vx *= .97; } b.a += b.va; }
+      g.globalAlpha = b.kind === 'ember' ? .7 * Math.sin(Math.PI * b.t / b.life) : Math.max(0, 1 - b.t / b.life);
+      g.fillStyle = b.c;
+      if (b.kind === 'shard'){ g.save(); g.translate(b.x, b.y); g.rotate(b.a); g.beginPath();
+        g.moveTo(0, -b.s / 2); g.lineTo(b.s / 2, b.s / 3); g.lineTo(-b.s / 3, b.s / 2); g.closePath(); g.fill();
+        g.strokeStyle = '#0A0D14'; g.lineWidth = 1.5 * D; g.stroke(); g.restore(); }
+      else { g.shadowColor = b.c; g.shadowBlur = 8 * D; g.beginPath(); g.arc(b.x, b.y, b.s, 0, 6.28); g.fill(); g.shadowBlur = 0; }
+    }
+    g.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 function closeSplash(){
   const s = $('splash'); if (!s) return;
@@ -3826,7 +3944,8 @@ document.addEventListener('click', async e => {
     case 'close-splash': return closeSplash();
     case 'ob-sport': setRides(b.dataset.k); return onboardResort();
     case 'ob-resort': return finishOnboarding(b.dataset.k);
-    case 'reward-collect': { $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r); return; }
+    case 'reward-collect': { $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
+    case 'rankup-tap': { const el = $('splash'); if (el.classList.contains('done')) return closeSplash(); el.classList.add('done'); return; }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
     case 'mute': {
       const v = b.closest('.player, .feed-item').querySelector('video'); v.muted = !v.muted;
