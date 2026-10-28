@@ -23,7 +23,7 @@ Bronze #c8793a · Silver #aab4c2 · Gold #f2b81f · Platinum #2fc4ac · Diamond 
 
 ## Type
 - Display: **Big Shoulders Display 900**, uppercase, italic for rank names and trick names.
-- UI/body: **Barlow Condensed 500–700**.
+- UI/body: **Figtree 400–700** (what the app has used since day 1).
 - Labels and numbers: **JetBrains Mono 700**, 10–11px, letter-spacing .12em, uppercase ("CREW / LAST 24H").
 
 ## Shapes

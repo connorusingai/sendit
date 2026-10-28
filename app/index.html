@@ -147,7 +147,7 @@ video.clip{display:block;width:100%;aspect-ratio:4/5;max-height:70vh;background:
 .trick{font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase;line-height:1;font-style:italic}
 .trick small{font-family:var(--body);font-style:normal;font-weight:500;font-size:12.5px;color:var(--muted);text-transform:none}
 .pts{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--accent);text-shadow:0 0 12px rgba(255,107,26,.5)}
-.pill{font-size:11px;font-weight:800;border-radius:999px;padding:3px 9px;letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;border:1px solid}
+.pill{font-size:11px;font-weight:800;border-radius:0;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);padding:3px 9px;letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;border:1px solid}
 .pill.ok{background:var(--good-soft);color:var(--good);border-color:rgba(59,224,138,.4)}
 .pill.no{background:var(--bad-soft);color:var(--bad);border-color:rgba(255,84,112,.4)}
 .pill.wait{background:var(--ice-soft);color:var(--ice);border-color:rgba(201,208,222,.4)}
@@ -224,6 +224,8 @@ select:focus,input:focus{border-color:var(--ice)}
 .seg button{border:0;background:transparent;padding:7px 12px;border-radius:7px;font-weight:800;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--accent);color:var(--accent-ink)}
 .filters{display:flex;gap:8px;align-items:center;margin-block:12px 10px;flex-wrap:wrap}
+.filters:has(.seg + .seg){flex-wrap:nowrap;justify-content:space-between}   /* who + when on one row, not two stacked tab bars */
+.filters .seg button{padding:7px 9px}
 .filters select{width:auto;flex:1;min-width:140px;padding:8px 10px}
 .board{list-style:none;margin:0;padding:0}
 .board li{display:grid;grid-template-columns:28px 36px 1fr auto;align-items:center;gap:10px;padding:11px 14px;
@@ -273,8 +275,8 @@ select:focus,input:focus{border-color:var(--ice)}
 .onboard .ob-grid .btn.big{min-height:110px;font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .onboard .ob-grid .btn.big svg{width:34px;height:34px}
 .rec-hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:12;
-  background:var(--accent);color:var(--accent-ink);font-weight:700;padding:10px 14px;border-radius:10px;max-width:260px;text-align:center;
-  box-shadow:0 8px 24px rgba(0,0,0,.5);cursor:pointer}
+  background:var(--accent);color:var(--accent-ink);font-weight:700;padding:8px 12px;border-radius:0;max-width:220px;text-align:center;font-size:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
 .rec-hint::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);border:8px solid transparent;border-bottom:0;border-top-color:var(--accent)}
 .rec-hint small{display:block;font-weight:500;opacity:.8}
 /* "Get Stomped on your home screen" card (Connor 10/27): slides up from the bottom, over the tab bar */
@@ -288,7 +290,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .install-sheet .btns{display:flex;gap:8px}
 .install-sheet .btns .btn{flex:1}
 .inapp-note{border-left:3px solid var(--accent)!important}
-@media (prefers-reduced-motion:no-preference){.rec-hint{animation:hintbob 1.6s ease-in-out infinite}}
+@media (prefers-reduced-motion:no-preference){.rec-hint{animation:hintbob 1.6s ease-in-out 3}}
 @keyframes hintbob{50%{transform:translateX(-50%) translateY(-4px)}}
 .sent-you{display:block;padding:12px 14px;margin-block:0 14px;border-color:var(--accent);color:var(--ink);text-decoration:none}
 .sent-you b{color:var(--accent)}
@@ -317,7 +319,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .tips .label{margin-top:10px;color:var(--ice)}
 
 /* ---------- record ---------- */
-.cam{position:relative;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:9/14;max-height:62vh;margin-inline:auto;width:100%;border:1px solid var(--line)}
+.cam{position:relative;border-radius:0;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);overflow:hidden;background:#000;aspect-ratio:9/14;max-height:62vh;margin-inline:auto;width:100%;border:1px solid var(--line)}
 .cam video{width:100%;height:100%;object-fit:cover;display:block}
 .cam .timer{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-weight:700;
   background:rgba(0,0,0,.6);padding:4px 10px;border-radius:999px;font-size:14px}
@@ -352,7 +354,7 @@ select:focus,input:focus{border-color:var(--ice)}
 .feed-bar.float .seg{pointer-events:auto;background:rgba(10,13,20,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .feed-bar.float .seg button{padding:6px 8px;font-size:12px}
 .reel.feedreel{height:calc(100dvh - 150px - env(safe-area-inset-bottom,0px))}
-.feedreel .reel-top{top:62px}   /* clear the Clips | Judge bar */
+.feedreel .reel-top{top:72px}   /* clear the Clips | Judge bar */
 .feed-bar .on .cnt{background:#0a0b10;color:var(--hot,#ff5a1f)}
 .feed-item video{object-fit:contain}
 .feed-item::after{content:'';position:absolute;left:0;right:0;bottom:0;height:45%;pointer-events:none;background:linear-gradient(transparent,rgba(0,0,0,.8))}
@@ -374,11 +376,14 @@ select:focus,input:focus{border-color:var(--ice)}
 .feed-item > .clip-menu{position:absolute;right:66px;bottom:80px;z-index:6;display:grid;gap:6px;max-width:250px;padding:12px;
   background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .reel-item.intro{overflow-y:auto;padding:60px 16px 16px;background:var(--bg);display:grid;align-content:start;gap:12px}
-.round{width:62px;height:62px;border-radius:50%;border:3px solid #0A0D14;cursor:pointer;font-size:26px;font-weight:900;
+.round{width:62px;height:62px;border-radius:0;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);border:0;cursor:pointer;font-size:26px;font-weight:900;
   display:grid;place-items:center;box-shadow:0 4px 0 rgba(0,0,0,.5)}
 .round.yes{background:var(--good);color:#04160C}
 .round.no{background:var(--bad);color:#1A0207}
-.round.skip{width:46px;height:46px;background:rgba(255,255,255,.14);color:#fff;font-size:18px;border-color:transparent}
+.round.skip{width:46px;height:46px;clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);background:rgba(255,255,255,.14);color:#fff;font-size:18px;border-color:transparent}
+.round .ic-line{stroke-width:3}
+.round-label kbd{display:none;margin-left:5px;font:700 10px var(--mono);padding:1px 4px;border:1px solid rgba(255,255,255,.35);color:var(--muted)}
+@media (hover:hover) and (pointer:fine){.round-label kbd{display:inline-block}}   /* key hints only where there's a keyboard */
 .round-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:-10px;text-shadow:0 1px 4px #000}
 .reel-reasons{position:absolute;inset:auto 12px 18px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
   background:rgba(6,8,12,.9);padding:12px;border-radius:16px;border:1px solid var(--line)}
@@ -651,6 +656,7 @@ button,[data-act],select{touch-action:manipulation}
 
 .clip-menu{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:10px;margin-top:10px;border-top:1px solid var(--line)}
 .clip-menu .hint{width:100%}
+.clip-menu .btn.bad{background:transparent;color:var(--bad);border:1px solid rgba(255,84,112,.55);box-shadow:none}
 .legal{margin-top:12px;font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .legal a{color:var(--muted)}
 .danger{margin-top:12px;padding:14px;border-color:var(--bad);display:grid;gap:8px}
@@ -813,8 +819,13 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opa
 .b2-empty{margin:6px 0 0;color:var(--muted);font-size:13.5px}
 .b2-next .b2-mini{color:var(--muted)}
 .b2-try{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--hot);padding:5px 9px;border:2px solid var(--hot);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
-.filmed{margin-bottom:12px;display:grid;gap:10px;padding:14px;border-left:3px solid var(--hot)}.filmed .player,.filmed video{max-height:38svh}.filmed .label{display:flex;align-items:center;gap:6px}
-.filmed .label svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}.filmed .btns .btn{min-height:48px}
+.filmed{margin-bottom:12px;display:grid;grid-template-columns:84px minmax(0,1fr);gap:12px;padding:12px;border-left:3px solid var(--hot)}
+.filmed .player{width:84px;aspect-ratio:9/14;align-self:start}.filmed video{width:100%;height:100%;object-fit:cover}
+.filmed .player .pl-mute{display:none}.filmed .pl-play{transform:scale(.6)}
+.filmed .f-body{display:grid;gap:6px;align-content:start;min-width:0}.filmed .trick{font-size:20px}
+.filmed .label{display:flex;align-items:center;gap:6px}
+.filmed .label svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}.filmed .btns{margin-top:2px}.filmed .btns .btn{min-height:44px}
+.filmed-more{display:block;margin:-4px 0 12px}
 .b2-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .b2-judge{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:var(--b2-panel);clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 .b2-judge b{font-family:var(--display);font-weight:900;font-size:20px;text-transform:uppercase}
@@ -1037,16 +1048,16 @@ function payout(trickId, grab, combo){
   if (S.landed.combos && S.landed.combos.has(comboKey(trickId, chain)))
     return {pts: p.pts, why: p.why + ' · You\'ve landed this exact combo, so no combo bonus.'};
   const bonus = comboBonus(chain) * (isTotd(trickId) ? 2 : 1);
-  return {pts: p.pts + bonus, why: `🔗 New combo: +${bonus} bonus. ` + p.why};
+  return {pts: p.pts + bonus, why: `New combo: +${bonus} bonus. ` + p.why};
 }
 function trickPayout(trickId, grab){
   const base = trickById(trickId).pts, totd = isTotd(trickId), x = totd ? 2 : 1, grabbed = grab && grab !== 'No grab';
   const grabs = S.landed.get(trickId);
   if (!grabs) return {pts: Math.round(base * (grabbed ? 1.2 : 1) * x),
     why: totd ? 'New trick + Trick of the Day: 2×' : grabbed ? 'New trick! Grab adds 20%' : 'New trick! Full points'};
-  if (grabbed && !grabs.has(grab)) return {pts: Math.round(base * .2 * x), why: `🆕 New grab! A ${grab} is worth 20% of the trick`};
+  if (grabbed && !grabs.has(grab)) return {pts: Math.round(base * .2 * x), why: `New grab! A ${grab} is worth 20% of the trick`};
   if (totd) return {pts: base, why: 'Already landed, but it\'s the Trick of the Day: pays once today'};
-  return {pts: 0, why: grabbed ? `✓ You've landed this with a ${grab}. Try a new grab for points.` : '✓ Already in your Trick Book. Add a grab for points.'};
+  return {pts: 0, why: grabbed ? `You've landed this with a ${grab}. Try a new grab for points.` : 'Already in your Trick Book. Add a grab for points.'};
 }
 // ---------- rail combos ----------
 const MAX_COMBO = 3;   // tricks after the first one; the database allows the same
@@ -1067,8 +1078,9 @@ const RESORT_GEO = {
   'Eldora': [39.9372, -105.5827], 'Winter Park': [39.8868, -105.7625], 'Copper': [39.5022, -106.1511],
   'Arapahoe Basin': [39.6425, -105.8719], 'Breckenridge': [39.4817, -106.0384], 'Keystone': [39.6045, -105.9540],
 };
-const WX_ICON = c => c === 0 ? '☀️' : c <= 2 ? '🌤️' : c === 3 ? '☁️' : c <= 48 ? '🌫️' : c <= 67 ? '🌧️'
-  : c <= 77 ? '🌨️' : c <= 82 ? '🌦️' : c <= 86 ? '🌨️' : '⛈️';
+// Open-Meteo weather code -> drawn line icon (DESIGN.md: no emoji as icons)
+const WX_ICON = (c, size = 20) => ic(c === 0 ? 'sun' : c <= 2 ? 'partsun' : c === 3 ? 'cloud' : c <= 48 ? 'fog' : c <= 67 ? 'rain'
+  : c <= 77 ? 'snow' : c <= 82 ? 'rain' : c <= 86 ? 'snow' : 'storm', size);
 async function loadWeather(){
   const resort = S.me && S.me.home_resort, geo = RESORT_GEO[resort];
   if (!geo){ S.wx = null; return; }
@@ -1698,6 +1710,16 @@ const ICO = {
   cam: 'M3 7h13v10H3zM16 10l5-3v10l-5-3',
   wave: 'M7 11V6a1.5 1.5 0 0 1 3 0v5M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V13a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 4 13.5V12a1.5 1.5 0 0 1 3 0',
   check: 'M5 12l4 4L19 6',
+  x: 'M6 6l12 12M18 6L6 18',
+  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  partsun: 'M8 3v1.5M3.5 8H5M4.8 4.8l1 1M11.2 4.8l-1 1M5.5 10.5A3 3 0 1 1 10.6 7M8 19h9a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.2 3.2 0 0 0 8 19z',
+  cloud: 'M7 18h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.2 3.2 0 0 0 7 18z',
+  fog: 'M7 13h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6M4 17h16M6 21h12',
+  rain: 'M7 14h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.2 3.2 0 0 0 7 14zM8 17l-1 3M12 17l-1 3M16 17l-1 3',
+  snow: 'M7 13h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.2 3.2 0 0 0 7 13zM8 17v.01M12 19v.01M16 17v.01M10 21v.01M14 21v.01',
+  storm: 'M7 14h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.2 3.2 0 0 0 7 14zM13 15l-3 4h4l-3 4',
+  turn: 'M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4',
+  down: 'M12 5v14M6 13l6 6 6-6',
   flag: 'M6 21V4M6 4h11l-2 4 2 4H6',
   spin: 'M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4',
   swap: 'M4 9h13l-3-3M20 15H7l3 3',
@@ -1765,10 +1787,10 @@ function clipStatus(c){
   const shown = c.status === 'verified' ? (c.points_awarded ? '+' + c.points_awarded : 'repeat')
     : c.status === 'rejected' ? '+0' : '+' + (mine ? payout(c.trick_id, c.grab, c.combo).pts
       : (basePoints(c.trick_id, c.grab) + comboBonus(c.combo || [])) * (c.totd ? 2 : 1));
-  return {status, shown};
+  return {status, shown: shown === '+0' && c.status === 'pending' ? 'repeat' : shown};
 }
 // One full-screen clip in the Feed: video behind, buttons down the right, who + what bottom-left
-const filmedBy = c => c.filmed_by && S.filmers[c.filmed_by] ? '🎥 filmed by @' + esc(S.filmers[c.filmed_by]) : '';
+const filmedBy = c => c.filmed_by && S.filmers[c.filmed_by] ? ic('cam', 13) + ' filmed by @' + esc(S.filmers[c.filmed_by]) : '';
 function feedItem(c){
   const t = trickById(c.trick_id), sp = SPORTS[sportOf(t)], mine = c.user_id === myId();
   const who = c.profiles ? c.profiles.username : 'Rider', {status, shown} = clipStatus(c);
@@ -1788,7 +1810,7 @@ function feedItem(c){
       <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? rankTag(c.profiles.points) : ''}</div>
       <div class="trick">${esc(clipName(c))}</div>
       <div class="meta">${sp.icon} ${dots(esc(c.grab), esc(t.category), esc(c.resort || ''), ago(c.created_at) + ' ago', filmedBy(c))}</div>
-      <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' ? '<small> if verified</small>' : ''}</b>${c.totd ? `<span class="pill totd">${ic('fire', 12)} 2×</span>` : ''}</div>
+      <div class="row">${status}<b class="pts">${shown}${c.status === 'pending' && shown !== 'repeat' ? '<small> if verified</small>' : ''}</b>${c.totd ? `<span class="pill totd">${ic('fire', 12)} 2×</span>` : ''}</div>
     </div>
     ${S.menuFor === c.id ? clipMenu(c, mine) : ''}
     ${open ? commentsPanel(c.id) : ''}
@@ -1814,7 +1836,7 @@ function clipCard(c){
     ${media}
     <div class="card-foot">
       <div class="row"><div class="trick">${esc(clipName(c))} <small>· ${esc(c.grab)} · ${esc(t.category)}</small></div>
-        <div class="pts">${shown}${c.status === 'pending' ? '<small class="hint"> if verified</small>' : ''}</div></div>
+        <div class="pts">${shown}${c.status === 'pending' && shown !== 'repeat' ? '<small class="hint"> if verified</small>' : ''}</div></div>
       <div class="row" style="justify-content:flex-start;gap:6px">
         <span class="pill sport">${sp.icon} ${sp.label}</span>
         ${c.totd ? `<span class="pill totd">${ic('fire', 12)} Trick of the Day · 2×</span>` : ''}</div>
@@ -2118,14 +2140,14 @@ async function shareCard(clipId){
 // First moves for a new rider, ticked off as they go. Disappears once they're all done or the rider is past Bronze.
 // A clip a friend filmed of you, waiting on Base for Keep / Not me.
 function filmedCard(c){
-  const t = trickById(c.trick_id), by = S.filmers[c.filmed_by] || 'A friend';
+  const t = trickById(c.trick_id), by = S.filmers[c.filmed_by];
   return `<section class="card filmed" id="filmed-${c.id}">
-    <div class="label">${ICON.cam} @${esc(by)} filmed you</div>
-    <div class="trick">${esc(t ? clipName(c) : c.trick_id)} <small>· ${esc(dots(c.grab, c.resort, ago(c.created_at) + ' ago'))}</small></div>
-    ${c.video_path ? player(videoUrl(c.video_path), false) : ''}
-    <div class="btns"><button class="btn" data-act="filmed-nope" data-id="${c.id}">Not me</button>
-      <button class="btn primary" data-act="filmed-keep" data-id="${c.id}">Keep it</button></div>
-    <span class="hint">Keep it and it goes to judging. Points go to you.</span>
+    ${c.video_path ? player(videoUrl(c.video_path), false) : '<div></div>'}
+    <div class="f-body"><div class="label">${ICON.cam} ${by ? '@' + esc(by) : 'A friend'} filmed you</div>
+      <div class="trick">${esc(t ? clipName(c) : c.trick_id)}</div>
+      <span class="hint">${esc(dots(c.grab, c.resort, ago(c.created_at) + ' ago'))}. Keep it and the points are yours.</span>
+      <div class="btns"><button class="btn" data-act="filmed-nope" data-id="${c.id}">Not me</button>
+        <button class="btn primary" data-act="filmed-keep" data-id="${c.id}">Keep it</button></div></div>
   </section>`;
 }
 function startHere(){
@@ -2380,7 +2402,8 @@ const views = {
     const r = rankInfo(S.me.points, TRICK_TIERS), jq = judgeQueue().length;
     const totds = ridesSports().filter(k => S.totds[k] && trickById(S.totds[k])), two = totds.length > 1;
     return `<section class="lodge base2">
-      ${S.filmedForMe.map(filmedCard).join('')}
+      ${(S.filmedAll ? S.filmedForMe : S.filmedForMe.slice(0, 1)).map(filmedCard).join('')}
+      ${S.filmedForMe.length > 1 && !S.filmedAll ? `<button class="linkish filmed-more" data-act="filmed-all">+${S.filmedForMe.length - 1} more clip${S.filmedForMe.length > 2 ? 's' : ''} friends filmed of you ›</button>` : ''}
       <button class="b2-hero" data-act="me" aria-label="Your profile: ${esc(r.label)}">
         <span class="b2-badge">${badgeSVG(r.tier.key, 96, r.div)}</span>
         <span class="b2-rank"><small>Rank · @${esc(S.me.username)}</small>
@@ -2498,9 +2521,9 @@ const views = {
         <video id="rec-live" autoplay muted playsinline></video>
         <div class="timer ${R.mode === 'recording' ? 'live' : ''}" id="rec-timer">${R.mode === 'recording' ? '● 0.0s' : `max ${MAX_SECONDS}s`}</div>
         <div class="controls">
-          <button class="cam-side" data-act="cam-close" aria-label="Close camera">✕</button>
+          <button class="cam-side" data-act="cam-close" aria-label="Close camera">${ic('x', 22)}</button>
           <button class="shutter ${R.mode === 'recording' ? 'stop' : ''}" data-act="${R.mode === 'recording' ? 'rec-stop' : 'rec-start'}" aria-label="Record or stop"></button>
-          <button class="cam-side" data-act="cam-flip" aria-label="Flip camera">⟲</button>
+          <button class="cam-side" data-act="cam-flip" aria-label="Flip camera">${ic('turn', 22)}</button>
         </div></div>`;
     else body = `${ctx ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
       <div class="cam"><div class="cam-empty"><div style="display:grid;gap:14px;justify-items:center">
@@ -2665,7 +2688,7 @@ const views = {
           : `<button class="btn small primary" data-act="challenge" data-id="${u.id}">Challenge</button>`}</div>`
       : f ? '<span class="pill wait" style="display:inline-block;margin-top:6px">Request pending</span>'
       : `<button class="btn small" style="margin-top:8px" data-act="add-friend" data-id="${u.id}">+ Add friend</button>`;
-    return `<button class="linkish back" data-act="back">← Back</button>
+    return `${mine ? '' : '<button class="linkish back" data-act="back">← Back</button>'}
     <div class="prof-head">${badgeSVG(tr.tier.key, 72, tr.div, {glow: true})}
       <div><h2>${esc(u.username)}</h2><div class="hint">${u.home_resort ? ic('mountain', 13) + ' ' + esc(u.home_resort) : 'No home mountain yet'}</div>${friendBit}</div></div>
     <section class="card prof-rank">
@@ -2702,7 +2725,7 @@ function boardHtml(){
         <button class="${b.scope === 'global' ? 'on' : ''}" data-act="scope" data-k="global">Everyone</button>${S.crew.ready ? `
         <button class="${b.scope === 'crews' ? 'on' : ''}" data-act="scope" data-k="crews">Crews</button>` : ''}</div>
       <div class="seg" role="group" aria-label="Time period">
-        <button class="${b.period === 'all' ? 'on' : ''}" data-act="period" data-k="all">All time</button>
+        <button class="${b.period === 'all' ? 'on' : ''}" data-act="period" data-k="all">All</button>
         <button class="${b.period === 'week' ? 'on' : ''}" data-act="period" data-k="week">Week</button></div>
     </div>
     ${b.scope === 'crews' ? crewBoard() : `<div class="card">${b.rows.length ? `<ol class="board">${b.rows.map((u, i) => `
@@ -2834,9 +2857,9 @@ function reelItem(c){
       <button class="linkish" data-act="noreason" style="grid-column:1 / -1">Cancel</button></div>`;
   else actions = `<div class="swipe-hint yes">Landed</div><div class="swipe-hint no">Bailed</div>
     <div class="reel-actions">
-      <div><button class="round no" data-act="askreason" data-id="${c.id}" aria-label="Bailed">✕</button><span class="round-label">Bailed</span></div>
-      <div><button class="round skip" data-act="skip" data-id="${c.id}" aria-label="Skip">↓</button><span class="round-label">Skip</span></div>
-      <div><button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">✓</button><span class="round-label">Landed</span></div></div>`;
+      <div><button class="round no" data-act="askreason" data-id="${c.id}" aria-label="Bailed">${ic('x', 28)}</button><span class="round-label">Bailed<kbd>B</kbd></span></div>
+      <div><button class="round skip" data-act="skip" data-id="${c.id}" aria-label="Skip">${ic('down', 20)}</button><span class="round-label">Skip<kbd>S</kbd></span></div>
+      <div><button class="round yes" data-act="vote" data-id="${c.id}" data-y="1" aria-label="Landed">${ic('check', 30)}</button><span class="round-label">Landed<kbd>L</kbd></span></div></div>`;
   return `<section class="reel-item judging" id="reel-${c.id}" data-id="${c.id}">
     ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
     <div class="reel-top"><span class="pill wait">${sp.icon} Judge this · name shows after</span><span class="hint">${dots(esc(c.resort || ''), ago(c.created_at))}</span></div>
@@ -3261,6 +3284,14 @@ async function finishOnboarding(resort){
   render(true); showRecHint(); offerInviter();   // then "@x invited you", once setup is out of the way
   setTimeout(offerInstall, 4000);
 }
+// Judging on a laptop: L = landed, B = bailed, S = skip, on the clip in the middle of the screen
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input, textarea, select')) return;
+  const sel = {l: '.round.yes', b: '.round.no', s: '.round.skip'}[e.key.toLowerCase()]; if (!sel) return;
+  const mid = innerHeight / 2, item = [...document.querySelectorAll('.reel-item.judging')].find(el => {
+    const r = el.getBoundingClientRect(); return r.top <= mid && r.bottom >= mid; });
+  const btn = item && item.querySelector(sel); if (btn){ e.preventDefault(); btn.click(); }
+});
 // One bubble over the Record button until you've posted once. Any tap hides it for good.
 function showRecHint(){
   if (store.get('rec-hint-' + myId(), '') || !S.me || S.clips.some(c => c.user_id === myId()) || $('rec-hint')) return;
@@ -3270,6 +3301,7 @@ function showRecHint(){
   document.body.appendChild(h);
   const off = () => { store.set('rec-hint-' + myId(), '1'); h.remove(); document.removeEventListener('pointerdown', off, true); };
   setTimeout(() => document.addEventListener('pointerdown', off, true), 300);
+  addEventListener('scroll', () => h.remove(), {once: true, passive: true});   // scrolled = seen it; out of the way of what's under it
 }
 // ---------- add to home screen (Connor 10/27) ----------
 // Android Chrome: we catch its install offer and fire it from our own button.
@@ -3808,6 +3840,7 @@ document.addEventListener('click', async e => {
     case 'report-comment': return report({comment_id: id}, 'inappropriate', b.dataset.clip);
     case 'remove-clip': return removeClip(id);
     case 'filmed-keep': return answerFilmed(id, true);
+    case 'filmed-all': S.filmedAll = true; return render();
     case 'filmed-nope': return answerFilmed(id, false);
     case 'feedback': S.feedbackOpen = !S.feedbackOpen; return render(true);
     case 'feedback-send': return sendFeedback(b);
