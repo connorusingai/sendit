@@ -74,12 +74,14 @@ def main():
         q(sql if has_tz else sql.replace("'America/Denver'", "'UTC'"))
     print(f"Loaded {', '.join(f.name for f in SQL_FILES)}\n")
 
-    def user(name, points=0):
+    def user(name, points=0, new=False):
         uid = str(uuid.uuid4())
         q("insert into auth.users (id, email, raw_user_meta_data) values (%s, %s, jsonb_build_object('username', %s::text))",
           uid, f"{name}@test", name)
         if points:
             q("update public.profiles set points = %s where id = %s", points, uid)
+        if not new:   # test riders are a few days old unless a check is about brand-new accounts (023)
+            q("update public.profiles set created_at = now() - interval '3 days' where id = %s", uid)
         return uid
 
     voters = [user(f"judge{i}") for i in range(5)]
@@ -414,6 +416,20 @@ def main():
     late = as_user(ai_r, "insert into public.clips (trick_id) values ('180') returning id")[0][0]
     judge(late)
     check("no guesses added after riders decided", blocked(ai_r, guess, late, 180), True)
+
+    print("\n-- Fake accounts count half for their first day (023) --")
+    cheat, alt1, alt2, alt3 = user("cheater"), user("alt1", new=True), user("alt2", new=True), user("alt3", new=True)
+    fake = post(cheat, "540")
+    judge(fake, who=[alt1, alt2])
+    check("2 brand-new accounts can't verify your clip anymore", one("select status from public.clips where id = %s", fake), "pending")
+    judge(fake, who=[voters[0]])
+    check("...but one real rider + 2 new ones can (1 + 0.5 + 0.5)", one("select status from public.clips where id = %s", fake), "verified")
+    target = post(d, "180")
+    for r in (alt1, alt2, alt3):
+        as_user(r, "insert into public.reports (clip_id, reason) values (%s, 'spam')", target)
+    check("3 brand-new accounts can't hide someone's clip", one("select hidden from public.clips where id = %s", target), False)
+    q("update public.profiles set created_at = now() - interval '2 days' where id = any(%s)", [alt1, alt2, alt3])
+    check("after a day they count fully", one("select public.new_account_factor(%s)", alt1), 1)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
