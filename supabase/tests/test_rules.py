@@ -366,6 +366,16 @@ def main():
     judge(done)
     check("verified clips can't change hands", blocked(filmer, give, done, rider), True)
 
+    print("\n-- Your clip, your video (020) --")
+    thief, pro = user("thief"), user("pro")
+    mine = "insert into public.clips (trick_id, video_path) values ('dc1080', %s)"
+    check("can't post someone else's video as your clip", blocked(thief, mine, f"{pro}/landed.mp4"), True)
+    check("can't sneak out of your folder with ../", blocked(thief, mine, f"{thief}/../{pro}/landed.mp4"), True)
+    check("can't point the clip at a web link", blocked(thief, mine, "https://example.com/landed.mp4"), True)
+    check("...but your own video posts fine", blocked(thief, mine, f"{thief}/{uuid.uuid4()}.webm"), False)
+    check("film a friend can't sneak out with ../ either", blocked(filmer, "select public.post_for_friend(%s, '180', 'No grab', null, %s)",
+          rider, f"{filmer}/../{stranger}/x.mp4"), True)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)
