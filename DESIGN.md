@@ -55,7 +55,7 @@ Bronze #c8793a · Silver #aab4c2 · Gold #f2b81f · Platinum #2fc4ac · Diamond 
 - No rounded "card everywhere" look, no emoji as icons, no second accent color.
 
 ## App icon (2026-10-28, Connor's sketch → "Corduroy")
-The S is a groomed ski run in a box: it drops in from the top-right corner, makes two round turns and runs out the
+The S is a ski run in perspective, TRACED FROM CONNOR'S OWN SKETCH: narrow at the top, two turns, wide out the bottom; his two edge lines kept as drawn, corduroy lines blended between them. Earlier wording: it drops in from the top-right corner, makes two round turns and runs out the
 bottom-left, with corduroy lines along it. Same width the whole way (Connor: lines must not run to a point), clipped by the box so it runs on past it. Orange `#FF6B1A` on `#06080C`, 22px-at-512 frame with soft corners.
 Source: `app/icons/icon.svg` (+ `icon-maskable.svg`, content at 78% for the safe zone). Replaced the first-build shield,
 which looked like a rank badge. Rank badges keep the shield; the app icon never uses it again.
