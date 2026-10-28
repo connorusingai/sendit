@@ -1,8 +1,9 @@
-"""Trick AI advisor: the phone finds the body in a real clip, calls the trick, saves one guess, and judges see it.
+"""Trick AI in the background: the phone finds the body in a real clip, calls the trick and quietly saves one guess.
+Riders and judges never see it (Connor 10/28); it only feeds rider #001's AI scorecard.
 
 Same fake database as ui_walk.py. The pose model really runs (MediaPipe from the CDN), on a clip of Connor's
 own ground 360 that stays on his laptop (sendit-ai/data/clips/my_360.mp4, never committed). Without that file
-the pose part is skipped and only the judge-card part runs.
+the pose part is skipped.
 
 Run:  ..\\sendit\\.venv-test\\Scripts\\python.exe tests\\ai_walk.py
 """
@@ -22,13 +23,13 @@ OWN_360 = Path(__file__).resolve().parents[2] / "sendit-ai" / "data" / "clips" /
 OTHER = "22222222-2222-4222-8222-222222222222"
 JUDGE_ME = dict(w.CLIP, id="c9", user_id=OTHER, status="pending", trick_id="360", filmed_by=None,
                 profiles={"username": "rider2", "points": 0})
-GUESS = {"clip_id": "c9", "spin": 360, "axis": "flat", "landed": True, "sure": 0.71, "note": None}
+reads = []
 
 
 def handle(route, req):
     path = req.url.split(".supabase.co", 1)[1]
-    if req.method == "GET" and path.startswith("/rest/v1/clip_ai"):
-        return route.fulfill(json=[GUESS])
+    if req.method == "GET":
+        reads.append(path)
     if req.method == "GET" and path.startswith("/rest/v1/clips?select"):
         return route.fulfill(json=[w.CLIP, JUDGE_ME])
     return w.handle(route, req)
@@ -49,20 +50,16 @@ def main():
         pg.goto(w.URL, wait_until="networkidle")
         pg.wait_for_timeout(2500)
 
-        ok.append(("judges' guesses load with the clips", pg.evaluate("__ai.S.ai.c9 && __ai.S.ai.c9.spin") == 360))
-        card = pg.evaluate("__ai.reelItem(__ai.S.clips.find(c => c.id === 'c9'))")
-        ok.append(("judge card shows 'AI 360 · landed · 71% sure'", "ai-chip" in card and "360 · landed" in card and "71% sure" in card))
         for sel in ("[data-act=reward-collect]", ".ru-go"):     # the welcome-back reward + rank up come first
             if pg.locator(sel).count():
                 pg.click(sel); pg.wait_for_timeout(2200)
         pg.click("#tabs [data-tab=feed]"); pg.wait_for_timeout(500)
         if pg.locator("[data-act=feed-mode][data-k=judge]").count():
             pg.click("[data-act=feed-mode][data-k=judge]"); pg.wait_for_timeout(800)
-        ok.append(("the AI hint is on the judge screen", pg.locator(".reel-item.judging .ai-chip").count() >= 1))
+        ok.append(("judging works as before", pg.locator(".reel-item.judging").count() >= 1))
+        ok.append(("the AI stays in the background: no AI hint for judges", pg.locator(".reel-item.judging", has_text="% sure").count() == 0
+                   and "clip_ai" not in " ".join(reads)))
         pg.screenshot(path=str(w.SHOTS / "ai-judge.png"))
-        pg.evaluate("__ai.S.ai.c9 = {spin: null, landed: null, sure: 0, note: 'rider too small or out of frame'}")
-        card = pg.evaluate("__ai.reelItem(__ai.S.clips.find(c => c.id === 'c9'))")
-        ok.append(("...or says it can't tell, and why", ("can&#39;t tell" in card or "can't tell" in card) and "too small" in card))
         rails = pg.evaluate("__ai.TrickAI.judge([[]], 'Rails')")
         ok.append(("rails are left to the judges", rails is None))
 

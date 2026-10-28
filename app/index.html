@@ -371,9 +371,6 @@ select:focus,input:focus{border-color:var(--ice)}
 .reel-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
 .reel-item video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
 .reel-info{position:absolute;left:14px;right:14px;bottom:118px;text-shadow:0 1px 8px #000}
-.ai-chip{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 10px;border-radius:999px;font-size:13px;text-shadow:none;background:rgba(6,8,12,.72);border:1px solid rgba(110,200,255,.45);color:#d8f0ff;backdrop-filter:blur(6px)}
-.ai-chip b{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#6ec8ff}.ai-chip span{color:var(--muted);font-size:12px}
-.ai-chip.unsure{border-color:var(--line)}.ai-chip.unsure b{color:var(--muted)}
 .reel-info .trick{font-size:30px}
 .reel-actions{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:flex-end;gap:28px}
 .reel-actions > div{display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -1102,7 +1099,7 @@ const store = {
 };
 const S = {
   tab: 'lodge', prevTab: 'lodge', session: null, me: null,
-  tricks: [], clips: [], ai: {}, postCombo: [], filmedForMe: [], filmers: {}, postRider: '', myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
+  tricks: [], clips: [], postCombo: [], filmedForMe: [], filmers: {}, postRider: '', myVotes: new Set(), myLikes: new Set(), totds: {}, wx: null,
   get totd(){ return this.totds[this.sport] || null; },   // Trick of the Day for the sport you're on now
   landed: new Map(),        // my Trick Book: trick id -> Set of grabs I've been verified with
   book: null,               // {id, name, landed, sport} while viewing a Trick Book
@@ -1663,7 +1660,6 @@ async function loadAll(){
   S.landed = landed;
   S.me = mustOk(me);
   S.clips = mustOk(clips).filter(shownClip);   // removed or reported clips (011) and clips waiting on their rider (017) stay out of sight
-  await loadAI(S.clips.filter(c => c.status === 'pending').map(c => c.id)).catch(() => {});   // AI hints for clips still being judged
   S.myVotes = new Set(mustOk(votes).map(v => v.clip_id));
   S.myLikes = new Set(mustOk(likes).map(l => l.clip_id));
   S.totds = totd;
@@ -3070,7 +3066,7 @@ function reelItem(c){
     ${c.video_path ? `<video class="fit" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>` : ''}
     <div class="reel-top"><span class="pill wait">${sp.icon} Judge this · name shows after</span><span class="hint">${dots(esc(c.resort || ''), ago(c.created_at))}</span></div>
     ${voted || J.reasonFor === c.id ? '' : `<div class="reel-info"><div class="trick">${esc(clipName(c))}</div>
-      <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · Trick of the Day' : ''}</div>${aiChip(c)}</div>`}
+      <div class="hint">${esc(c.grab)} · ${esc(t.category)}${c.totd ? ' · Trick of the Day' : ''}</div></div>`}
     ${actions}
   </section>`;
 }
@@ -3544,32 +3540,19 @@ async function poseFromVideo(blob, fps = 15, maxFrames = 330){
     return world;
   } finally { URL.revokeObjectURL(url); v.removeAttribute('src'); }
 }
-// After a clip posts: look at it, save ONE guess (022). Never blocks posting, never changes votes or points.
+// After a clip posts: look at it and save ONE guess (022), quietly. Riders never see it: it's only compared with
+// how the clip gets judged, on rider #001's AI scorecard. Never blocks posting, never changes votes or points.
 async function runTrickAI(clipId, blob, trick){
   if (!blob || !trick || trick.category === 'Rails' || !db) return;
   try {
     const g = TrickAI.judge(await poseFromVideo(blob), trick.category); if (!g) return;
     const row = {clip_id: clipId, spin: g.spin, axis: g.axis, landed: g.landed, sure: g.sure, note: g.note, seen: g.seen, ver: 'web-0.5'};
     const r = await db.from('clip_ai').insert(row);   // fails quietly until supabase/022 is pasted
-    if (!r.error){ S.ai[clipId] = row; refreshReelItem(clipId); }
   } catch (e) { console.warn('trick AI skipped:', e && e.message); }
-}
-async function loadAI(ids){
-  if (!ids.length) return;
-  const r = await db.from('clip_ai').select('clip_id, spin, axis, landed, sure, note').in('clip_id', ids);
-  if (!r.error) for (const a of r.data) S.ai[a.clip_id] = a;
-}
-// The hint judges see: "AI · 360 · landed · 70% sure", or why it can't tell
-function aiChip(c){
-  const a = S.ai[c.id]; if (!a) return '';
-  const said = [a.spin != null ? (a.axis === 'flip' && a.spin === 360 ? 'flip' : a.axis === 'off-axis' ? 'cork ' + a.spin : String(a.spin)) : null,
-    a.landed == null ? null : a.landed ? 'landed' : 'looks like a fall'].filter(Boolean);
-  return `<div class="ai-chip${said.length ? '' : ' unsure'}" title="The trick AI's guess. You decide.">${ic('spark', 13)}<b>AI</b>${
-    said.length ? esc(said.join(' · ')) + ` <span>${Math.round(a.sure * 100)}% sure</span>` : "can't tell" + (a.note ? ` <span>${esc(a.note)}</span>` : '')}</div>`;
 }
 
 // Local test runs only (tests/ai_walk.py): reach the AI pieces from outside the module
-if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__ai = {S, TrickAI, poseFromVideo, runTrickAI, reelItem: c => reelItem(c)};
+if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__ai = {TrickAI, poseFromVideo, runTrickAI, reelItem: c => reelItem(c), S};
 
 // ---------- render ----------
 const TABS = [

@@ -1,7 +1,7 @@
 -- Stomped database, version 22: the trick AI's guess on each clip (Oct 28).
--- The filming phone looks at the video right after recording and writes ONE guess per clip:
--- how far the rider spun, flat/cork/flip, landed or not, and how sure it is. Judges see it as a hint.
--- It never changes points or votes: riders still decide. Rails are skipped (the AI can't read them yet).
+-- The filming phone looks at the video right after recording and quietly writes ONE guess per clip:
+-- how far the rider spun, flat/cork/flip, landed or not, and how sure it is. It stays in the background:
+-- riders and judges never see it, and it never changes points or votes. Rails are skipped (the AI can't read them yet).
 -- Only the clip's own rider or filmer can add the guess, once, and nobody can edit it afterwards.
 -- founder_ai_stats() is rider #001's scorecard: how often the AI agreed with what riders verified.
 -- Paste into Supabase > SQL Editor and click Run, after 021. No existing data is changed.
@@ -19,19 +19,15 @@ create table if not exists public.clip_ai (
 );
 
 alter table public.clip_ai enable row level security;
--- You can see the AI's guess on any clip you can see
-drop policy if exists "read the AI guess on clips you can see" on public.clip_ai;
-create policy "read the AI guess on clips you can see" on public.clip_ai for select
-  using (exists (select 1 from public.clips c where c.id = clip_id));
+-- No read policy: nobody can read guesses from the app. Only founder_ai_stats() (below) sees them.
 -- Only the clip's rider or filmer adds it, and only on a clip that's still waiting for votes
 drop policy if exists "add the AI guess to your own clip" on public.clip_ai;
 create policy "add the AI guess to your own clip" on public.clip_ai for insert to authenticated
   with check (exists (select 1 from public.clips c where c.id = clip_id and c.status = 'pending'
                       and (c.user_id = auth.uid() or c.filmed_by = auth.uid())));
 revoke all on public.clip_ai from anon;
-revoke update, delete on public.clip_ai from authenticated;
-grant select, insert on public.clip_ai to authenticated;
-grant select on public.clip_ai to anon;
+revoke select, update, delete on public.clip_ai from authenticated;
+grant insert on public.clip_ai to authenticated;
 
 -- Rider #001's AI scorecard: on clips riders have decided, how often was the AI right?
 create or replace function public.founder_ai_stats() returns jsonb

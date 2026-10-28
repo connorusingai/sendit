@@ -405,7 +405,8 @@ def main():
     check("your phone adds the AI guess to your clip", blocked(ai_r, guess, ai_clip, 360), False)
     check("...only once", blocked(ai_r, guess, ai_clip, 360), True)
     check("...and nobody can change it", blocked(ai_r, "update public.clip_ai set spin = 720 where clip_id = %s", ai_clip), True)
-    check("other riders see the guess", as_user(ai_x, "select spin from public.clip_ai where clip_id = %s", ai_clip), [(360,)])
+    check("the guess stays in the background: riders can't read it", blocked(ai_x, "select spin from public.clip_ai"), True)
+    check("...not even on their own clip", blocked(ai_r, "select spin from public.clip_ai"), True)
     judge(ai_clip)
     check("riders can't open the AI scorecard", blocked(ai_x, "select public.founder_ai_stats()"), True)
     sc = as_user(creator, "select public.founder_ai_stats()")[0][0]
