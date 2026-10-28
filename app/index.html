@@ -556,7 +556,7 @@ select:focus,input:focus{border-color:var(--ice)}
   .tabs button.rec-tab{background:none;border:0;box-shadow:none;height:66px}
   .tabs button.rec-tab .dot{width:56px;height:56px;margin-top:-10px;border:3px solid #06080C}
   .tabs .badge{top:-6px;left:auto;right:-4px;background:var(--bad);color:#fff;font-family:var(--body);font-weight:800;min-width:20px;line-height:20px;box-shadow:0 0 10px rgba(255,84,112,.6)}
-  .app{padding-block-end:96px}
+  .app{padding-block-end:calc(120px + env(safe-area-inset-bottom,0px))}   /* tab bar (~82px) + iPhone home bar, so the last clips scroll clear of it */
   .reel{height:calc(100dvh - 214px - env(safe-area-inset-bottom,0px))}           /* the game tab bar is a bit taller */
   .reel.feedreel{height:calc(100dvh - 166px - env(safe-area-inset-bottom,0px))}
   .lodge{min-height:calc(100svh - 162px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
