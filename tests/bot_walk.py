@@ -57,6 +57,9 @@ def main():
         b = p.chromium.launch(channel="chrome", args=["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"])
         ctx = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, permissions=["camera", "microphone"])
         ctx.add_init_script(f"localStorage.setItem('sb-{u.REF}-auth-token', {json.dumps(json.dumps(u.session))});")
+        # Fake share sheet: remembers what Save handed it (the real one is the phone's)
+        ctx.add_init_script("window.__shared = []; navigator.canShare = () => true;"
+                            "navigator.share = async d => { window.__shared.push((d.files || []).map(f => f.name + '|' + f.type + '|' + f.size)); };")
         ctx.route(f"https://{u.REF}.supabase.co/**", handle)
         pg = ctx.new_page()
         pg.on("pageerror", lambda e: u.logs.append(f"PAGEERROR: {e}"))
@@ -135,6 +138,14 @@ def main():
             pg.select_option("#post-trick", index=1)
             pg.click("#post-btn")
             pg.wait_for_timeout(3000)
+            # After posting: 'Save to camera roll?' and Save hands the video to the share sheet
+            sheet = pg.locator("#save-sheet").count() == 1
+            pg.click("[data-act=save-go]") if sheet else None
+            pg.wait_for_timeout(600)
+            shared = pg.evaluate("window.__shared")
+            ok = sheet and len(shared) == 1 and len(shared[0]) == 1 and shared[0][0].split('|')[1].startswith('video/') and int(shared[0][0].split('|')[2]) > 0
+            print("PASS" if ok else "FAIL", "save to camera roll after posting |", shared, "| sheet gone:", pg.locator("#save-sheet").count() == 0)
+            assert ok
 
         def every_screen():
             for t in ["lodge", "feed", "record", "duels"]:

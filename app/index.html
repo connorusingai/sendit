@@ -2840,6 +2840,9 @@ const views = {
         <select id="home-resort"><option value="">Not set</option>${resortOptions(me.home_resort)}</select></div>
       <div class="field"><label class="label" for="sound-pref">Sounds</label>
         <select id="sound-pref"><option value="on" ${SFX.on ? 'selected' : ''}>On</option><option value="off" ${SFX.on ? '' : 'selected'}>Off</option></select></div>
+      <div class="field"><label class="label" for="save-pref">Save clips to camera roll</label>
+        <select id="save-pref">${[['on', 'Ask after posting'], ['off', "Don't ask"]].map(([k, l]) =>
+          `<option value="${k}" ${store.get('save-ask', 'on') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="btns"><button class="btn" data-act="profile" data-id="${me.id}">View my page</button>
         <button class="btn" data-act="feedback">Send feedback</button>
         <button class="btn" data-act="signout">Sign out</button></div>
@@ -3771,6 +3774,31 @@ function offerInstall(){
   document.body.appendChild(sh);
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
 }
+// After posting: offer to keep the clip in the camera roll. A website can't save to Photos by itself, so Save opens the
+// phone's share sheet with the video (iPhone: Save Video). Turn off in gear > Save clips.
+function offerSave(blob, trickId){
+  if (!blob || store.get('save-ask', 'on') === 'off' || $('save-sheet')) return;
+  const ext = /mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm';
+  S.saveFile = new File([blob], `stomped-${(trickById(trickId).name || 'clip').replace(/\W+/g, '-').toLowerCase()}.${ext}`, {type: blob.type || 'video/mp4'});
+  const sh = document.createElement('section');
+  sh.id = 'save-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Save this clip to your camera roll');
+  sh.innerHTML = `<h3>Save to camera roll?</h3><p>Keep your own copy of this clip.${isIOS() ? ' Tap <b>Save</b>, then <b>Save Video</b>.' : ''}</p>
+    <div class="btns"><button class="btn ghost" data-act="save-later">Not now</button><button class="btn primary" data-act="save-go">Save</button></div>
+    <button class="linkish" data-act="save-never" style="justify-self:center">Don't ask again</button>`;
+  hideInstall(); document.body.appendChild(sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+}
+function hideSave(){ S.saveFile = null; const sh = $('save-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
+async function saveGo(){
+  const file = S.saveFile; if (!file) return hideSave();
+  if (navigator.canShare && navigator.canShare({files: [file]})){
+    try { await navigator.share({files: [file]}); } catch (e) { if (e.name === 'AbortError') return; }   // closed the sheet: leave Save up
+    return hideSave();
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('Saved to your downloads.'); hideSave();
+}
 function hideInstall(){ const sh = $('install-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
 async function installGo(){
   if (!installEvt) return hideInstall();
@@ -4128,7 +4156,7 @@ async function submitPost(){
   try {
     if (!navigator.onLine) throw new Error('offline');
     await uploadClip(fields, blob);
-    resetRecorder(); S.postCombo = [];
+    resetRecorder(); S.postCombo = []; offerSave(blob, fields.trick_id);
     if (rider){   // stay on the camera: you're probably filming the next run too
       toast(`Sent to @${rider.username}. It shows up once they tap Keep.`, 4000);
       render(true); return;
@@ -4139,7 +4167,7 @@ async function submitPost(){
     if (looksOffline(err) && blob){
       try {
         await queueClip({kind: 'post', fields, blob, motion: mot});
-        resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0);
+        resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0); offerSave(blob, fields.trick_id);
         toast("No signal. Saved on your phone, and it uploads when you're back online.", 5000);
         return;
       } catch (e) { /* couldn't save it either: fall through to the error */ }
@@ -4317,6 +4345,9 @@ document.addEventListener('click', async e => {
     case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
     case 'close-modal': $('overlay').innerHTML = ''; return;
     case 'install-go': return installGo();
+    case 'save-go': return saveGo();
+    case 'save-later': return hideSave();
+    case 'save-never': store.set('save-ask', 'off'); toast('Okay. Turn it back on in ⚙ settings.'); return hideSave();
     case 'install-later': store.set('install-later', String(Date.now() + 3 * 864e5)); return hideInstall();   // ask again in 3 days
     case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
     // judging
@@ -4460,6 +4491,7 @@ document.addEventListener('change', async e => {
   }
   if (id === 'post-combo-add' && e.target.value){ S.postCombo.push(e.target.value); syncPost(); }
   if (id === 'duel-trick') S.duelTrick = e.target.value;
+  if (id === 'save-pref'){ store.set('save-ask', e.target.value); toast('Saved'); }
   if (id === 'sound-pref'){ SFX.on = e.target.value === 'on'; store.set('sound', e.target.value); if (SFX.on) sfx('collect'); toast('Saved'); }
   if (id === 'ride-pref'){ setRides(e.target.value); toast('Saved'); render(true); }
   if (id === 'board-resort'){ S.board.resort = e.target.value; try { await loadBoard(); } catch (err){ toast(err.message); } render(true); }
