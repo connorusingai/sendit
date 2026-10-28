@@ -330,6 +330,13 @@ select:focus,input:focus{border-color:var(--ice)}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .tile{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;padding:0;cursor:pointer}
 .tile video{width:100%;height:100%;object-fit:cover;display:block}
+/* Your own profile tiles get a small delete button in the top-left corner (pending = delete, verified/missed = remove, points stay) */
+.tile-wrap{position:relative}
+.tile-wrap .tile{width:100%}
+.tile-del{position:absolute;left:4px;top:4px;width:28px;height:28px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;
+  background:rgba(0,0,0,.6);color:#fff;cursor:pointer}
+.tile-del svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile-del:active{transform:scale(.9)}
 .tile span{position:absolute;left:6px;right:6px;bottom:5px;font-family:var(--display);font-weight:900;font-style:italic;
   font-size:15px;line-height:1;text-transform:uppercase;text-align:left;text-shadow:0 1px 6px #000}
 .tile em{position:absolute;right:6px;top:5px;font-style:normal;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);text-shadow:0 1px 4px #000}
@@ -2928,11 +2935,12 @@ const views = {
     <button class="btn" style="width:100%;margin-bottom:16px" data-act="book" data-id="${u.id}" data-name="${esc(u.username)}">${ic('book', 18)} ${mine ? 'My' : esc(u.username) + '’s'} Trick Book</button>
     ${best ? `<div class="label" style="margin-bottom:8px">Best trick · <span style="color:var(--accent)">${esc(trickById(best.trick_id).name)} +${best.points_awarded}</span></div>` : ''}
     <div class="label" style="margin-block:14px 8px">${mine ? 'Your clips' : 'Clips'}</div>
-    ${P.clips.length ? `<div class="grid">${P.clips.map(c => `
+    ${P.clips.length ? `<div class="grid">${P.clips.map(c => `<div class="tile-wrap">
       <button class="tile" data-act="playtile" aria-label="Play ${esc(trickById(c.trick_id).name)}">
         ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline loop preload="metadata"></video>` : ''}
         <em>${c.status === 'verified' ? '+' + c.points_awarded : c.status === 'pending' ? 'judging' : '✕'}</em>
-        <span>${esc(trickById(c.trick_id).name)}</span></button>`).join('')}</div>`
+        <span>${esc(trickById(c.trick_id).name)}</span></button>
+      ${mine ? `<button class="tile-del" data-act="${c.status === 'pending' ? 'delete' : 'remove-clip'}" data-id="${c.id}" aria-label="Delete ${esc(trickById(c.trick_id).name)}">${ICON.trash}</button>` : ''}</div>`).join('')}</div>`
       : `<div class="card empty"><strong>No clips yet</strong>${mine ? 'Record your first trick.' : 'Nothing verified yet.'}</div>`}`;
   },
 };
