@@ -291,6 +291,10 @@ select:focus,input:focus{border-color:var(--ice)}
 .onboard h2{font-family:var(--display);font-style:italic;text-transform:uppercase;font-size:34px;line-height:1;margin:0}
 .onboard .ob-step{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
 .onboard .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.onboard{overflow-y:auto;justify-content:safe center}   /* 15 Northeast mountains: the list scrolls, and Skip stays reachable */
+.onboard .ob-reg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.onboard .ob-reg button{min-height:44px;border:1px solid var(--line);background:none;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.onboard .ob-reg button.on{border-color:var(--accent);color:var(--ink);background:rgba(255,107,26,.12)}
 .onboard .ob-grid .btn{min-height:64px;font-size:16px;font-weight:700}
 .onboard .ob-grid .btn.big{min-height:110px;font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .onboard .ob-grid .btn.big svg{width:34px;height:34px}
@@ -1017,7 +1021,16 @@ const SPORTS = {
   snowboard: {label: 'Snowboard', icon: IC.board, cats: ['Park','Rails','Pipe','Backcountry'],
               grabs: ['No grab','Indy','Melon','Method','Mute','Stalefish','Tail','Nose']},
 };
-const RESORTS = ['Eldora','Winter Park','Copper','Arapahoe Basin','Breckenridge','Keystone'];
+// Mountains by region. Northeast added 10/28 for the Boston riders (they were stuck with Colorado only).
+const REGIONS = {
+  'Colorado': ['Eldora','Winter Park','Copper','Arapahoe Basin','Breckenridge','Keystone'],
+  'Northeast': ['Wachusett','Nashoba Valley','Loon','Waterville Valley','Bretton Woods','Cannon','Killington','Stowe',
+    'Okemo','Mount Snow','Stratton','Sugarbush','Jay Peak','Sunday River','Sugarloaf'],
+};
+const RESORTS = Object.values(REGIONS).flat();
+// <option>s grouped by region, for every mountain dropdown
+const resortOptions = sel => Object.entries(REGIONS).map(([reg, list]) => `<optgroup label="${reg}">${
+  list.map(r => `<option ${sel === r ? 'selected' : ''}>${r}</option>`).join('')}</optgroup>`).join('');
 const REASONS = [['fell','Fell'],['wrong_trick','Wrong trick'],['cant_see',"Can't see"]];
 const MAX_SECONDS = 20;       // longest recording
 const MAX_MB = 50;            // Supabase free plan limit per file
@@ -1156,6 +1169,11 @@ function avStyle(name){
 const RESORT_GEO = {
   'Eldora': [39.9372, -105.5827], 'Winter Park': [39.8868, -105.7625], 'Copper': [39.5022, -106.1511],
   'Arapahoe Basin': [39.6425, -105.8719], 'Breckenridge': [39.4817, -106.0384], 'Keystone': [39.6045, -105.9540],
+  'Wachusett': [42.5031, -71.8867], 'Nashoba Valley': [42.5445, -71.4426], 'Loon': [44.0364, -71.6214],
+  'Waterville Valley': [43.9650, -71.5276], 'Bretton Woods': [44.2580, -71.4410], 'Cannon': [44.1567, -71.6987],
+  'Killington': [43.6045, -72.8201], 'Stowe': [44.5303, -72.7814], 'Okemo': [43.4017, -72.7170],
+  'Mount Snow': [42.9602, -72.9204], 'Stratton': [43.1134, -72.9081], 'Sugarbush': [44.1358, -72.8944],
+  'Jay Peak': [44.9379, -72.5045], 'Sunday River': [44.4734, -70.8566], 'Sugarloaf': [45.0314, -70.3131],
 };
 // Open-Meteo weather code -> drawn line icon (DESIGN.md: no emoji as icons)
 const WX_ICON = (c, size = 20) => ic(c === 0 ? 'sun' : c <= 2 ? 'partsun' : c === 3 ? 'cloud' : c <= 48 ? 'fog' : c <= 67 ? 'rain'
@@ -2761,8 +2779,7 @@ const views = {
         <select id="ride-pref">${[...Object.entries(SPORTS).map(([k, sp]) => [k, sp.label]), ['both', 'Both']].map(([k, l]) =>
           `<option value="${k}" ${S.sports === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="field"><label class="label" for="home-resort">Home mountain</label>
-        <select id="home-resort"><option value="">Not set</option>${RESORTS.map(r =>
-          `<option ${me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+        <select id="home-resort"><option value="">Not set</option>${resortOptions(me.home_resort)}</select></div>
       <div class="field"><label class="label" for="sound-pref">Sounds</label>
         <select id="sound-pref"><option value="on" ${SFX.on ? 'selected' : ''}>On</option><option value="off" ${SFX.on ? '' : 'selected'}>Off</option></select></div>
       <div class="btns"><button class="btn" data-act="profile" data-id="${me.id}">View my page</button>
@@ -3216,7 +3233,7 @@ function postForm(){
     <div class="field" id="post-combo" hidden></div>
     <div class="field"><label class="label" for="post-resort">Resort</label>
       <select id="post-resort" required>${S.me.home_resort ? '' : '<option value="" selected disabled>Where did you ride?</option>'}${
-        RESORTS.map(r => `<option ${S.me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+        resortOptions(S.me.home_resort)}</select></div>
     <div class="preview"><div><div class="label">Worth</div><span class="hint" id="post-why">A grab adds 20%</span></div>
       <div><span class="big" id="post-pts">0</span> <span class="label">pts</span></div></div>
     <div class="btns"><button class="btn" type="button" data-act="retake">Retake</button>
@@ -3419,10 +3436,12 @@ function showOnboarding(){
     <p class="hint">You only see tricks for what you ride. Change it any time on your profile.</p></div>`;
   return true;
 }
-function onboardResort(){
+function onboardResort(reg = 'Colorado'){
   $('overlay').innerHTML = `<div class="onboard" role="dialog" aria-label="Pick your home mountain">
     <div class="ob-step">2 of 2</div><h2>Home<br>mountain?</h2>
-    <div class="ob-grid">${RESORTS.map(r => `<button class="btn" data-act="ob-resort" data-k="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+    <div class="seg ob-reg">${Object.keys(REGIONS).map(k =>
+      `<button class="${k === reg ? 'on' : ''}" data-act="ob-region" data-k="${k}" aria-pressed="${k === reg}">${k}</button>`).join('')}</div>
+    <div class="ob-grid">${REGIONS[reg].map(r => `<button class="btn" data-act="ob-resort" data-k="${esc(r)}">${esc(r)}</button>`).join('')}</div>
     <button class="linkish" data-act="ob-resort" data-k="">Somewhere else / skip</button></div>`;
 }
 async function finishOnboarding(resort){
@@ -4023,6 +4042,7 @@ document.addEventListener('click', async e => {
     }
     case 'close-splash': return closeSplash();
     case 'ob-sport': setRides(b.dataset.k); return onboardResort();
+    case 'ob-region': return onboardResort(b.dataset.k);
     case 'ob-resort': return finishOnboarding(b.dataset.k);
     case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
     case 'rankup-tap': { const el = $('splash'); if (el.classList.contains('done')) return closeSplash(); el.classList.add('done'); return; }
