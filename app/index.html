@@ -512,6 +512,9 @@ select:focus,input:focus{border-color:var(--ice)}
   .reel.feedreel{height:calc(100dvh - 166px - env(safe-area-inset-bottom,0px))}
   .lodge{min-height:calc(100svh - 162px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 }
+.help{margin-top:20px;padding:0}.help summary{cursor:pointer;padding:14px;font-family:var(--display);font-weight:900;font-style:italic;text-transform:uppercase;font-size:18px}
+.help dl{margin:0;padding:0 14px 14px;display:grid;gap:4px}.help dt{font-weight:700;margin-top:8px}.help dd{margin:0;color:var(--muted);font-size:14px}
+.toast-undo{margin-left:14px;background:none;border:0;padding:6px 2px;color:var(--hot);font:inherit;font-weight:800;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;
   background:#0B0F16;color:var(--ink);border:1px solid var(--accent);box-shadow:var(--glow);
   padding:11px 16px;border-radius:12px;font-weight:700;font-size:14px;max-width:calc(100% - 32px)}
@@ -1025,6 +1028,13 @@ function plainError(msg){
 }
 function toast(msg, ms = 2800){
   const t = $('toast'); t.textContent = plainError(msg); t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, ms);
+}
+// A toast with an Undo button (votes wait VOTE_WAIT ms before they're saved, so Undo really takes it back)
+function toastUndo(msg, onUndo, ms){
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  const b = document.createElement('button'); b.className = 'toast-undo'; b.textContent = 'Undo';
+  b.onclick = () => { t.hidden = true; onUndo(); }; t.appendChild(b);
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, ms);
 }
 const trickById = id => S.tricks.find(t => t.id === id) || {id, name: id, category: '', pts: 0, sport: 'ski'};
@@ -2606,6 +2616,17 @@ const views = {
     ${ladder(me.points, TRICK_TIERS)}
     <h3>Leaderboard</h3>
     ${boardHtml()}
+    <details class="card help" id="help">
+      <summary>How Stomped works</summary>
+      <dl>
+        <dt>Points</dt><dd>Film a trick in the app. Once riders verify it, you get its points. A new trick pays in full, a new grab on it pays 20%, and repeats pay nothing, so nobody farms.</dd>
+        <dt>Judging</dt><dd>Watch a clip and vote Landed or Bailed. You don't see whose it is until you vote. Changed your mind? Tap Undo within 3 seconds.</dd>
+        <dt>Ranks</dt><dd>Bronze to Legend, three stars in each. Fill the bar to earn the next star.</dd>
+        <dt>Trick of the Day 2×</dt><dd>One trick pays double for the day. It's on Base.</dd>
+        <dt>Duels (S.K.I.)</dt><dd>Challenge a friend. One sets a trick, the other has to land it or take a letter. Spell S.K.I. and you lose.</dd>
+        <dt>Film a friend</dt><dd>Film your buddy and tag them. The clip waits on their Base: Keep it and the points are theirs.</dd>
+      </dl>
+    </details>
     <section class="card form" id="profile-card" style="margin-top:20px">
       <div class="label">Your profile</div>
       <div class="hint">Signed in as <b>${esc(me.username)}</b> · ${esc(S.session.user.email)}</div>
@@ -3416,25 +3437,46 @@ setInterval(() => {
 }, 20000);
 
 // ---------- actions ----------
+const VOTE_WAIT = 3000, pendingVotes = {};   // clipId -> {timer, send}
 async function vote(clipId, landed, reason){
   const J = S.judge;
-  // Celebrate first, save second: the stamp shows on the tap, not after the database answers
+  // Celebrate first, save second: the stamp shows on the tap, then the vote waits a few seconds so Undo can take it back
   J.voted[clipId] = landed; J.reasonFor = null;
   refreshReelItem(clipId);
   if (navigator.vibrate) navigator.vibrate(landed ? [15, 50, 25] : 60);   // Android buzz; iPhones ignore it
-  const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
-  if (r.error){ delete J.voted[clipId]; toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
-  J.count++;
-  S.myVotes.add(clipId);
+  const send = async () => {
+    delete pendingVotes[clipId];
+    const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
+    if (r.error){ delete J.voted[clipId]; toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
+    J.count++;
+    S.myVotes.add(clipId);
+    maybeBreak();
+    loadAll().then(() => render()).catch(() => {});  // update badges quietly
+  };
+  pendingVotes[clipId] = {timer: setTimeout(send, VOTE_WAIT), send};
+  toastUndo(landed ? 'Voted Landed' : 'Voted Bailed', () => undoVote(clipId), VOTE_WAIT);
   setTimeout(() => nextReel(clipId), 1000);   // long enough to see the stamp land
   setTimeout(() => {   // then it becomes a normal clip (name, fire, comments) you can scroll back to
+    if (!(clipId in J.voted)) return;   // undone
     delete J.voted[clipId];
     const el = $('reel-' + clipId), c = findClip(clipId);
     if (el && c && S.tab === 'feed' && S.feed.mode === 'clips'){ el.outerHTML = feedItem(c); const f = $('clip-' + clipId); if (f && reelObserver) reelObserver.observe(f); }
   }, 1700);
-  maybeBreak();
-  loadAll().then(() => render()).catch(() => {});  // update badges quietly
 }
+// Undo inside VOTE_WAIT: nothing was saved, so put the clip back to "judge this" and scroll to it
+function undoVote(clipId){
+  const p = pendingVotes[clipId]; if (!p) return;
+  clearTimeout(p.timer); delete pendingVotes[clipId]; delete S.judge.voted[clipId];
+  const el = $('reel-' + clipId) || $('clip-' + clipId), c = findClip(clipId);
+  if (!el || !c) return;
+  el.outerHTML = reelItem(c);
+  const fresh = $('reel-' + clipId); if (reelObserver) reelObserver.observe(fresh);
+  fresh.scrollIntoView({behavior: 'smooth'});
+}
+// Leaving the app mid-wait still saves the vote
+const flushVotes = () => Object.values(pendingVotes).forEach(p => { clearTimeout(p.timer); p.send(); });
+addEventListener('pagehide', flushVotes);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushVotes(); });
 
 async function toggleLike(id){
   const c = findClip(id);

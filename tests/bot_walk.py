@@ -93,7 +93,7 @@ def main():
             pg.screenshot(path=u.SHOTS / "bot-judge-card.png")
             cid = card.get_attribute("data-id")
             card.locator("[data-act=vote][data-y='1']").click()
-            pg.wait_for_timeout(2400)   # stamp, then the stack moves to the next clip
+            pg.wait_for_timeout(3400)   # stamp, the stack moves on, then the vote saves (3s Undo window)
             print("stamp stays on the judged card:", pg.locator(f"#reel-{cid} .reel-done").count() == 1)
             pg.screenshot(path=u.SHOTS / "bot-after-vote.png")
 
@@ -103,7 +103,24 @@ def main():
             r = pg.locator("[data-act=vote][data-y='0']")
             if r.count():
                 r.first.click()
-            pg.wait_for_timeout(1200)
+            pg.wait_for_timeout(3400)
+
+        def judge_undo():
+            tab("feed")
+            pg.click("[data-act=feed-mode][data-k=judge]")
+            pg.wait_for_timeout(500)
+            card = pg.locator(".reel-item.judging").first
+            card.scroll_into_view_if_needed()
+            cid = card.get_attribute("data-id")
+            before = len(u.writes)
+            card.locator("[data-act=vote][data-y='1']").click()
+            pg.wait_for_timeout(600)
+            pg.click(".toast-undo")
+            pg.wait_for_timeout(3600)
+            w = u.writes[before:]
+            ok = not any("/rest/v1/votes" in x and cid in x for x in w) and pg.locator(f"#reel-{cid} [data-act=vote][data-y='1']").count() == 1
+            print("PASS" if ok else "FAIL", "Undo takes a vote back (nothing saved, clip back to judge)")
+            return ok
 
         def record_and_post():
             tab("record")
@@ -127,6 +144,7 @@ def main():
 
         results.append(step("fire a clip in the feed", fire, "/rest/v1/likes"))
         results.append(step("comment on a clip", comment, "/rest/v1/comments"))
+        results.append(judge_undo())
         results.append(step("judge a clip: landed", judge_yes, "/rest/v1/votes"))
         results.append(step("judge a clip: bailed", judge_no, "/rest/v1/votes"))
         results.append(step("record with the camera and post", record_and_post, "/rest/v1/clips"))
