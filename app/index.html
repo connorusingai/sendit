@@ -1416,7 +1416,10 @@ function tipsFor(t){
 // ---------- achievements: badges earned from a rider's Trick Book ----------
 const hasName = (L, re) => [...L.keys()].filter(id => re.test(trickById(id).name)).length;
 const inCat = (L, cat) => [...L.keys()].filter(id => trickById(id).category === cat).length;
+// Founder: everyone who joins before the first season's launch deadline keeps it forever (Connor, 10/27)
+const FOUNDER_UNTIL = '2026-12-16T07:00:00Z';   // end of Dec 15 in Colorado
 const ACHIEVEMENTS = [
+  {icon: 'shield', name: 'Founder',  desc: 'Joined before Dec 15, 2026', test: (L, u) => !!u && !!u.created_at && u.created_at < FOUNDER_UNTIL},
   {icon: 'flag', name: 'First Send',    desc: 'Land any trick',        test: L => L.size >= 1},
   {icon: 'spin', name: 'Spin Cycle',    desc: '3 spins',               test: L => hasName(L, /\b(180|360|540|720|900|1080)\b/) >= 3},
   {icon: 'swap', name: 'Switch Hitter', desc: '3 switch tricks',       test: L => hasName(L, /Switch|Cab/) >= 3},
@@ -1433,8 +1436,8 @@ const ACHIEVEMENTS = [
     const all = tricksFor(sp); return all.length && all.filter(t => L.has(t.id)).length >= all.length / 2; })},
 ];
 // Trophy case: earned badges first; the locked ones stay folded until you ask (S.achAll)
-function achievementsHtml(L){
-  const earned = ACHIEVEMENTS.filter(a => a.test(L)), locked = ACHIEVEMENTS.filter(a => !a.test(L));
+function achievementsHtml(L, u){
+  const earned = ACHIEVEMENTS.filter(a => a.test(L, u)), locked = ACHIEVEMENTS.filter(a => !a.test(L, u));
   const shown = S.achAll ? [...earned, ...locked] : earned.length ? earned : locked.slice(0, 4);
   const tile = a => `<div class="ach ${earned.includes(a) ? 'got' : ''}" title="${esc(a.desc)}">
     <div class="emb">${ic(a.icon, 26)}</div><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></div>`;
@@ -1794,6 +1797,7 @@ const ICO = {
   grab: 'M8 13V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1a5 5 0 0 1-5-5v-2a1.5 1.5 0 0 1 3 0',
   pipe: 'M3 5v4a9 9 0 0 0 18 0V5',
   burst: 'M12 3l2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1z',
+  shield: 'M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6zM9 12l2 2 4-4',
   both: 'M4 20L20 4M9 21L21 9',
 };
 const ic = (name, size = 18) => `<svg class="ic-line" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICO[name]}"/></svg>`;
@@ -2521,7 +2525,7 @@ const views = {
       </div>
 
       <h2 id="auth-top" class="sec">${up ? 'Join Stomped' : 'Drop in'}</h2>
-      <p class="sub">${up ? 'Pick a username. Your email stays private.' : 'Sign in to record, judge, duel and climb the leaderboard.'}</p>
+      <p class="sub">${up ? `Pick a username. Your email stays private.${Date.now() < Date.parse(FOUNDER_UNTIL) ? ' Join before Dec 15 and keep the <b>Founder</b> badge forever.' : ''}` : 'Sign in to record, judge, duel and climb the leaderboard.'}</p>
       <form class="card form" id="auth-form">
         ${up ? `<div class="field"><label class="label" for="auth-user">Username</label>
           <input id="auth-user" autocomplete="username" required minlength="3" maxlength="24"></div>` : ''}
@@ -2774,7 +2778,7 @@ const views = {
         <span class="duel-rank">${badgeSVG(dr.tier.key, 20, dr.div)}<span class="hint">Duels · ${esc(dr.label)}</span></span></div>
     </section>
     ${ladder(u.points, TRICK_TIERS)}
-    ${achievementsHtml(P.landed || new Map())}
+    ${achievementsHtml(P.landed || new Map(), u)}
     <div class="stats">
       <div class="stat"><b>${(P.landed || new Map()).size}</b><span>Tricks landed</span></div>
       <div class="stat"><b>${verified.length}</b><span>Verified clips</span></div>
@@ -3875,7 +3879,7 @@ async function submitAuth(){
       if (taken.data){ toast('That username is taken. Try another.'); return; }
       // The confirmation email links back to wherever this page is running (laptop or online)
       const r = await db.auth.signUp({email, password,
-        options: {data: {username}, emailRedirectTo: location.origin + location.pathname}});
+        options: {data: {username, src: store.get('signup-src', '') || null}, emailRedirectTo: location.origin + location.pathname}});
       if (r.error) throw r.error;
       if (!r.data.session){
         S.authMode = 'signin'; render();
@@ -4155,6 +4159,16 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
   }
 }
 
+// ---------- where riders come from (?src=ig, tt, poster...): the first tag seen rides along with sign-up ----------
+// Saved in the account's sign-up info (auth.users raw_user_meta_data->>'src'), so no table change is needed.
+{
+  const q = new URLSearchParams(location.search), src = q.get('src');
+  if (src && /^[\w-]{1,24}$/.test(src)){
+    if (!store.get('signup-src', '')) store.set('signup-src', src.toLowerCase());
+    q.delete('src');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+  }
+}
 // ---------- crew invite links (?crew=CODE): remember the code through sign-up ----------
 {
   const code = new URLSearchParams(location.search).get('crew');

@@ -97,6 +97,9 @@ def main():
         if reward:
             pg.click("[data-act=reward-collect]")
             pg.wait_for_timeout(600)
+        if pg.locator(".rankup").count():   # the rank up waits for Let's go
+            pg.click(".ru-go")
+            pg.wait_for_timeout(500)
         pg.mouse.click(195, 420)      # close the rank splash if it's up
         pg.wait_for_timeout(2000)     # let the badge pop and the stamp slam
         # Base v2 (DESIGN.md): rank hero, trick of the day, Judge + Trick book; the crew list is gone (Connor 10/25)
