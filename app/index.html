@@ -370,6 +370,17 @@ select:focus,input:focus{border-color:var(--ice)}
 .reel::-webkit-scrollbar{display:none}
 .reel-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
 .reel-item video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.fdash{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-color:rgba(255,210,63,.35)}
+.fdash .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.fd-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.fd-nums div{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border:1px solid var(--line);border-radius:10px}
+.fd-nums b{font-family:var(--display);font-size:24px;font-variant-numeric:tabular-nums}.fd-nums span{font-size:11px;color:var(--muted);text-align:center}
+.fd-spark{display:flex;align-items:flex-end;gap:3px;height:56px}.fd-spark i{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:4px;max-height:56px}
+.fd-step{display:grid;grid-template-columns:130px minmax(0,1fr) 30px;align-items:center;gap:8px;font-size:13px}
+.fd-step i{display:block;height:10px;border-radius:5px;background:var(--accent);min-width:2px}.fd-step b{text-align:right;font-variant-numeric:tabular-nums}
+.fd-tags{display:flex;flex-wrap:wrap;gap:6px}
+.fd-riders{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.fd-riders div{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.fd-riders span{color:var(--muted);font-size:12px}
 .reel-info{position:absolute;left:14px;right:14px;bottom:118px;text-shadow:0 1px 8px #000}
 .reel-info .trick{font-size:30px}
 .reel-actions{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:flex-end;gap:28px}
@@ -1125,6 +1136,12 @@ const initials = n => String(n || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).
 const $ = id => document.getElementById(id);
 const count = rel => (rel && rel[0] ? rel[0].count : 0);
 const myId = () => S.session && S.session.user.id;
+// App activity (021): one short row per thing a rider does, so we learn what gets used. Never what anyone types.
+// Fire and forget: until supabase/021 is pasted the insert just fails quietly.
+function logEvent(name, detail){
+  if (!myId()) return;
+  try { db.from('events').insert({name, detail: detail == null ? null : String(detail).slice(0, 40)}).then(() => {}, () => {}); } catch (e) {}
+}
 const mustOk = r => { if (r.error) throw r.error; return r.data; };
 function ago(iso){
   const m = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60000));
@@ -1643,6 +1660,7 @@ async function loadTotds(){
   return t ? {[sportOf(t)]: one} : {};
 }
 async function loadAll(){
+  if (!S.opened){ S.opened = true; logEvent('app_open', isInstalled() ? 'home_screen' : 'browser'); }
   if (!S.tricks.length) S.tricks = mustOk(await db.from('tricks').select('*').order('pts'));
   const [me, clips, votes, likes, totd, friends, duels, landed] = await Promise.all([
     db.from('profiles').select('*').eq('id', myId()).single(),
@@ -2893,6 +2911,7 @@ const views = {
       <div><h2>${esc(u.username)}</h2><div class="hint">${u.home_resort ? ic('mountain', 13) + ' ' + esc(u.home_resort) : 'No home mountain yet'}</div>${friendBit}</div></div>
     ${u.id === CREATOR_ID ? `<div class="founder-plate" role="img" aria-label="The Founder, rider number 1, built Stomped">
       <span class="fp-crown">${ic('crown', 30)}</span><div><b>The Founder</b><span class="mono">Rider #001 · built Stomped</span></div></div>` : ''}
+    ${mine && u.id === CREATOR_ID ? founderDash() : ''}
     <section class="card prof-rank">
       <div class="row">${rankWord(tr, 26)}<span class="mono hint">${u.points} pts</span></div>
       <div class="bar"><i style="width:${Math.max(4, tr.pct)}%"></i></div>
@@ -3213,6 +3232,7 @@ const motion = {
 async function startRecording(){
   const R = S.rec, mime = pickMime();
   if (!R.stream || R.starting) return;
+  logEvent('record_start');
   R.starting = true; R.useMotion = R.useMotion != null ? R.useMotion : await motion.allowed(); R.starting = false;
   if (!R.stream) return;
   R.chunks = []; R.motion = null;
@@ -3394,6 +3414,7 @@ async function uploadClip(fields, blob = S.rec.blob, mot = S.rec.motion){
   if (mot) await db.storage.from('clips').upload(motionPath(path),
     new Blob([JSON.stringify(mot)], {type: 'application/json'}), {contentType: 'application/json'}).catch(() => {});
   runTrickAI(ins.data.id, blob, trickById(cols.trick_id));   // in the background: the clip is already posted
+  logEvent('clip_posted', rider ? 'for_friend' : trickById(cols.trick_id).category);
   return ins.data.id;
 }
 
@@ -3553,6 +3574,43 @@ async function runTrickAI(clipId, blob, trick){
 
 // Local test runs only (tests/ai_walk.py): reach the AI pieces from outside the module
 if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__ai = {TrickAI, poseFromVideo, runTrickAI, reelItem: c => reelItem(c), S};
+
+// ---------- Founder dashboard (only rider #001; the database refuses everyone else) ----------
+function founderDash(){
+  const F = S.fdash;
+  if (!F) return `<section class="card fdash"><div class="row"><b>Founder dashboard</b>
+    <button class="btn small primary" data-act="fdash">Open</button></div><p class="hint">Riders, where they came from, what they use, and how the trick AI is doing. Only you can see it.</p></section>`;
+  if (F.loading) return `<section class="card fdash"><b>Founder dashboard</b><p class="hint">Loading…</p></section>`;
+  if (F.error) return `<section class="card fdash"><b>Founder dashboard</b><p class="hint">${esc(F.error)}</p>
+    <button class="btn small" data-act="fdash">Try again</button></section>`;
+  const st = F.stats, ai = F.ai, fn = st.funnel || {}, top = Math.max(1, fn.signed_up || 0);
+  const ago2 = t => t ? ago(t) : 'never';
+  const step = (k, l) => `<div class="fd-step"><span>${l}</span><i style="width:${Math.round(100 * (fn[k] || 0) / top)}%"></i><b>${fn[k] || 0}</b></div>`;
+  const spark = (st.signups_by_day || []).map(d => `<i title="${esc(d.day)}: ${d.n}" style="height:${8 + 10 * d.n}px"></i>`).join('');
+  return `<section class="card fdash"><div class="row"><b>Founder dashboard</b><button class="linkish" data-act="fdash">Refresh</button></div>
+    <div class="fd-nums"><div><b>${st.riders}</b><span>riders</span></div><div><b>${st.new_7d}</b><span>new this week</span></div>
+      <div><b>${st.active_1d}</b><span>active today</span></div><div><b>${st.active_7d}</b><span>active this week</span></div></div>
+    ${spark ? `<div class="label">Sign-ups, last 14 days</div><div class="fd-spark">${spark}</div>` : ''}
+    <div class="label">How far riders get</div>
+    ${step('signed_up', 'Signed up')}${step('set_up', 'Picked a mountain')}${step('filmed', 'Started filming')}${step('posted', 'Posted a clip')}${step('judged', 'Judged a clip')}${step('friended', 'Has a friend')}
+    <div class="label">Where they came from</div>
+    <div class="fd-tags">${(st.by_src || []).map(x => `<span class="pill">${esc(x.src)} · ${x.n}</span>`).join('') || '<span class="hint">No sign-ups yet</span>'}</div>
+    <div class="label">Most used this week</div>
+    <div class="fd-tags">${(st.top_events_7d || []).map(x => `<span class="pill">${esc(x.name.replace(/_/g, ' '))} · ${x.n}</span>`).join('') || '<span class="hint">No activity logged yet</span>'}</div>
+    <div class="label">Trick AI (in the background)</div>
+    <p class="hint">${ai ? `Guessed ${ai.guessed} clips. Of ${ai.decided} riders decided: landed right ${ai.landed_right}/${ai.landed_calls}, spin right ${ai.spin_right}/${ai.spin_calls}, can't tell ${ai.cant_tell}.`
+      : 'Starts once supabase/022 is pasted.'}</p>
+    <div class="label">Riders</div>
+    <div class="fd-riders">${(st.riders_list || []).map(r => `<div><b>@${esc(r.username)}</b><span>${esc(r.src)} · joined ${ago2(r.joined)} · seen ${ago2(r.last_seen)}</span>
+      <span class="mono">${r.clips} clips · ${r.votes} votes</span></div>`).join('')}</div></section>`;
+}
+async function loadFounderDash(){
+  S.fdash = {loading: true}; render(true);
+  const [st, ai] = await Promise.all([db.rpc('founder_stats'), db.rpc('founder_ai_stats')]);
+  S.fdash = st.error ? {error: /function|schema|does not exist/i.test(st.error.message) ? 'Paste supabase/021_events.sql into Supabase first (2 min).' : st.error.message}
+                     : {stats: st.data, ai: ai.error ? null : ai.data};
+  render(true);
+}
 
 // ---------- render ----------
 const TABS = [
@@ -3833,6 +3891,7 @@ async function openTab(tab, focusId){
   if (tab === 'feed') startJudge();
   if (tab === 'duels') S.duelId = null;
   S.tab = tab; S.openComments = null; $('view').innerHTML = '';
+  logEvent('tab', tab === 'feed' ? 'feed_' + S.feed.mode : tab);
   if (tab === 'ranks' || (tab === 'duels' && S.squad === 'ranks')){ try { await loadBoard(); } catch (err){ toast(err.message); } }
   render(true); window.scrollTo(0, 0);
   // Links like "Pick your home mountain" land right on the control, not at the top of a long page
@@ -3859,6 +3918,7 @@ async function vote(clipId, landed, reason){
   const J = S.judge;
   // Celebrate first, save second: the stamp shows on the tap, then the vote waits a few seconds so Undo can take it back
   J.voted[clipId] = landed; J.reasonFor = null;
+  logEvent('vote', landed ? 'landed' : reason || 'bailed');
   refreshReelItem(clipId);
   if (navigator.vibrate) navigator.vibrate(landed ? [15, 50, 25] : 60);   // Android buzz; iPhones ignore it
   sfx(landed ? 'landed' : 'bailed');
@@ -3946,6 +4006,7 @@ async function toggleComments(id){
 }
 async function sendComment(clipId, input){
   const body = input.value.trim(); if (!body) return;
+  logEvent('comment');
   input.disabled = true;
   const r = await db.from('comments').insert({clip_id: clipId, body});
   if (r.error){ toast('Comment failed: ' + r.error.message); input.disabled = false; return; }
@@ -4083,6 +4144,7 @@ async function submitPost(){
 // ----- friends & duels -----
 async function addFriend(id){
   const r = await db.from('friendships').insert({addressee: id});
+  if (!r.error) logEvent('friend_add');
   if (r.error) toast(/duplicate|unique/i.test(r.error.message) ? 'You two are already connected' : 'Could not add: ' + r.error.message);
   else toast('Friend request sent');
   await refresh(true);
@@ -4293,9 +4355,11 @@ document.addEventListener('click', async e => {
       S.squad = b.dataset.k; store.set('squad', S.squad); S.duelId = null;
       if (S.squad === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
       return render(true);
+    case 'fdash': return loadFounderDash();
     case 'invite': {
       const url = `${location.origin}${location.pathname}?from=${encodeURIComponent(S.me.username)}`;
       const text = `Get on Stomped with me: film tricks, riders judge them, rank up. I'm @${S.me.username}.`;
+      logEvent('invite_share');
       if (navigator.share){ try { await navigator.share({title: 'Stomped', text, url}); } catch (e) {} return; }
       try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Invite link copied. Paste it to your friends.'); }
       catch (e) { toast(url, 6000); }
