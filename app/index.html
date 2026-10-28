@@ -647,9 +647,6 @@ button,[data-act],select{touch-action:manipulation}
   pointer-events:none;transition:opacity .2s,transform .2s}
 .pl-play svg{width:28px;height:28px;fill:#fff;margin-left:4px}
 .player.playing .pl-play{opacity:0;transform:scale(.7)}
-.pl-mute{position:absolute;right:10px;bottom:10px;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;
-  background:rgba(0,0,0,.55);cursor:pointer}
-.pl-mute svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn.ghost{background:none;border-color:var(--line);color:var(--muted);width:100%}
 @media (prefers-reduced-motion:no-preference){
   button,.btn{transition:transform .12s ease,filter .12s ease}
@@ -826,7 +823,7 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opa
 .b2-try{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--hot);padding:5px 9px;border:2px solid var(--hot);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
 .filmed{margin-bottom:12px;display:grid;grid-template-columns:84px minmax(0,1fr);gap:12px;padding:12px;border-left:3px solid var(--hot)}
 .filmed .player{width:84px;aspect-ratio:9/14;align-self:start}.filmed video{width:100%;height:100%;object-fit:cover}
-.filmed .player .pl-mute{display:none}.filmed .pl-play{transform:scale(.6)}
+.filmed .pl-play{transform:scale(.6)}
 .filmed .f-body{display:grid;gap:6px;align-content:start;min-width:0}.filmed .trick{font-size:20px}
 .filmed .label{display:flex;align-items:center;gap:6px}
 .filmed .label svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}.filmed .btns{margin-top:2px}.filmed .btns .btn{min-height:44px}
@@ -1723,6 +1720,53 @@ function loadSeenStatus(){
   try { const s = localStorage.getItem('seen-status-' + myId()); if (s) seenStatus = JSON.parse(s); } catch (e) {}
 }
 
+// Game sounds, made in code (no audio files): votes, the reward, the rank up. Off switch: gear > Sounds.
+// iPhone: 'ambient' means the silent switch mutes them and they mix with your music instead of stopping it.
+// Browsers only allow sound after a tap, so the first tap anywhere wakes the audio up.
+const SFX = {ctx: null, on: store.get('sound', 'on') === 'on'};
+try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch (e) {}
+function sfxCtx(){
+  if (!SFX.on) return null;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!SFX.ctx){ SFX.ctx = new AC(); SFX.out = SFX.ctx.createGain(); SFX.out.gain.value = .5; SFX.out.connect(SFX.ctx.destination); }
+  if (SFX.ctx.state === 'suspended') SFX.ctx.resume().catch(() => {});
+  return SFX.ctx.state === 'running' ? SFX.ctx : null;
+}
+document.addEventListener('pointerdown', () => { if (SFX.on) sfxCtx(); }, {capture: true, passive: true});
+// one note: type, start Hz -> end Hz, when (s from now), length (s), volume
+function tone(a, type, f0, f1, at, len, vol){
+  const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + at;
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + len);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + len);
+  o.connect(g).connect(SFX.out); o.start(t); o.stop(t + len + .05);
+}
+// noise burst through a filter sweep: whooshes, snow crunch, impacts
+function noise(a, at, len, vol, f0, f1, kind = 'lowpass', rise = .01){
+  const n = Math.ceil(a.sampleRate * len), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), t = a.currentTime + at;
+  src.buffer = buf; f.type = kind; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + len);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + rise); g.gain.exponentialRampToValueAtTime(.0001, t + len);
+  src.connect(f).connect(g).connect(SFX.out); src.start(t); src.stop(t + len + .05);
+}
+function sfx(name, o = {}){
+  const a = sfxCtx(); if (!a) return;
+  if (name === 'landed'){ noise(a, 0, .12, .5, 2500, 600); tone(a, 'triangle', 660, 660, .02, .12, .35); tone(a, 'triangle', 990, 990, .1, .22, .35); }
+  else if (name === 'bailed'){ noise(a, 0, .25, .5, 900, 120); tone(a, 'sine', 180, 70, 0, .3, .5); }
+  else if (name === 'stomp'){          // the reward: a heavy landing thud, snow spray, then a bright two-note sting
+    tone(a, 'sine', 140, 38, 0, .45, .9); noise(a, 0, .35, .7, 3000, 200);
+    tone(a, 'square', 523, 523, .16, .16, .12); tone(a, 'square', 784, 784, .26, .4, .12); tone(a, 'triangle', 1568, 1568, .26, .5, .15);
+  }
+  else if (name === 'collect'){ [784, 988, 1319].forEach((f, i) => tone(a, 'triangle', f, f, i * .06, .2, .3)); }
+  else if (name === 'charge'){         // rank up, part 1: a rising whoosh while the old badge charges
+    const len = o.len || 1.5; noise(a, 0, len, .45, 200, 5000, 'bandpass', len * .9); tone(a, 'sawtooth', 70, 300, 0, len, .08);
+  }
+  else if (name === 'rankup'){         // rank up, part 2: boom on the hit, then a shimmering major chord
+    tone(a, 'sine', 110, 30, 0, .9, 1); noise(a, 0, .8, .8, 6000, 150);
+    [523, 659, 784, 1047].forEach((f, i) => { tone(a, 'triangle', f, f, .08 + i * .07, 1.4, .16); tone(a, 'sine', f * 2, f * 2, .08 + i * .07, 1, .05); });
+  }
+}
 // The reward moment: STOMPED slams in, the screen shakes, points count up, confetti. A rank change follows it.
 function showReward(c, rankUp){
   const pts = c.points_awarded || 0;
@@ -1739,6 +1783,7 @@ function showReward(c, rankUp){
   const app = document.querySelector('.shell');
   if (app && !matchMedia('(prefers-reduced-motion: reduce)').matches){ app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake'); }
   if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) try { navigator.vibrate([25, 40, 25]); } catch (e) {}
+  sfx('stomp');
   if (pts){ let n = 0; const el = $('reward-n'), step = () => { n = Math.min(pts, n + Math.ceil(pts / 28)); if (el) el.textContent = n; if (n < pts) requestAnimationFrame(step); }; step(); }
   confetti($('reward-fx'));
 }
@@ -1764,7 +1809,6 @@ const ICON = {
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l7 7-7 7M21 11H10a6 6 0 0 0-6 6v2"/></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
   more:  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
-  mute:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
 };
 // Line icons, one stroke weight (DESIGN.md: no emoji as icons). ic('book') -> inline SVG that takes the text color.
 const ICO = {
@@ -1809,13 +1853,11 @@ function trickSelect(id, sport, selected){
     return `<optgroup label="${cat}">${list.map(t => `<option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)} (${t.pts})</option>`).join('')}</optgroup>`;
   }).join('')}</select>`;
 }
-// App-style video: tap to play or pause, plays by itself when it scrolls into view, small sound button.
+// App-style video: tap to play or pause, plays by itself when it scrolls into view. Clips have no sound (no mic).
 // No browser controls bar, so it looks like an app instead of a web page.
-const SPEAKER = '<path d="M4 9h4l5-4v14l-5-4H4z"/>';
 const player = (src, auto = true) => `<div class="player" data-act="play">
   <video class="clip" src="${esc(src)}" playsinline muted loop preload="metadata" ${auto ? 'data-auto' : ''}></video>
-  <span class="pl-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
-  <button class="pl-mute" data-act="mute" aria-label="Turn sound on"><svg viewBox="0 0 24 24">${SPEAKER}<path d="M17 9l5 6M22 9l-5 6"/></svg></button></div>`;
+  <span class="pl-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>`;
 let playerObserver;
 function watchPlayers(){
   if (playerObserver) playerObserver.disconnect();
@@ -1872,7 +1914,6 @@ function feedItem(c){
       <button class="icon-btn ${open ? 'lit' : ''}" data-act="comments" data-id="${c.id}" aria-expanded="${open}" aria-label="Comments">${ICON.chat}${count(c.comments)}</button>
       <button class="icon-btn" data-act="share-link" data-id="${c.id}" aria-label="Send this clip">${ICON.share}Share</button>
       <button class="icon-btn" data-act="clip-menu" data-id="${c.id}" aria-label="More options">${ICON.more}</button>
-      <button class="icon-btn" data-act="mute" aria-label="Turn sound on">${ICON.mute}</button>
     </div>
     <div class="fi-info">
       <div class="who"><button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${c.profiles ? rankTag(c.profiles.points) : ''}</div>
@@ -2695,6 +2736,8 @@ const views = {
       <div class="field"><label class="label" for="home-resort">Home mountain</label>
         <select id="home-resort"><option value="">Not set</option>${RESORTS.map(r =>
           `<option ${me.home_resort === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div class="field"><label class="label" for="sound-pref">Sounds</label>
+        <select id="sound-pref"><option value="on" ${SFX.on ? 'selected' : ''}>On</option><option value="off" ${SFX.on ? '' : 'selected'}>Off</option></select></div>
       <div class="btns"><button class="btn" data-act="profile" data-id="${me.id}">View my page</button>
         <button class="btn" data-act="feedback">Send feedback</button>
         <button class="btn" data-act="signout">Sign out</button></div>
@@ -3462,7 +3505,10 @@ function showRankUp(r, from = null){
     <div class="ru-next mono">${r.nextLabel ? `${r.toNext} pts to ${esc(r.nextLabel)}` : 'Top of the mountain'}</div>
     <button class="btn primary ru-go" data-act="close-splash">Let's go</button>
   </div>`;
+  if (from && !still) sfx('charge', {len: hit});
+  else sfx('rankup');
   if (still) return;
+  if (from) setTimeout(() => { const el = $('splash'); if (el && !el.classList.contains('done')) sfx('rankup'); }, hit * 1000);
   rankUpFx($('rankup-fx'), [c1, c2, c3, '#ffffff'], from ? hit * 1000 : 0, hit * 1000);
   setTimeout(() => {
     const el = $('splash'); if (!el || el.classList.contains('done')) return;
@@ -3569,6 +3615,7 @@ async function vote(clipId, landed, reason){
   J.voted[clipId] = landed; J.reasonFor = null;
   refreshReelItem(clipId);
   if (navigator.vibrate) navigator.vibrate(landed ? [15, 50, 25] : 60);   // Android buzz; iPhones ignore it
+  sfx(landed ? 'landed' : 'bailed');
   const send = async () => {
     delete pendingVotes[clipId];
     const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
@@ -3948,16 +3995,9 @@ document.addEventListener('click', async e => {
     case 'close-splash': return closeSplash();
     case 'ob-sport': setRides(b.dataset.k); return onboardResort();
     case 'ob-resort': return finishOnboarding(b.dataset.k);
-    case 'reward-collect': { $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
+    case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
     case 'rankup-tap': { const el = $('splash'); if (el.classList.contains('done')) return closeSplash(); el.classList.add('done'); return; }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
-    case 'mute': {
-      const v = b.closest('.player, .feed-item').querySelector('video'); v.muted = !v.muted;
-      b.setAttribute('aria-label', v.muted ? 'Turn sound on' : 'Turn sound off');
-      b.innerHTML = `<svg viewBox="0 0 24 24">${SPEAKER}${v.muted ? '<path d="M17 9l5 6M22 9l-5 6"/>' : '<path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>'}</svg>`;
-      if (!v.muted && v.paused) v.play().catch(() => {});
-      return;
-    }
     case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
     case 'close-modal': $('overlay').innerHTML = ''; return;
     case 'install-go': return installGo();
@@ -4102,6 +4142,7 @@ document.addEventListener('change', async e => {
   }
   if (id === 'post-combo-add' && e.target.value){ S.postCombo.push(e.target.value); syncPost(); }
   if (id === 'duel-trick') S.duelTrick = e.target.value;
+  if (id === 'sound-pref'){ SFX.on = e.target.value === 'on'; store.set('sound', e.target.value); if (SFX.on) sfx('collect'); toast('Saved'); }
   if (id === 'ride-pref'){ setRides(e.target.value); toast('Saved'); render(true); }
   if (id === 'board-resort'){ S.board.resort = e.target.value; try { await loadBoard(); } catch (err){ toast(err.message); } render(true); }
   if (id === 'home-resort'){
