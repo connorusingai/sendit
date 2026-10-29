@@ -116,6 +116,8 @@ def main():
         ok.append(("Weak signal records smaller, still 60 fps", plan["weak"]["bps"] < 1500000 and plan["weak"]["fps"] == 60))
         ok.append(("Low battery records smaller at 30 fps", plan["cold"]["bps"] < 1500000 and plan["cold"]["fps"] == 30))
         ok.append(("Clips already waiting: next one records smaller", plan["queued"]["lite"]))
+        saved = pg.evaluate("StompedOutbox.save({kind: 'test', id: undefined}).then(i => StompedOutbox.remove(i.id).then(() => !!i.id))")
+        ok.append(("Saving without an id still gets one", saved))
 
         # 2. Filmed, not posted, app closed: Record gives it back
         record()

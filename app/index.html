@@ -3199,7 +3199,8 @@ async function openCamera(){
   const R = S.rec;
   try {
     stopStream();
-    R.plan = await OB.shrinkPlan(myId()).catch(() => null);   // weak signal or low battery: a smaller clip (outbox.js)
+    // Weak signal or low battery: a smaller clip (outbox.js). Worked out when Record opens, so the camera never waits on it.
+    OB.shrinkPlan(myId()).then(p => { R.plan = p; }).catch(() => {});
     R.stream = await navigator.mediaDevices.getUserMedia({
       // 60 fps when the phone allows it: twice the frames means the trick AI loses the rider less.
       // Phones that can't do 60 quietly fall back to 30.
@@ -3993,7 +3994,7 @@ async function openTab(tab, focusId){
   logEvent('tab', tab === 'feed' ? 'feed_' + S.feed.mode : tab);
   if (tab === 'ranks' || (tab === 'duels' && S.squad === 'ranks')){ try { await loadBoard(); } catch (err){ toast(err.message); } }
   render(true); window.scrollTo(0, 0);
-  if (tab === 'record') restoreDraft();   // a clip filmed but never posted comes back
+  if (tab === 'record'){ restoreDraft(); OB.shrinkPlan(myId()).then(p => { S.rec.plan = p; }).catch(() => {}); }   // an unposted clip comes back
   // Links like "Pick your home mountain" land right on the control, not at the top of a long page
   const el = focusId && $(focusId);
   if (el){

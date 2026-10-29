@@ -73,7 +73,8 @@
   // ---------- items ----------
   // kind 'draft': filmed, not posted yet (kept so closing the app doesn't lose it). 'post' / 'duel': waiting to upload.
   async function save(item){
-    const it = {id: item.id || crypto.randomUUID(), createdAt: Date.now(), attempts: 0, nextTry: 0, ...item};
+    const it = {createdAt: Date.now(), attempts: 0, nextTry: 0, ...item};
+    if (!it.id) it.id = crypto.randomUUID();
     await put(it); keepStorage();
     return it;
   }
