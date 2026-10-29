@@ -71,15 +71,15 @@ def run(uid):
         if uid != CREATOR:
             ok.append(("opening the app is logged", any("app_open" in x for x in ev)))
             ok.append(("switching tabs is logged (feed_clips)", any("feed_clips" in x for x in ev)))
-            ok.append(("a normal rider has no Founder dashboard", pg.locator(".fdash").count() == 0))
+            ok.append(("a normal rider has no Founder dashboard", pg.locator(".fdash", has_text="Founder dashboard").count() == 0))
         else:
-            ok.append(("rider #001 sees the Founder dashboard on his profile", pg.locator(".fdash").count() == 1))
-            pg.click(".fdash [data-act=fdash]"); pg.wait_for_timeout(1200)
+            ok.append(("rider #001 sees the Founder dashboard on his profile", pg.locator(".fdash", has_text="Founder dashboard").count() == 1))
+            pg.click(".fdash:has-text(\"Founder dashboard\") [data-act=fdash]"); pg.wait_for_timeout(1200)
             ok.append(("it loads his numbers (9 riders, ig 5)", pg.locator(".fd-nums", has_text="9").count() == 1
                        and pg.locator(".fdash", has_text="ig · 5").count() == 1))
             ok.append(("...the funnel and the rider list", pg.locator(".fd-step").count() == 6 and pg.locator(".fdash", has_text="@boston_bri").count() == 1))
             ok.append(("...and the background AI's score", pg.locator(".fdash", has_text="spin right 1/1").count() == 1))
-            pg.locator(".fdash").scroll_into_view_if_needed()
+            pg.locator(".fdash", has_text="Founder dashboard").scroll_into_view_if_needed()
             pg.screenshot(path=str(w.SHOTS / "founder-dash.png"), full_page=True)
         b.close()
     return ok
