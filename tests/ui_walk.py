@@ -23,7 +23,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 SHOTS = Path(__file__).parent / "shots"
-PORT = 8123
+PORT = int(os.environ.get("WALK_PORT", 8123))   # another copy of the app running its tests at once: give each its own port
 URL = f"http://127.0.0.1:{PORT}/app/"
 REF = "kyabslzotdtcwtjcygew"
 UID = "11111111-2222-3333-4444-555555555555"
