@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import ui_walk as w  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 
-w.PORT = int(os.environ.get("PORT", 8131))
+w.PORT = int(os.environ.get("PORT", 8147))
 w.URL = f"http://127.0.0.1:{w.PORT}/app/"
 CREW = {"name": "Boulder Park Rats", "tag": "BPR", "members": 4}
 OLD_CREW = {"id": "oc1", "name": "Old Crew", "tag": "OLD", "code": "OLDOLD", "owner": "x", "created_at": "2026-10-01T00:00:00Z"}

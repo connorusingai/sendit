@@ -87,6 +87,8 @@ Behind the scenes:
 - **Offline uploads** ✅: no signal? Clips save on the phone and upload when you're back online.
 - **Install to home screen** ✅: works like an app and opens with no signal.
 - **Invite friends** ✅ and a short **rank-up** moment.
+- **Founder's call** (027, 10/28): a founder's vote settles any clip that has waited over 24h (normal vote rule otherwise). Founders get a "Needs a call" list on Me and an oldest-first judge stack.
+- **Crew invite link** (028, 10/28): one link per crew (`?crew=CODE`). Tapping it, even from iMessage or an Instagram DM, signs you up or in and puts you in the crew (asks before switching crews).
 
 ## Ideas for later
 - **Trick of the Day**: a daily challenge trick for bonus points.
