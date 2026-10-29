@@ -1694,6 +1694,7 @@ async function loadAll(){
   });
   S.duels = mustOk(duels).map(d => ({...d, other: d.challenger === myId() ? d.op : d.ch}));
   await loadCrew();
+  await loadFounderQueue();
   await loadFilmedForMe();
   await loadFilmers(S.clips);
   loadSeenStatus();
@@ -2638,7 +2639,8 @@ const views = {
     const up = S.authMode === 'signup';
     const ladder = TRICK_TIERS.slice().reverse();
     return `<section class="lhero">
-        ${store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Sign up and it opens right after.</a>`
+        ${inviteCrew ? `<a class="card sent-you" href="#auth-top"><b>You're invited to ${esc(inviteCrew.name)}.</b> Sign up or sign in and you're in the crew.</a>`
+          : store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Sign up and it opens right after.</a>`
           : store.get('pending-from', '') ? `<a class="card sent-you" href="#auth-top"><b>@${esc(store.get('pending-from', ''))} invited you.</b> Sign up and you can add them right away.</a>` : ''}
         ${inAppBrowser() ? `<div class="card sent-you inapp-note"><b>Open this in ${realBrowser()} first.</b> Tap ••• at the top, then Open in ${realBrowser()}. ${inAppBrowser()}'s browser can't keep Stomped on your home screen or keep you signed in.</div>` : ''}
         <div class="eyebrow">The trick app for skiers & snowboarders</div>
@@ -2922,6 +2924,7 @@ const views = {
     ${u.id === CREATOR_ID ? `<div class="founder-plate" role="img" aria-label="The Founder, rider number 1, built Stomped">
       <span class="fp-crown">${ic('crown', 30)}</span><div><b>The Founder</b><span class="mono">Rider #001 · built Stomped</span></div></div>` : ''}
     ${mine && u.id === CREATOR_ID ? founderDash() : ''}
+    ${mine && isFounder() ? founderQueueCard() : ''}
     <section class="card prof-rank">
       <div class="row">${rankWord(tr, 26)}<span class="mono hint">${u.points} pts</span></div>
       <div class="bar"><i style="width:${Math.max(4, tr.pct)}%"></i></div>
@@ -3586,6 +3589,36 @@ async function runTrickAI(clipId, blob, trick){
 // Local test runs only (tests/ai_walk.py): reach the AI pieces from outside the module
 if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__ai = {TrickAI, poseFromVideo, runTrickAI, reelItem: c => reelItem(c), S};
 
+// ---------- Founder's call (027): clips that need a call, oldest first ----------
+// profiles.is_founder can only be set in the database. A founder's vote settles any clip that has waited over 24h.
+const isFounder = () => !!(S.me && S.me.is_founder);
+async function loadFounderQueue(){
+  if (!isFounder()){ S.fq = null; return; }
+  const r = await db.rpc('founder_queue');
+  if (r.error){ S.fq = null; return; }
+  S.fq = r.data || [];
+  // Old clips may be past the newest 80 the app loads: pull them in so the judge stack has them
+  const have = new Set(S.clips.map(c => c.id)), missing = S.fq.map(x => x.clip_id).filter(id => !have.has(id));
+  if (missing.length){
+    const m = await db.from('clips').select(CLIP_SELECT).in('id', missing);
+    if (!m.error) S.clips = S.clips.concat((m.data || []).filter(shownClip));
+  }
+}
+// true when my vote on this clip decides it right away
+function founderSettles(clipId){
+  if (!isFounder()) return false;
+  const c = findClip(clipId);
+  return !!c && Date.now() - Date.parse(c.created_at) > 24 * 3600e3;
+}
+function founderQueueCard(){
+  const Q = S.fq;
+  if (!Q) return '';
+  const now = Q.filter(x => x.settles).length;
+  const rows = Q.slice(0, 5).map(x => `<li>@${esc(x.rider)} · ${esc(x.trick || 'trick')}${x.grab && x.grab !== 'No grab' ? ' ' + esc(x.grab) : ''} · ${ago(x.created_at)}${x.settles ? ' · <b>your call settles it</b>' : ''}</li>`).join('');
+  return `<section class="card fdash"><div class="row"><b>Needs a call (${Q.length})</b>${Q.length ? '<button class="btn small primary" data-act="fq-judge">Judge oldest first</button>' : ''}</div>
+    ${Q.length ? `<p class="hint">${now} waited over a day, so your vote settles ${now === 1 ? 'it' : 'them'}. The rest still need the normal votes.</p><ul class="hint">${rows}</ul>` : '<p class="hint">Nothing waiting. Every clip has your vote.</p>'}</section>`;
+}
+
 // ---------- Founder dashboard (only rider #001; the database refuses everyone else) ----------
 function founderDash(){
   const F = S.fdash;
@@ -3635,7 +3668,8 @@ const TABS = [
 function startJudge(){ S.judge = {list: judgeQueue(), voted: {}, reasonFor: null, count: 0, breakShown: false}; }
 // Someone else's clip still being judged that you can vote on (not one you filmed for them)
 const needsMyVote = c => c.status === 'pending' && c.user_id !== myId() && c.filmed_by !== myId() && !S.myVotes.has(c.id);
-const judgeQueue = () => S.clips.filter(needsMyVote);
+// A founder (027) judges every clip at first, so their stack starts with the clips that have waited longest
+const judgeQueue = () => { const q = S.clips.filter(needsMyVote); return isFounder() ? q.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)) : q; };
 // Shown as a judge card in the feed: someone else's clip still being judged that you haven't voted on (or just voted on, stamp showing)
 const judgeable = c => c.status === 'pending' && c.user_id !== myId() && (!S.myVotes.has(c.id) || c.id in S.judge.voted);
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag'];  // keep what's typed/picked across redraws
@@ -3968,7 +4002,7 @@ async function vote(clipId, landed, reason){
     loadAll().then(() => render()).catch(() => {});  // update badges quietly
   };
   pendingVotes[clipId] = {timer: setTimeout(send, VOTE_WAIT), send};
-  toastUndo(landed ? 'Voted Landed' : 'Voted Bailed', () => undoVote(clipId), VOTE_WAIT);
+  toastUndo((founderSettles(clipId) ? 'Your call: ' : 'Voted ') + (landed ? 'Landed' : 'Bailed'), () => undoVote(clipId), VOTE_WAIT);
   setTimeout(() => nextReel(clipId), 1000);   // long enough to see the stamp land
   setTimeout(() => {   // then it becomes a normal clip (name, fire, comments) you can scroll back to
     if (!(clipId in J.voted)) return;   // undone
@@ -4270,7 +4304,7 @@ async function submitAuth(){
       if (taken.data){ toast('That username is taken. Try another.'); return; }
       // The confirmation email links back to wherever this page is running (laptop or online)
       const r = await db.auth.signUp({email, password,
-        options: {data: {username, src: store.get('signup-src', '') || null}, emailRedirectTo: location.origin + location.pathname}});
+        options: {data: {username, src: store.get('signup-src', '') || null, ...(pendingCrewCode() ? {crew: pendingCrewCode()} : {})}, emailRedirectTo: location.origin + location.pathname}});
       if (r.error) throw r.error;
       if (!r.data.session){
         S.authMode = 'signin'; render();
@@ -4375,7 +4409,7 @@ document.addEventListener('click', async e => {
       return render(true);
     case 'crew-invite': {
       const c = S.crew.mine; if (!c) return;
-      const url = `${location.origin}${location.pathname}?crew=${c.code}`, text = `Join my crew ${c.name} on Stomped. Code: ${c.code}`;
+      const url = crewInviteUrl(c), text = `Join my crew ${c.name} on Stomped. Tap the link and you're in.`;
       if (navigator.share){ try { await navigator.share({title: `${c.name} on Stomped`, text, url}); } catch (e) {} return; }
       try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Crew invite copied. Paste it to your friends.'); }
       catch (e) { toast(`Code: ${c.code}`, 6000); }
@@ -4395,6 +4429,7 @@ document.addEventListener('click', async e => {
       if (S.squad === 'ranks'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
       return render(true);
     case 'fdash': return loadFounderDash();
+    case 'fq-judge': return openTab('judge');
     case 'invite': {
       const url = `${location.origin}${location.pathname}?from=${encodeURIComponent(S.me.username)}`;
       const text = `Get on Stomped with me: film tricks, riders judge them, rank up. I'm @${S.me.username}.`;
@@ -4560,14 +4595,54 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
   }
 }
-// ---------- crew invite links (?crew=CODE): remember the code through sign-up ----------
+// ---------- crew invite links (?crew=CODE): one link per crew (028) ----------
+// Tapping it signs you up or in and drops you straight into the crew. It has to survive iMessage (opens Safari)
+// and Instagram DMs (Instagram's own browser, where we tell people to hop to Safari), so the code is kept three ways:
+// this page's memory, localStorage, and the address bar while in an app's browser (so "Open in Safari" carries it).
+// Sign-up also sends it, and the database joins the crew when the account is made, even in another browser.
+let inviteCrew = null, linkCrew = '';   // inviteCrew = {name, tag, members} for "You're invited to X"
 {
-  const code = new URLSearchParams(location.search).get('crew');
+  const q = new URLSearchParams(location.search), code = q.get('crew');
   if (code && /^[A-Za-z0-9]{6}$/.test(code)){
-    store.set('pending-crew', code.toUpperCase());
-    history.replaceState(null, '', location.pathname);
+    linkCrew = code.toUpperCase();
+    store.set('pending-crew', linkCrew);
+    if (!inAppBrowser()){ q.delete('crew'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '')); }
   }
 }
+const pendingCrewCode = () => store.get('pending-crew', '') || linkCrew;
+function clearPendingCrew(){ store.set('pending-crew', ''); linkCrew = ''; }
+// Who invited me? Works signed out. Until 028 is pasted it just finds nothing.
+async function lookUpInviteCrew(){
+  const code = pendingCrewCode(); if (!code) return;
+  const r = await db.rpc('crew_invite_info', {p_code: code});
+  inviteCrew = !r.error && r.data && r.data[0] || null;
+  if (!S.me && document.body.classList.contains('signed-out')) render(true);   // only redraw the sign-in screen
+}
+lookUpInviteCrew();
+const crewInviteUrl = c => `${location.origin}${location.pathname}?crew=${c.code}`;
+// Signed in with a crew link waiting: join it (asking first if you're already in another crew)
+async function offerPendingCrew(){
+  const code = pendingCrewCode();
+  if (!code || !S.crew.ready) return;
+  const cur = S.crew.mine;
+  if (cur && cur.code === code){ clearPendingCrew(); toast(`You're already in ${cur.name}.`); return; }
+  const name = inviteCrew ? inviteCrew.name : 'the crew that invited you';
+  if (cur && !confirm(`You're in ${cur.name}. Leave it and join ${name}?`)){ clearPendingCrew(); return; }
+  const r = await db.rpc('join_crew_link', {p_code: code, p_switch: !!cur});
+  clearPendingCrew();
+  if (r.error){
+    // 028 not pasted yet: fall back to the old way (code filled in, tap Join)
+    if (/function|schema cache|does not exist/i.test(r.error.message) && !cur){ S.crewPrefill = code; S.squad = 'crew'; S.tab = 'duels'; render(true); toast('You were invited to a crew. Tap Join.', 5000); }
+    else toast(r.error.message, 5000);
+    return;
+  }
+  logEvent('crew_join', 'link');
+  await loadCrew();
+  S.squad = 'crew'; store.set('squad', 'crew'); S.tab = 'duels'; render(true);
+  const crew = S.crew.mine ? S.crew.mine.name : name;
+  toast(inAppBrowser() ? `You're in ${crew}! For the camera, tap ••• and Open in ${realBrowser()}, then sign in there.` : `You're in ${crew}!`, 6000);
+}
+
 // ---------- app invites (?from=USERNAME): after sign-up, offer to add the friend who sent it ----------
 {
   const from = new URLSearchParams(location.search).get('from');
@@ -4621,15 +4696,6 @@ async function openPendingClip(){
   render(true);
   const el = $('clip-' + id); if (el) el.scrollIntoView({block: 'start'});
 }
-function offerPendingCrew(){
-  const code = store.get('pending-crew', '');
-  if (!code || !S.crew.ready) return;
-  store.set('pending-crew', '');
-  if (S.crew.mine) return;
-  S.crewPrefill = code; S.tab = 'duels'; render(true);
-  toast('You were invited to a crew. Tap Join.', 5000);
-}
-
 // ---------- start ----------
 // Supabase warns against awaiting its own calls inside this callback, so hand off with setTimeout.
 db.auth.onAuthStateChange((event, session) => {
