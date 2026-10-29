@@ -70,7 +70,9 @@ h3{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-
 .mt-chip{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:none;cursor:pointer;text-transform:lowercase}
 .me-chip{display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;border:0;background:none;cursor:pointer;color:var(--ink)}
 .me-chip svg{width:22px;height:22px}
-body.on-feed .top,body.on-judge .top{display:none}
+body.on-feed .top{position:absolute;left:0;right:0;height:0;margin:0;visibility:hidden}
+/* the "waiting for signal" note (outbox.js) floats over the full-screen feed, where posting lands you */
+body.on-feed #outbox-chip{visibility:visible;position:fixed;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;min-height:36px}
 body.signed-out .top{display:none}
 
 /* buttons */
@@ -576,6 +578,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="pass-file" accept="image/*" hidden>
 
+<script src="outbox.js"></script>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -2430,10 +2433,12 @@ async function openCamera(){
   const R = S.rec;
   try {
     stopStream();
+    // Weak signal or low battery: a smaller clip (outbox.js). Worked out when Record opens, so the camera never waits on it.
+    OB.shrinkPlan(myId()).then(p => { R.plan = p; }).catch(() => {});
     R.stream = await navigator.mediaDevices.getUserMedia({
       // 60 fps when the phone allows it: twice the frames means the trick AI loses the rider less.
       // Phones that can't do 60 quietly fall back to 30.
-      video: {facingMode: {ideal: R.facing}, width: {ideal: 1280}, height: {ideal: 720}, frameRate: {ideal: 60}}, audio: false});
+      video: {facingMode: {ideal: R.facing}, width: {ideal: 1280}, height: {ideal: 720}, frameRate: {ideal: (R.plan && R.plan.fps) || 60}}, audio: false});
     R.mode = 'live'; render(true);
   } catch (err){
     toast(err.name === 'NotAllowedError' ? 'Camera blocked. Allow camera access in your browser settings.' : 'Camera error: ' + err.message, 5000);
@@ -2481,7 +2486,8 @@ async function startRecording(){
   R.chunks = []; R.motion = null;
   // 1.5 Mbit/s keeps a 20 s clip near 4 MB (the free database holds about 1 GB of video) and is still sharp at 720p.
   // Set the bitrate even when no type matched, or some phones pick 5+ Mbit/s on their own.
-  R.recorder = new MediaRecorder(R.stream, {videoBitsPerSecond: 1500000, ...(mime ? {mimeType: mime} : {})});
+  // Weak signal, low battery or clips already waiting: 0.9 Mbit/s, so it uploads on one bar (R.plan, outbox.js).
+  R.recorder = new MediaRecorder(R.stream, {videoBitsPerSecond: (R.plan && R.plan.bps) || 1500000, ...(mime ? {mimeType: mime} : {})});
   R.recorder.ondataavailable = e => { if (e.data && e.data.size) R.chunks.push(e.data); };
   R.recorder.onstop = () => {
     const type = (R.recorder.mimeType || mime || 'video/webm').split(';')[0];
@@ -2491,6 +2497,7 @@ async function startRecording(){
     R.motion = motion.stop();
     clearInterval(R.tick); clearTimeout(R.stopTimer);
     stopStream(); R.mode = 'review'; render(true);
+    R.draftSaving = saveDraft();   // on the phone before Post, so closing the app can't lose it
   };
   R.recorder.start();   // one piece at the end: Safari has written broken MP4s when asked for small timed pieces
   if (R.useMotion) motion.start();
@@ -2506,7 +2513,7 @@ function resetRecorder(keepContext){
   if (R.recorder && R.recorder.state === 'recording'){ R.recorder.onstop = null; R.recorder.stop(); }
   clearInterval(R.tick); clearTimeout(R.stopTimer); stopStream(); motion.stop();
   if (R.url) URL.revokeObjectURL(R.url);
-  Object.assign(R, {mode: 'idle', recorder: null, chunks: [], blob: null, url: null, motion: null});
+  Object.assign(R, {mode: 'idle', recorder: null, chunks: [], blob: null, url: null, motion: null, draftSaving: null});
   if (!keepContext) R.context = null;
 }
 function postForm(){
@@ -2577,89 +2584,148 @@ function syncCombo(firstId){
     <div class="hint">In order, after your first trick. A new combo adds half the points of the tricks you add.</div>`;
 }
 
-// ---------- offline outbox ----------
-// No signal on the hill? Clips wait on the phone (in IndexedDB, the browser's own storage)
-// and upload by themselves when the connection comes back.
-const outbox = {
-  _db: null,
-  open(){
-    if (this._db) return this._db;
-    this._db = new Promise((res, rej) => {
-      const r = indexedDB.open('sendit', 1);
-      r.onupgradeneeded = () => r.result.createObjectStore('outbox', {keyPath: 'id'});
-      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-    });
-    return this._db;
-  },
-  async run(mode, fn){
-    const dbh = await this.open();
-    return new Promise((res, rej) => {
-      const tx = dbh.transaction('outbox', mode), req = fn(tx.objectStore('outbox'));
-      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
-    });
-  },
-  add(item){ return this.run('readwrite', s => s.put(item)); },
-  all(){ return this.run('readonly', s => s.getAll()); },
-  remove(id){ return this.run('readwrite', s => s.delete(id)); },
-};
-const looksOffline = err => !navigator.onLine || /fetch|network|load failed|timed? ?out/i.test(String(err && err.message));
-async function queueClip(item){
-  await outbox.add({id: crypto.randomUUID(), recordedAt: new Date().toISOString(), ...item});
-  await updateOutboxChip();
-}
-async function updateOutboxChip(){
-  let n = 0; try { n = (await outbox.all()).length; } catch (e) {}
-  const chip = $('outbox-chip'); if (!chip) return;
-  chip.hidden = !n || !S.me; chip.textContent = `📤 ${n} waiting`;
-}
-let flushing = false;
-async function flushOutbox(){
-  if (flushing || !navigator.onLine || !S.me) return;
-  flushing = true;
-  let sent = 0;
-  try {
-    for (const it of await outbox.all()){
-      try {
-        const clipId = await uploadClip(it.fields, it.blob, it.motion);
-        if (it.kind === 'duel') await duelMove(it.duelId, true, it.trick, clipId);
-        await outbox.remove(it.id); sent++;
-      } catch (err){
-        if (looksOffline(err)) break;                 // still no signal: try again later
-        await outbox.remove(it.id);                   // a real error (e.g. duel moved on): don't retry forever
-        toast(`Couldn't upload a saved clip: ${err.message}`, 5000);
-      }
-    }
-  } catch (e) { /* storage unavailable (private browsing) */ }
-  flushing = false;
-  await updateOutboxChip();
-  if (sent){ toast(`📤 Uploaded ${sent} saved clip${sent > 1 ? 's' : ''}`); await refresh(); }
-}
-window.addEventListener('online', () => flushOutbox());
+// ---------- offline outbox (the logic is in outbox.js, shared with the service worker) ----------
+// No signal on the hill? Every clip is saved on the phone first (IndexedDB), then uploads. If the signal drops it
+// waits and retries by itself (backoff, back in range, app reopened), and a clip only leaves the phone once it's posted.
+const OB = self.StompedOutbox;
+const WAITING_MSG = "Saved on your phone. Waiting for signal, will post when you're back in range.";
+const motionPath = OB.motionPath;   // abc.mp4 -> abc.motion.json
+const outboxApi = () => ({url: SUPABASE_URL, key: SUPABASE_KEY,
+  token: async () => { const s = (await db.auth.getSession()).data.session; return s ? s.access_token : SUPABASE_KEY; },
+  refresh: async () => { const r = await db.auth.refreshSession(); return r.data.session && r.data.session.access_token; }});
+// The service worker uploads with a copy of the current login while the app is closed (outbox.js setAuth).
+db.auth.onAuthStateChange((e, s) => { OB.setAuth(s ? {url: SUPABASE_URL, key: SUPABASE_KEY, token: s.access_token,
+  exp: s.expires_at, uid: s.user.id} : null).catch(() => {}); });
 
-const motionPath = videoPath => videoPath.replace(/\.[^./]+$/, '.motion.json');
-// Upload the recorded video and create the clip. Returns the new clip's id.
-async function uploadClip(fields, blob = S.rec.blob, mot = S.rec.motion){
-  if (!blob || !blob.size) throw new Error('Nothing recorded');
-  if (blob.size > MAX_MB * 1024 * 1024) throw new Error(`Video is over ${MAX_MB} MB. Record a shorter clip.`);
-  const type = blob.type || 'video/webm';
-  const ext = type.includes('mp4') ? 'mp4' : type.includes('quicktime') ? 'mov' : 'webm';
-  const path = `${myId()}/${crypto.randomUUID()}.${ext}`;  // must start with my user id (storage rule)
-  const up = await db.storage.from('clips').upload(path, blob, {contentType: type});
-  if (up.error) throw up.error;
-  const {rider, ...cols} = fields;
-  const ins = rider   // filmed a friend: the database checks you're friends and files it under them (017)
-    ? await db.rpc('post_for_friend', {p_rider: rider, p_trick: cols.trick_id, p_grab: cols.grab, p_resort: cols.resort,
-                                       p_video_path: path, p_combo: cols.combo || []}).then(r => ({...r, data: r.data && {id: r.data}}))
-    : await db.from('clips').insert({...cols, video_path: path}).select('id').single();
-  if (ins.error){ await db.storage.from('clips').remove([path]); throw ins.error; }
-  // The motion log sits next to the video (abc.mp4 -> abc.motion.json). Best effort: storage
-  // refuses JSON until supabase/015_motion.sql has run, and the clip is already posted either way.
-  if (mot) await db.storage.from('clips').upload(motionPath(path),
-    new Blob([JSON.stringify(mot)], {type: 'application/json'}), {contentType: 'application/json'}).catch(() => {});
-  runTrickAI(ins.data.id, blob, trickById(cols.trick_id));   // in the background: the clip is already posted
-  logEvent('clip_posted', rider ? 'for_friend' : trickById(cols.trick_id).category);
-  return ins.data.id;
+async function queueClip(item){
+  if (item.blob.size > MAX_MB * 1024 * 1024) throw new Error(`Video is over ${MAX_MB} MB. Record a shorter clip.`);
+  const it = await OB.save({uid: myId(), ...item});
+  updateOutboxChip();
+  return it;
 }
+let obTimer = null, obSending = '';
+async function updateOutboxChip(){
+  const chip = $('outbox-chip'); if (!chip) return;
+  let list = []; try { if (myId()) list = await OB.waiting(myId()); } catch (e) {}
+  const stuck = list.filter(i => i.stuck).length;
+  chip.hidden = !list.length;
+  chip.textContent = obSending || (stuck === list.length ? `${stuck} didn't post` : `Waiting for signal · ${list.length - stuck}`);
+}
+// Upload what's due. force: ignore the backoff wait (signal back, app opened, a tap). first/only: the clip just posted.
+async function flushOutbox(force = true, first = null, only = false){
+  if (!myId()) return null;
+  clearTimeout(obTimer);
+  let r;
+  try {
+    r = await OB.flush({api: outboxApi(), uid: myId(), force, first, only,
+      onStart: (it, done) => { if (it.id !== first){ obSending = `Posting saved clip${done ? ` (${done + 1})` : ''}…`; updateOutboxChip(); } }});
+  } catch (e){ obSending = ''; updateOutboxChip(); return null; }   // phone storage unavailable (private browsing)
+  obSending = '';
+  for (const it of r.sent){
+    runTrickAI(it.clipId, it.blob, trickById(it.fields.trick_id));   // in the background: the clip is already posted
+    logEvent('clip_posted', it.fields.rider ? 'for_friend' : trickById(it.fields.trick_id).category);
+  }
+  await updateOutboxChip();
+  if (r.nextTry) obTimer = setTimeout(() => flushOutbox(false), Math.max(1000, r.nextTry - Date.now()));
+  if (r.waiting) OB.requestSync();
+  const later = r.sent.filter(it => it.id !== first);
+  if (later.length){
+    toast(`Back in range: posted ${later.length} saved clip${later.length > 1 ? 's' : ''}.`);
+    const lost = later.find(it => it.duelError); if (lost) toast(`Clip posted, but the duel didn't take it: ${lost.duelError}`, 5000);
+    refresh();
+  }
+  if (r.failed.some(it => it.id !== first)) toast("A saved clip didn't post. Tap the note at the top.", 5000);
+  return r;
+}
+// Save the clip on the phone, then try it now. Returns {status: 'posted' | 'waiting', item}. Throws when the server
+// refuses it: the clip goes back to the recorder (and stays saved) so you can fix it and post again.
+async function postSaved(item){
+  const R = S.rec, draftId = await R.draftSaving;
+  let it;
+  try {
+    const prev = draftId ? await OB.get(draftId) : null;   // keeps an upload that already got through
+    it = await queueClip({...(prev || {}), ...item, id: draftId || undefined, stuck: false, attempts: 0, nextTry: 0});
+  } catch (e){
+    if (/MB/.test(e.message)) throw e;
+    // The phone can't store it (private browsing): upload straight from memory, like before.
+    it = {uid: myId(), ...item, memory: true};
+    try { await OB.send(it, outboxApi()); }
+    catch (err){ throw OB.isTransient(err) ? new Error("No signal, and this browser can't save clips. Keep the app open and try again.") : err; }
+    runTrickAI(it.clipId, it.blob, trickById(it.fields.trick_id));
+    logEvent('clip_posted', it.fields.rider ? 'for_friend' : trickById(it.fields.trick_id).category);
+    return {status: 'posted', item: it};
+  }
+  R.draftSaving = null;
+  const r = await flushOutbox(true, it.id, true);
+  flushOutbox(false);   // anything else that's due
+  const sent = r && r.sent.find(x => x.id === it.id);
+  if (sent) return {status: 'posted', item: sent};
+  const now = await OB.get(it.id).catch(() => null);
+  if (now && now.stuck){
+    await OB.put({...now, kind: 'draft', stuck: false, lockedUntil: 0});
+    R.draftSaving = Promise.resolve(now.id); updateOutboxChip();
+    throw new Error(now.lastError || 'the server refused it');
+  }
+  return {status: 'waiting', item: it};
+}
+
+// Filmed but not posted yet: keep a copy on the phone so a dead battery or a closed app doesn't lose the clip.
+// Resolves to the draft's id. One draft per rider: a new recording replaces the last one.
+async function saveDraft(){
+  const R = S.rec, blob = R.blob; if (!blob || !myId()) return null;
+  try {
+    const it = await OB.save({kind: 'draft', uid: myId(), blob, motion: R.motion});
+    await OB.clearDrafts(myId(), it.id);
+    return it.id;
+  } catch (e){ return null; }
+}
+// Retake / close / bail: the rider threw this clip away on purpose.
+function dropDraft(){ const p = S.rec.draftSaving; S.rec.draftSaving = null; if (p) p.then(id => id && OB.remove(id)).catch(() => {}); }
+// Back on Record with a clip that never got posted (app closed, tab switched): put it back in review.
+async function restoreDraft(){
+  const R = S.rec; if (R.mode !== 'idle' || R.context || !myId()) return;
+  let d = null; try { d = await OB.draft(myId()); } catch (e) {}
+  if (!d || S.tab !== 'record' || R.mode !== 'idle' || R.context) return;
+  Object.assign(R, {blob: d.blob, url: URL.createObjectURL(d.blob), motion: d.motion || null, mode: 'review', draftSaving: Promise.resolve(d.id)});
+  render(true);
+  toast('Your last clip is still here. Pick the trick and post it, or retake.', 4000);
+}
+
+// Tapping the note at the top: say what's waiting, or deal with a clip the server refused.
+async function outboxTap(){
+  let list = []; try { list = await OB.waiting(myId()); } catch (e) {}
+  const stuck = list.find(i => i.stuck);
+  if (stuck) return showStuck(stuck);
+  const n = list.length;
+  toast(n ? `${n} clip${n > 1 ? 's' : ''} saved on your phone. Waiting for signal, will post when you're back in range.` : 'All clips posted.', 4500);
+  if (n) flushOutbox();
+}
+function showStuck(it){
+  if ($('stuck-sheet')) return;
+  const sh = document.createElement('section');
+  sh.id = 'stuck-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', "A clip didn't post");
+  sh.innerHTML = `<h3>A clip didn't post</h3><p>${esc(trickById(it.fields && it.fields.trick_id).name || 'Clip')}: ${esc(it.lastError || 'the server refused it')}. It's still saved on your phone.</p>
+    <div class="btns"><button class="btn ghost" data-act="outbox-delete" data-id="${it.id}">Delete</button><button class="btn ghost" data-act="outbox-save" data-id="${it.id}">Save</button><button class="btn primary" data-act="outbox-retry" data-id="${it.id}">Try again</button></div>`;
+  document.body.appendChild(sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+}
+function hideStuck(){ const sh = $('stuck-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
+async function outboxAct(act, id){
+  const it = await OB.get(id).catch(() => null); hideStuck();
+  if (!it) return updateOutboxChip();
+  if (act === 'outbox-retry'){ await OB.put({...it, stuck: false, attempts: 0, nextTry: 0}); toast('Trying again…'); return flushOutbox(); }
+  if (act === 'outbox-save'){ S.saveFile = new File([it.blob], `stomped-clip.${/mp4/.test(it.blob.type) ? 'mp4' : 'webm'}`, {type: it.blob.type || 'video/mp4'}); return saveGo(); }
+  if (!confirm("Delete this clip? It never posted, so the copy on your phone is the only one.")) return;
+  if (it.uploaded && it.path) db.storage.from('clips').remove([it.path]).catch(() => {});
+  await OB.remove(id); toast('Clip deleted'); updateOutboxChip();
+}
+
+window.addEventListener('online', () => flushOutbox());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) flushOutbox(); });
+if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', e => {
+  if (e.data && e.data.type === 'outbox-flush') flushOutbox();
+  if (e.data && e.data.type === 'outbox-changed'){ updateOutboxChip(); if (e.data.sent) refresh(); }
+});
 
 // ---------- trick AI (runs on the filming phone) ----------
 // A JavaScript copy of the laptop AI in sendit-ai/src (spin.py v0.1, spin3d.py v0.5, landed.py v2, verdict.py).
@@ -3112,6 +3178,7 @@ async function openTab(tab, focusId){
   logEvent('tab', tab === 'feed' ? 'feed_' + S.feed.mode : tab);
   if (tab === 'duels'){ try { await loadBoard(); } catch (err){ toast(err.message); } }
   render(true); window.scrollTo(0, 0);
+  if (tab === 'record'){ restoreDraft(); OB.shrinkPlan(myId()).then(p => { S.rec.plan = p; }).catch(() => {}); }   // an unposted clip comes back
   // Links like "Pick your home mountain" land right on the control, not at the top of a long page
   const el = focusId && $(focusId);
   if (el){
@@ -3450,8 +3517,12 @@ async function submitPost(){
   const blob = S.rec.blob, mot = S.rec.motion;
   S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
   try {
-    if (!navigator.onLine) throw new Error('offline');
-    await uploadClip(fields, blob);
+    if (!blob || !blob.size) throw new Error('Nothing recorded');
+    if ((await postSaved({kind: 'post', fields, blob, motion: mot})).status === 'waiting'){
+      resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0); offerSave(blob, fields.trick_id);
+      toast(WAITING_MSG, 5000);
+      return;
+    }
     resetRecorder(); S.postCombo = []; offerSave(blob, fields.trick_id);
     if (rider){   // stay on the camera: you're probably filming the next run too
       toast(`Sent to @${rider.username}. It shows up once they tap Keep.`, 4000);
@@ -3460,14 +3531,6 @@ async function submitPost(){
     toast('Posted. Riders are judging it now.');
     S.tab = 'feed'; S.feed.mode = 'clips'; await refresh(true); window.scrollTo(0, 0);
   } catch (err){
-    if (looksOffline(err) && blob){
-      try {
-        await queueClip({kind: 'post', fields, blob, motion: mot});
-        resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0); offerSave(blob, fields.trick_id);
-        toast("No signal. Saved on your phone, and it uploads when you're back online.", 5000);
-        return;
-      } catch (e) { /* couldn't save it either: fall through to the error */ }
-    }
     console.error(err); toast('Post failed: ' + err.message, 5000);
     b.disabled = false; b.textContent = 'Post';
   } finally { S.busy = false; }
@@ -3524,21 +3587,15 @@ async function sendDuelClip(){
   const fields = {trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]}, blob = S.rec.blob, mot = S.rec.motion;
   S.busy = true; b.disabled = true; b.textContent = 'Uploading…';
   try {
-    if (!navigator.onLine) throw new Error('offline');
-    const clipId = await uploadClip(fields, blob);
-    if (await duelMove(ctx.duelId, true, ctx.kind === 'set' ? ctx.trickId : null, clipId)){
-      toast(ctx.kind === 'set' ? `Sent! ${ctx.otherName} has to match it.` : 'Matched! Their turn to set.');
-      resetRecorder(); await refresh(true); await openDuel(ctx.duelId);
-    } else { b.disabled = false; b.textContent = 'Landed: send it'; }
+    if (!blob || !blob.size) throw new Error('Nothing recorded');
+    const r = await postSaved({kind: 'duel', fields, blob, motion: mot, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
+    const dId = ctx.duelId; resetRecorder();
+    if (r.status === 'waiting') toast("Your attempt is saved on your phone. Waiting for signal, will send when you're back in range.", 5000);
+    else if (r.item.duelError) toast(`Clip posted, but the duel didn't take it: ${r.item.duelError}`, 5000);
+    else toast(ctx.kind === 'set' ? `Sent! ${ctx.otherName} has to match it.` : 'Matched! Their turn to set.');
+    if (r.status === 'posted') await refresh(true);
+    await openDuel(dId);
   } catch (err){
-    if (looksOffline(err) && blob){
-      try {
-        await queueClip({kind: 'duel', fields, blob, motion: mot, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
-        const dId = ctx.duelId; resetRecorder(); await openDuel(dId);
-        toast("No signal. Your attempt is saved and sends when you're back online.", 5000);
-        return;
-      } catch (e) { /* fall through */ }
-    }
     toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.textContent = 'Landed: send it';
   } finally { S.busy = false; }
 }
@@ -3639,7 +3696,8 @@ document.addEventListener('click', async e => {
     case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
     case 'rankup-tap': { const el = $('splash'); if (!el) return; if (el.classList.contains('done')) return closeSplash(); return el._finish && el._finish(); }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
-    case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
+    case 'flush': return outboxTap();
+    case 'outbox-retry': case 'outbox-save': case 'outbox-delete': return outboxAct(act, id);
     case 'close-modal': $('overlay').innerHTML = ''; return;
     case 'install-go': return installGo();
     case 'save-go': return saveGo(b);
@@ -3766,12 +3824,12 @@ document.addEventListener('click', async e => {
       return render(true);
     case 'cam-open': return openCamera();
     case 'cam-flip': if (S.rec.mode === 'recording') return; S.rec.facing = S.rec.facing === 'environment' ? 'user' : 'environment'; return openCamera();
-    case 'cam-close': resetRecorder(true); return render(true);
+    case 'cam-close': dropDraft(); resetRecorder(true); return render(true);
     case 'rec-start': return startRecording();
     case 'rec-stop': if (S.rec.recorder && S.rec.recorder.state === 'recording') S.rec.recorder.stop(); return;
-    case 'retake': resetRecorder(true); return openCamera();
+    case 'retake': dropDraft(); resetRecorder(true); return openCamera();
     case 'combo-del': S.postCombo.splice(Number(id), 1); return syncPost();
-    case 'rec-cancel': { const dId = S.rec.context && S.rec.context.duelId; resetRecorder(); return dId ? openDuel(dId) : render(true); }
+    case 'rec-cancel': { const dId = S.rec.context && S.rec.context.duelId; dropDraft(); resetRecorder(); return dId ? openDuel(dId) : render(true); }
     // friends & duels
     case 'add-friend': return addFriend(id);
     case 'accept-friend': return acceptFriend(id);
@@ -3784,7 +3842,7 @@ document.addEventListener('click', async e => {
     case 'duel-send': return sendDuelClip();
     case 'duel-bail': case 'duel-miss': return bail();
     case 'duel-bail-after': {
-      const ctx = S.rec.context; resetRecorder();
+      const ctx = S.rec.context; dropDraft(); resetRecorder();
       if (await duelMove(ctx.duelId, false, ctx.kind === 'set' ? ctx.trickId : null, null)) toast('Logged as a bail.');
       await refresh(true); return openDuel(ctx.duelId);
     }

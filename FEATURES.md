@@ -84,7 +84,7 @@ Behind the scenes:
   Flips and corks always say to learn them on a trampoline or airbag first.
 - **Mountain conditions** ✅: live weather + new snow for your home mountain on the Feed (Open-Meteo).
 - **Achievements** ✅: 12 badges on profiles (Switch Hitter, Rail Rat, Corkscrew…) from the Trick Book.
-- **Offline uploads** ✅: no signal? Clips save on the phone and upload when you're back online.
+- **Mountain-proof uploads** ✅: every clip is saved on the phone first (even before you tap Post), then uploads. No signal: "Waiting for signal, will post when you're back in range", retrying with backoff, when signal returns, when the app reopens, and on Android even with the app closed. A clip the server refuses is kept (Try again / Save / Delete), never dropped. Weak signal or a low (cold) battery records a smaller clip. Logic: `app/outbox.js`; test: `tests/offline_walk.py`.
 - **Install to home screen** ✅: works like an app and opens with no signal.
 - **Invite friends** ✅ and a short **rank-up** moment.
 
