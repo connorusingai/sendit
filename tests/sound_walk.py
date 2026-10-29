@@ -44,12 +44,11 @@ def main():
         n0 = notes()
         pg.click("[data-act=reward-collect]")
         pg.wait_for_timeout(2200)
-        ok.append(("Collect + rank up make sound", notes() - n0 >= 8))
-        if pg.locator(".rankup").count():
+        ok.append(("Collect + the gate beep make sound", notes() - n0 >= 5))   # 3 collect notes + the 2-note placeholder beep
+        if pg.locator(".gate").count():
+            pg.wait_for_timeout(600)
             pg.click(".ru-go")
             pg.wait_for_timeout(400)
-        pg.mouse.click(195, 420)
-        pg.wait_for_timeout(600)
         pg.click("#acct-chip")      # the gear: account settings
         pg.wait_for_timeout(1000)
         pg.wait_for_selector("#sound-pref", timeout=6000)

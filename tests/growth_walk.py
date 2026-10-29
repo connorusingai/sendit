@@ -51,6 +51,7 @@ def main():
         pg.fill("#auth-user", "newrider")
         pg.fill("#auth-email", "new@example.com")
         pg.fill("#auth-pass", "longenough1")
+        pg.click(".mt-pick [data-k=Eldora]")   # home mountain at signup (10/28)
         pg.check("#auth-agree")
         pg.click("#auth-form button[type=submit]")
         pg.wait_for_timeout(1200)
@@ -65,10 +66,8 @@ def main():
         pg = ctx.new_page()
         pg.on("pageerror", lambda e: w.logs.append(f"PAGEERROR: {e}"))
         pg.goto(w.URL, wait_until="networkidle")
-        pg.wait_for_timeout(1500)
-        pg.mouse.click(195, 420)
-        pg.wait_for_timeout(600)
-        pg.click(".b2-hero")      # the rank card opens your profile
+        pg.wait_for_timeout(2000)
+        pg.click(".base .pass-btn")      # the season pass opens Me
         pg.wait_for_selector(".ach", timeout=6000)
         got = pg.locator(".ach.got b").all_inner_texts()
         ok.append(("Founder badge on an October rider", "Founder" in got))

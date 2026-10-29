@@ -21,7 +21,7 @@ from playwright.sync_api import sync_playwright  # noqa: E402
 
 w.PORT = int(os.environ.get("PORT", 8125))
 w.URL = f"http://127.0.0.1:{w.PORT}/app/"
-w.ME["points"] = int(os.environ.get("POINTS", 105))   # 105 = just crossed into Silver (100)
+w.ME["points"] = int(os.environ.get("POINTS", 105))   # 105 = just crossed into blue (100)
 w.CLIP["points_awarded"] = w.ME["points"]
 VIDEO = sys.argv[1] if len(sys.argv) > 1 else None
 
@@ -44,25 +44,25 @@ def main():
         pg.wait_for_selector("[data-act=reward-collect]", timeout=8000)
         pg.wait_for_timeout(1500)
         pg.click("[data-act=reward-collect]")
-        pg.wait_for_selector(".rankup", timeout=3000)
+        pg.wait_for_selector(".gate", timeout=3000)
         txt = lambda s: pg.locator(s).inner_text() if pg.locator(s).count() else ""
-        ok.append(("rank up opens with the old badge", pg.locator(".rankup .ru-old").count() == 1))
-        ok.append(("banner says NEW TIER", "NEW TIER" in txt(".ru-banner").upper()))
-        ok.append(("name is Silver I", txt(".ru-word").replace("\n", "").strip().upper() == "SILVER I"))
-        ok.append(("says Bronze I -> Silver I", "Bronze I" in txt(".ru-sub") and "Silver I" in txt(".ru-sub")))
+        # The gate (DESIGN.md 10/28): the old pass taps the reader, the light goes green, the SAME pass scans into the next tier
+        ok.append(("rank up opens on the old green pass", "green" in pg.locator(".gate .g-old").inner_html()))
+        ok.append(("...with the next tier underneath it", "blue" in pg.locator(".gate .g-new").inner_html()))
+        ok.append(("says tap in.", txt("#g-word") == "tap in."))
         at = 0
-        for ms, name in [(300, "1-banner"), (1100, "2-charge"), (1580, "3-hit"), (2300, "4-slam"), (3600, "5-done")]:
+        for ms, name in [(300, "1-ready"), (700, "2-tap"), (1000, "3-beep"), (1600, "4-scan"), (2600, "5-done")]:
             pg.wait_for_timeout(ms - at)
             at = ms
             pg.screenshot(path=w.SHOTS / f"rankup-{name}.png")
-        new_op = pg.evaluate("() => +getComputedStyle(document.querySelector('.ru-new')).opacity")
-        ok.append(("new badge showing after the hit", new_op > .9))
-        pg.wait_for_timeout(1500)
-        pg.mouse.click(195, 120)                     # tap the background: skip to end (already ended -> stays)
-        ok.append(("first tap skips to the end, stays open", pg.locator(".rankup.done").count() == 1))
-        pg.click(".ru-go")
-        pg.wait_for_timeout(600)
-        ok.append(("Let's go closes it", pg.locator(".rankup").count() == 0))
+            if name == "3-beep":
+                ok.append(("gate light turns green on the tap", pg.locator(".gate.lit").count() == 1))
+        ok.append(("ends on blue.", txt("#g-word") == "blue."))
+        ok.append(("says how far to black", "to black" in txt("#g-sub")))
+        pg.mouse.click(195, 120)                     # tap the background once it's done: closes
+        pg.wait_for_timeout(500)
+        ok.append(("a tap when it's done closes it", pg.locator(".gate").count() == 0))
+
         ctx.close()
         if VIDEO:
             print("video:", pg.video.path())

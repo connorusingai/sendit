@@ -684,7 +684,7 @@ const S = {
   squad: store.get('squad', 'friends'),
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
-  feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false, scope: store.get('feed-scope', 'mt')},   // mode: 'clips' (watch) or 'judge'; scope: mt / crew / all
+  feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false, scope: store.get('feed-scope', '')},   // mode: 'clips' (watch) or 'judge'; scope: mt / crew / all ('' = your mountain if it has clips, else CU)
   board: {scope: store.get('board-scope', 'mt'), period: 'week', resort: '', rows: [], pass: {}},   // scope: mt / global / friends / crews
   myClips: [], mtRank: null, blocked: new Set(), blockedNames: new Map(), firstRun: null, signupMt: null, clipFilter: 'all', passMenu: false,
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
@@ -1777,12 +1777,30 @@ async function shareClipVideo(id){
   try {
     const r = await fetch(videoUrl(c.video_path)); if (!r.ok) throw new Error('download failed');
     const out = await stampVideo(await r.blob(), S.me.username, clipName(c), p => { const t = $('toast'); if (t && !t.hidden) t.textContent = `Adding the STOMPED stamp… ${p}%`; });
-    const ext = /mp4/.test(out.type) ? 'mp4' : 'webm', file = new File([out], `stomped-${clipName(c).replace(/\W+/g, '-').toLowerCase()}.${ext}`, {type: out.type || 'video/mp4'});
     $('toast').hidden = true;
-    if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file]}); } catch (e) {} return; }
-    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000); toast('Saved to your downloads.');
+    readyToShare(clipFile(out, clipName(c)));
   } catch (err){ toast("Couldn't get that video. Check your signal and try again."); }
+}
+const clipFile = (blob, name) => new File([blob], `stomped-${String(name).replace(/\W+/g, '-').toLowerCase()}.${/mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm'}`, {type: blob.type || 'video/mp4'});
+// Phones only open the share sheet straight after a tap, and stamping takes as long as the clip, so: stamp, then one more tap
+function readyToShare(file){
+  hideSave(); hideInstall(); S.readyFile = file;
+  const sh = document.createElement('section');
+  sh.id = 'save-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Your stamped clip is ready');
+  sh.innerHTML = `<h3>stamped. ready to go.</h3><p>Save it to your camera roll or send it anywhere.${isIOS() ? ' iPhone: tap <b>Save Video</b> in the next sheet.' : ''}</p>
+    <div class="btns"><button class="btn ghost" data-act="save-later">Not now</button><button class="btn primary" data-act="share-ready">Save / share</button></div>`;
+  document.body.appendChild(sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+}
+async function shareReady(){
+  const file = S.readyFile; S.readyFile = null; if (!file) return hideSave();
+  if (navigator.canShare && navigator.canShare({files: [file]})){
+    try { await navigator.share({files: [file]}); } catch (e) { if (e.name === 'AbortError'){ S.readyFile = file; return; } }
+    return hideSave();
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('Saved to your downloads.'); hideSave();
 }
 // ---------- views ----------
 // A clip a friend filmed of you, waiting on Base for Keep / Not me.
@@ -1918,10 +1936,10 @@ const views = {
         <div class="reel-end"><div>${done}</div></div></div></div>`;
     }
     const pinId = F.pin && F.pin.id, ids = F.scope === 'crew' ? crewIds() : null, home = S.me.home_resort;
-    const scope = F.scope === 'mt' && !home ? 'all' : F.scope;
+    const scope = F.scope === 'mt' && !home ? 'all' : F.scope || (home && F.rows.some(c => c.resort === home) ? 'mt' : 'all');
     const inScope = c => c.id === pinId || scope === 'all' || (scope === 'mt' ? c.resort === home : ids.has(c.user_id));
     const waiting = (S.myClips || []).filter(c => c.status === 'pending');   // your own clips still being called come first
-    const seen = new Set(), list = [...waiting, ...F.rows].filter(c => !seen.has(c.id) && seen.add(c.id) && shownClip(c) && inScope(c));
+    const seen = new Set(), list = [...waiting, ...F.rows.filter(inScope)].filter(c => !seen.has(c.id) && seen.add(c.id) && shownClip(c));
     const tabs = [home && ['mt', mtTab(), ''], ['crew', 'crew', ''], ['all', 'CU', 'cu']].filter(Boolean);
     let end;
     if (!F.loaded) end = '<p class="sub">Loading…</p>';
@@ -3005,6 +3023,7 @@ function offerSave(blob, trickId){
   if (!blob || store.get('save-ask', 'on') === 'off' || $('save-sheet')) return;
   const ext = /mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm';
   S.saveFile = new File([blob], `stomped-${(trickById(trickId).name || 'clip').replace(/\W+/g, '-').toLowerCase()}.${ext}`, {type: blob.type || 'video/mp4'});
+  S.saveTrick = trickById(trickId).name || '';
   const sh = document.createElement('section');
   sh.id = 'save-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Save this clip to your camera roll');
   sh.innerHTML = `<h3>Save to camera roll?</h3><p>Keep your own copy of this clip.${isIOS() ? ' Tap <b>Save</b>, then <b>Save Video</b>.' : ''}</p>
@@ -3013,16 +3032,13 @@ function offerSave(blob, trickId){
   hideInstall(); document.body.appendChild(sh);
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
 }
-function hideSave(){ S.saveFile = null; const sh = $('save-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
-async function saveGo(){
+function hideSave(){ S.saveFile = null; S.readyFile = null; const sh = $('save-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
+// Save adds the STOMPED stamp first (BRAND-DECISIONS.md: exported clips carry it), then hands over with one more tap
+async function saveGo(b){
   const file = S.saveFile; if (!file) return hideSave();
-  if (navigator.canShare && navigator.canShare({files: [file]})){
-    try { await navigator.share({files: [file]}); } catch (e) { if (e.name === 'AbortError') return; }   // closed the sheet: leave Save up
-    return hideSave();
-  }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  toast('Saved to your downloads.'); hideSave();
+  if (b){ b.disabled = true; b.textContent = 'Stamping… 0%'; }
+  const out = await stampVideo(file, S.me.username, S.saveTrick || '', p => { if (b) b.textContent = `Stamping… ${p}%`; });
+  readyToShare(out === file ? file : clipFile(out, S.saveTrick || 'clip'));
 }
 function hideInstall(){ const sh = $('install-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
 async function installGo(){
@@ -3624,7 +3640,8 @@ document.addEventListener('click', async e => {
     case 'flush': toast(navigator.onLine ? "Uploading saved clips…" : "Still no signal. They'll send automatically."); return flushOutbox();
     case 'close-modal': $('overlay').innerHTML = ''; return;
     case 'install-go': return installGo();
-    case 'save-go': return saveGo();
+    case 'save-go': return saveGo(b);
+    case 'share-ready': return shareReady();
     case 'save-later': return hideSave();
     case 'save-never': store.set('save-ask', 'off'); toast('Okay. Turn it back on in ⚙ settings.'); return hideSave();
     case 'install-later': store.set('install-later', String(Date.now() + 3 * 864e5)); return hideInstall();   // ask again in 3 days

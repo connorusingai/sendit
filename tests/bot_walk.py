@@ -87,8 +87,8 @@ def main():
             pg.wait_for_timeout(800)
 
         def judge_yes():
-            tab("feed")
-            pg.click("[data-act=feed-mode][data-k=judge]")  # Clips | Judge tabs on the feed (10/27)
+            tab("lodge")
+            pg.click(".calls")  # Base: "N clips need your call" opens the judge screen (10/28)
             pg.wait_for_timeout(500)
             card = pg.locator(".reel-item.judging").first
             card.scroll_into_view_if_needed()
@@ -109,8 +109,8 @@ def main():
             pg.wait_for_timeout(3400)
 
         def judge_undo():
-            tab("feed")
-            pg.click("[data-act=feed-mode][data-k=judge]")
+            tab("lodge")
+            pg.click(".calls")
             pg.wait_for_timeout(500)
             card = pg.locator(".reel-item.judging").first
             card.scroll_into_view_if_needed()
@@ -141,6 +141,8 @@ def main():
             # After posting: 'Save to camera roll?' and Save hands the video to the share sheet
             sheet = pg.locator("#save-sheet").count() == 1
             pg.click("[data-act=save-go]") if sheet else None
+            pg.wait_for_selector("[data-act=share-ready]", timeout=15000)   # the STOMPED stamp goes on first (10/28)
+            pg.click("[data-act=share-ready]")
             pg.wait_for_timeout(600)
             shared = pg.evaluate("window.__shared")
             ok = sheet and len(shared) == 1 and len(shared[0]) == 1 and shared[0][0].split('|')[1].startswith('video/') and int(shared[0][0].split('|')[2]) > 0

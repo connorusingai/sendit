@@ -69,10 +69,13 @@ def handle(route, req):
 
 
 def serve():
-    h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT))
+    # A free port every run: on Windows two servers can share a fixed port, and then another worktree's server answers
+    global PORT, URL
     h = type("Quiet", (http.server.SimpleHTTPRequestHandler,), {"log_message": lambda *a: None})
     h = functools.partial(h, directory=str(ROOT))
-    srv = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), h)
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), h)
+    PORT = srv.server_address[1]
+    URL = f"http://127.0.0.1:{PORT}/app/"
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
 
@@ -97,26 +100,26 @@ def main():
         if reward:
             pg.click("[data-act=reward-collect]")
             pg.wait_for_timeout(600)
-        if pg.locator(".rankup").count():   # the rank up waits for Let's go
+        if pg.locator(".gate").count():   # the rank up waits for Let's go
+            pg.wait_for_timeout(2500)
             pg.click(".ru-go")
             pg.wait_for_timeout(500)
-        pg.mouse.click(195, 420)      # close the rank splash if it's up
-        pg.wait_for_timeout(2000)     # let the badge pop and the stamp slam
-        # Base v2 (DESIGN.md): rank hero, trick of the day, Judge + Trick book; the crew list is gone (Connor 10/25)
-        print("lodge first:", pg.locator(".lodge.base2").count() == 1, "| hero:", pg.locator(".b2-hero").count() == 1,
-              "| crew list gone:", pg.locator(".b2-stamp").count() == 0, "| next to land:", pg.locator(".b2-next .b2-item").count(),
-              "| rider gone:", pg.locator("#base-rider").count() == 0)
+        pg.wait_for_timeout(1500)
+        # Base (DESIGN.md 10/28): the season pass, today's trick + Film it, clips to call, the week in 3 numbers
+        print("base first:", pg.locator(".base").count() == 1, "| pass:", pg.locator(".base .pass").count() == 1,
+              "| film it:", pg.locator(".today .btn").count() == 1, "| calls:", pg.locator(".calls").count() == 1,
+              "| week:", pg.locator(".week3 .num").count())
         pg.screenshot(path=SHOTS / "2-lodge.png")
-        # Rank card opens your profile: rank bar, ladder, badges, trick book, clips
-        pg.click(".b2-hero")
+        # The pass opens Me: pass, 6 stats, your bag, contact sheet, badges
+        pg.click(".base .pass-btn")
         pg.wait_for_timeout(1200)
-        print("profile:", pg.locator(".prof-head").count() == 1, "| rank bar:", pg.locator(".prof-rank").count() == 1,
-              "| ladder:", pg.locator(".ladder .rung").count(), "| badges:", pg.locator(".ach").count())
+        print("me:", pg.locator(".me .pass").count() >= 1, "| stats:", pg.locator(".six .num").count(),
+              "| bag:", pg.locator(".bag").count() == 1, "| badges:", pg.locator(".ach").count())
         pg.screenshot(path=SHOTS / "4-profile.png", full_page=True)
-        # Squad: Friends / Ranks / Crew / Duels
+        # Crew: board + friends / your crew / duels
         pg.click("#tabs [data-tab=duels]")
         pg.wait_for_timeout(900)
-        for k in ["friends", "ranks", "crew", "duels"]:
+        for k in ["friends", "crew", "duels"]:
             pg.click(f".squad-seg [data-k={k}]")
             pg.wait_for_timeout(700)
             pg.screenshot(path=SHOTS / f"5-squad-{k}.png")
@@ -127,8 +130,10 @@ def main():
             pg.wait_for_timeout(900)
             if tab != "lodge":
                 pg.screenshot(path=SHOTS / f"6-{tab}.png")
-        # Trick book from Base
-        pg.click(".b2-row [data-act=book]")
+        # Trick book from Me
+        pg.click("#tabs [data-act=me]")
+        pg.wait_for_timeout(1200)
+        pg.click(".bag [data-act=book]")
         pg.wait_for_timeout(2500)
         pg.screenshot(path=SHOTS / "7-book.png")
         pg.click("#tabs [data-tab=lodge]")

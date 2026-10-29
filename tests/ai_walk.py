@@ -53,9 +53,8 @@ def main():
         for sel in ("[data-act=reward-collect]", ".ru-go"):     # the welcome-back reward + rank up come first
             if pg.locator(sel).count():
                 pg.click(sel); pg.wait_for_timeout(2200)
-        pg.click("#tabs [data-tab=feed]"); pg.wait_for_timeout(500)
-        if pg.locator("[data-act=feed-mode][data-k=judge]").count():
-            pg.click("[data-act=feed-mode][data-k=judge]"); pg.wait_for_timeout(800)
+        pg.click("#tabs [data-tab=lodge]"); pg.wait_for_timeout(500)
+        pg.click(".calls"); pg.wait_for_timeout(800)   # Base: "N clips need your call" opens the judge screen
         ok.append(("judging works as before", pg.locator(".reel-item.judging").count() >= 1))
         ok.append(("the AI stays in the background: no AI hint for judges", pg.locator(".reel-item.judging", has_text="% sure").count() == 0
                    and "clip_ai" not in " ".join(reads)))

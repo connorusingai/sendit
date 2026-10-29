@@ -41,8 +41,8 @@ def main():
         pg.click("[data-act=ob-sport][data-k=ski]"); pg.wait_for_timeout(300)
         ok.append(("step 2: home mountain", pg.locator("[data-act=ob-resort]").count() > 3))
         pg.screenshot(path=w.SHOTS / "onboard-2-resort.png")
-        ok.append(("popular list before typing (Eldora + Wachusett)", pg.locator("[data-act=ob-resort][data-k=Eldora]").count() == 1
-                   and pg.locator("[data-act=ob-resort][data-k=Wachusett]").count() == 1))
+        ok.append(("short list before typing (Eldora ... Steamboat)", pg.locator("[data-act=ob-resort][data-k=Eldora]").count() == 1
+                   and pg.locator("[data-act=ob-resort][data-k=Steamboat]").count() == 1))
         pg.fill("#ob-search", "smugglers notch"); pg.wait_for_timeout(200)
         ok.append(("search ignores punctuation (smugglers notch -> Smugglers' Notch)", pg.locator(".ob-mt", has_text="Smugglers").count() == 1))
         pg.fill("#ob-search", "utah"); pg.wait_for_timeout(200)
@@ -54,10 +54,12 @@ def main():
         last.scroll_into_view_if_needed()
         ok.append(("...and Skip is still reachable", last.is_visible()))
         pg.screenshot(path=w.SHOTS / "onboard-2-search.png")
-        pg.click("[data-act=ob-resort][data-k=Loon]"); pg.wait_for_timeout(1500)
+        pg.click("[data-act=ob-resort][data-k=Loon]"); pg.wait_for_timeout(3000)
         ok.append(("home mountain saved", any("PATCH /rest/v1/profiles" in x and "Loon" in x for x in w.writes)))
-        ok.append(("setup closed, on Base", pg.locator(".onboard").count() == 0 and pg.locator(".lodge.base2").count() == 1))
-        ok.append(("Start here list on Base", pg.locator(".lodge .start").count() == 1))
+        ok.append(("no clips to call yet: straight to the green pass", pg.locator(".gate").count() == 1 and "green" in pg.locator("#g-word").inner_text()))
+        pg.screenshot(path=w.SHOTS / "onboard-3-pass.png")
+        pg.click(".ru-go"); pg.wait_for_timeout(600)
+        ok.append(("setup closed, on Base", pg.locator(".onboard").count() == 0 and pg.locator(".base").count() == 1))
         ok.append(("Record hint showing", pg.locator("#rec-hint").count() == 1))
         pg.screenshot(path=w.SHOTS / "onboard-3-base.png")
 
@@ -66,7 +68,7 @@ def main():
         pg.mouse.click(30, 300); pg.wait_for_timeout(300)
         ok.append(("hint gone after a tap", pg.locator("#rec-hint").count() == 0))
         pg.click("#tabs [data-act=me]"); pg.wait_for_timeout(1200)
-        ok.append(("Profile tab opens your profile", pg.locator(".prof-head").count() == 1))
+        ok.append(("Me tab opens your pass", pg.locator(".me .pass").count() >= 1))
         pg.screenshot(path=w.SHOTS / "onboard-4-profile.png")
 
         pg.reload(wait_until="networkidle"); pg.wait_for_timeout(2500)

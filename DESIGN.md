@@ -1,62 +1,93 @@
-# Stomped design: "Gloss + Edge"
+# Stomped design: "the ski edit"
 
-Locked 2026-10-24 (Connor: "yes thats better"). Reference mockup: style E in `prototype/style-compare.html`
-(https://claude.ai/artifact/Jf6t6ZCAGFWCmTcwowZ3yU). Inspiration: Liftoff's glossy rank badges, made edgier.
-Do not copy Liftoff's layout or features. Every screen gets built to this file; if something here is wrong, change this file first.
+Locked 2026-10-28 (Connor's picks, `../sendit-splash/BRAND-DECISIONS.md`). Mock: "FINAL picks" page of
+https://claude.ai/artifact/6fy5qomGP5Kx13kcqoHRu2. Replaces "Gloss + Edge" (dark, shields, metal ranks).
+Every screen follows this file. If something here is wrong, change this file first.
 
 ## Feel
-A polished game with a ski-edit attitude. Glossy rewards on a dark, gritty base. Not cartoon, not a website.
+A friend's ski edit on a phone: cool snow, a camcorder REC corner, one orange stamp. Chill park rat, not a game HUD.
 
 ## Color
 | Token | Hex | Use |
 |---|---|---|
-| bg | #0a0b10 | page, near-black with a cool tint |
-| panel | #15161d | flat panels |
-| line | #1d1f28 | dividers |
-| ink | #eef1f7 | main text |
-| mute | #80849a | secondary text |
-| hot | #ff5a1f | the one accent: DROP IN, stamps, 2x, trick of the day edge |
-| bail | #5d6070 | bailed stamp, disabled |
+| snow | #edf1f4 | page background, with faint film grain over everything (opacity .08) |
+| paper | #f7f9fa | tab bar, sheets, inputs' surroundings |
+| ink | #111316 | text, dark screens (feed, judge, camera) |
+| mute | #5b6168 | secondary text (5.5:1 on snow) |
+| line | #cfd6dc | hairline rules between rows |
+| hot | #ff5a1f | the ONE accent: Film it, Landed, Collect, the STOMPED stamp, active tab underline |
+| rec | #ff3b1f | the REC dot only |
 
-Tier colors live only on rank badges and rank glows:
-Bronze #c8793a · Silver #aab4c2 · Gold #f2b81f · Platinum #2fc4ac · Diamond #7d70ff · Legend #e96ae0.
+Tier colors live only on season passes and their trail marks (see below). Never a second accent.
 
 ## Type
-- Display: **Big Shoulders Display 900**, uppercase, italic for rank names and trick names.
-- UI/body: **Figtree 400–700** (what the app has used since day 1).
-- Labels and numbers: **JetBrains Mono 700**, 10–11px, letter-spacing .12em, uppercase ("CREW / LAST 24H").
+- Display: **Archivo** at width 125%, weight 800-900, lowercase ("land it. prove it.", "landed or bailed?", "your bag").
+- Wordmark: **STOMPED**, all caps, Archivo 900 wide.
+- UI/body: **Figtree** 400-700.
+- **JetBrains Mono 700** only for the REC timecode and numbers on passes (840 / 1,000 PTS, NO. 0042). Not for labels.
 
-## Shapes
-- Cut corners, not round ones: clip-path bevels on panels and buttons. Radius only on avatars.
-- Angled (skewed -20°) progress bars with a glow in the tier color.
-- Accent edge: a 3px `hot` left border marks the featured panel (trick of the day).
-- Light film grain over the whole screen (opacity ~.14).
+## Film bits
+- REC dot + timecode (`REC 00:00:07`) top-left on clips, the camera and the reward.
+- Camcorder corner brackets on clips and photos (the `brk` element).
+- The **STOMPED stamp**: rough orange ink box, rotated about -7°, on landed clips, the reward, the contact sheet and
+  shared exports. Bails get a grey BAILED stamp.
 
-## Badges (the main art)
-- A shield with blade wings and a dark rim, glossy facets (light top, mid, dark bottom), and a white core.
-- A glow drop-shadow in the tier color on large badges.
-- The code version is `#blade` in the mockup. For the real app, make polished PNG/SVG files per tier (6 tiers × large/small).
+## Season pass (the rank)
+A modern RFID-style card (340 × 214): tier gradient, faint topo lines + two ridge silhouettes, a light sheen,
+STOMPED + season (26/27) on top, the tier's trail mark, the tier name, @handle, an ID photo the rider picks
+(REC dot + brackets on it, blank until they pick one), a progress bar, points to the next tier, "NO. 0042 · ELDORA".
 
-## Motion (where the game feel lives)
-- Rank badge pops in (scale .4 → 1, overshoot).
-- Progress bar fills on load (1.2s ease-out).
-- STOMPED stamp slams onto the newest crew trick (scale 2.4 → 1, rotated -6°).
-- Buttons press down on tap. Respect prefers-reduced-motion.
+| Tier | Points | Mark | Card | Foil edge |
+|---|---|---|---|---|
+| green | 0 | ● | #34b36c → #155e38 | none |
+| blue | 100 | ■ | #4386ea → #173f94 | none |
+| black | 300 | ◆ | #363c43 → #131518 | none |
+| double black | 600 | ◆◆ | #2c3137 → #0d0f11 | silver |
+| triple black | 1000 | ◆◆◆ | #25292e → #070809 + holo sheen | gold |
+| park rat | 1500 | orange park-sign oval | #1d2024 → #060708 + holo sheen, orange topo + name | orange |
 
-## Home (Base) layout
-1. Top bar: logo, streak, points.
-2. Rank hero: big badge + rank name + angled bar + "N pts to next".
-3. Trick of the day panel (hot edge, 2x).
-4. Crew / last 24h: each row = small rank badge, @name, trick + place, STOMPED/BAILED stamp.
-5. DROP IN button (hot, bevelled) above the tab bar.
+- No divisions (no I/II/III). Names are just the color, never "green circle".
+- Old ranks map 1:1 on the same thresholds: Bronze→green, Silver→blue, Gold→black, Platinum→double black,
+  Diamond→triple black, Legend→park rat.
+- **Season reset (soft):** on opening day everyone drops about one tier (`start_season()` in supabase/024) and last
+  season's pass stays on the profile as a trophy.
+- **Rank-up:** the pass dips and taps the gate reader, the light turns green with the gate beep (placeholder until
+  Connor records the real one, to-do #10: drop it in `app/sounds/gate.mp3`), a vibration (only with sounds on), then a
+  scan line sweeps across and the SAME pass becomes the next tier. No new card.
+- No real brands (Ikon, Red Bull...) anywhere.
 
-## Never
-- No cartoon rider in the middle, no drawn scenery, no looped video background.
-- No rounded "card everywhere" look, no emoji as icons, no second accent color.
+## Layout
+Tabs: **base / feed / record / crew / me** (record = orange dot in a ring, in the middle).
+- **Base:** your pass big at the top → today's trick as one line + Film it → "N clips need your call" → your week in
+  3 numbers (landed, bailed, #rank at your mountain). No clip replays on Base.
+- **Feed:** full screen, one clip at a time, REC + brackets, tabs = your mountain / crew / CU. A clip that still needs
+  calls shows Bailed / Landed right on it; the rider's name stays hidden until you call it (judging stays fair).
+- **Judge:** video on top, a thin progress line, then "@rider · trick · mountain", "landed or bailed?", two 64px
+  buttons, "Your call is anonymous." + Skip.
+- **Reward:** your clip, the STOMPED stamp slams on, +points huge, the bar to your next pass, Collect (60px).
+- **Crew:** "eldora, this week", tabs mountain / CU / friends (+ crews), a podium of the top-3 passes, then the list.
+  Below: friends / your crew / duels.
+- **Me:** your pass, 6 stats, "your bag" (landed tricks solid, next ones dashed), then your clips as a contact sheet
+  with STOMPED / BAILED stamps. Settings live behind the gear.
+- **Landing:** Connor's backflip full-bleed with REC + the stamp, "land it. prove it.", Make an account.
+- **First run:** ski or snowboard → home mountain (picked at signup from the short list) → call 3 clips → green pass.
 
-## App icon (2026-10-28, Connor's pick)
-An orange S drawn as a ski run with corduroy lines, coming toward you from white mountains, inside a rounded orange
-frame on near-black. Made in ChatGPT from Connor's sketch and chosen by him ("this one's my favorite").
-Master: `app/icons/icon-source.png` (1254px original). Every size is cut from it; the maskable and the profile
-picture shrink it onto the same background so circle crops never cut the frame. Don't redraw it in code
-(10/28: code-drawn versions looked bad). Rank badges keep the shield; the app icon never uses it again.
+## Glove-proof
+Main moves are **at least 56px tall with real gaps** (12px+): Film it, Landed / Bailed (64 on Judge), Collect (60),
+Post / Retake, Keep it, the shutter (80). Everything else that's tappable is at least 44px.
+
+## Shapes + motion
+- Flat. Hairline rules between rows, not cards everywhere. 4px corners on buttons, 6px on the few cards.
+- Stamps slam in (scale 2.2 → 1), the pass scans, the reward shakes once. Respect prefers-reduced-motion.
+
+## Voice
+Chill park rat: short, lowercase, like texting your crew ("stomped. +140 pts", "needs your call. what's yours?").
+No hype words, no emoji spam.
+
+## Never (no AI tells)
+No glow, no floating particles, no confetti, no little code-font labels, no gradient text, no second accent,
+no cartoon rider, no shields.
+
+## App icon
+Connor's ski-run S (2026-10-28 pick), recolored: safety-orange S + frame, ink mountains, snow background.
+Every size in `app/icons/` was recolored from the same art (not redrawn). `og.png` = the landing photo + "land it. prove it.".

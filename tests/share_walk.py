@@ -92,8 +92,8 @@ def main():
         pg.goto(w.URL + "?from=pal", wait_until="networkidle"); pg.wait_for_timeout(4000)
         ok.append(("invite, signed in: Squad shows @pal to add", pg.locator("#view").inner_text().count("pal") > 0 and pg.locator("[data-act=add-friend], [data-act=addfriend], [data-act=friend-add]").count() > 0))
         pg.screenshot(path=w.SHOTS / "share-3-invited.png")
-        pg.mouse.click(195, 420); pg.evaluate("document.querySelector('#tabs [data-tab=lodge]').click()"); pg.wait_for_timeout(800)
-        pg.evaluate("window.__shared = null; document.querySelector('.b2-invite').click()"); pg.wait_for_timeout(400)
+        pg.evaluate("document.querySelector('#tabs [data-tab=lodge]').click()"); pg.wait_for_timeout(800)
+        pg.evaluate("window.__shared = null; document.querySelector('.base-extra [data-act=invite]').click()"); pg.wait_for_timeout(400)
         d = pg.evaluate("window.__shared") or {}
         ok.append(("Base invite button shares ?from= link", "?from=walker" in d.get("url", "")))
         print("   invite text:", d.get("text"))
