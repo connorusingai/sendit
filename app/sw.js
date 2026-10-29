@@ -4,7 +4,7 @@
 // - Code libraries and fonts from CDNs: use the saved copy (they never change at a given version).
 // - Database calls and videos (Supabase): never cached. They always go to the network.
 
-const CACHE = 'sendit-v2';
+const CACHE = 'sendit-v3';   // v3: the 10/28 rebrand (new icons)
 const SHELL = ['./', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
