@@ -63,13 +63,15 @@ h3{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-
 .disp{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:1}
 
 /* header */
-.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px;
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;height:calc(56px + env(safe-area-inset-top,0px));
   padding-top:env(safe-area-inset-top,0px);margin-inline:-16px;padding-inline:16px;background:var(--snow)}
 .brand{font-family:var(--display);font-stretch:125%;font-weight:900;font-size:18px;letter-spacing:-.01em;color:var(--ink)}
 .brand span{color:inherit}
-.mt-chip{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:none;cursor:pointer;text-transform:lowercase}
+.mt-chip{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:none;cursor:pointer;text-transform:lowercase;max-width:min(52vw,220px);min-width:0}
 .me-chip{display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;border:0;background:none;cursor:pointer;color:var(--ink)}
 .me-chip svg{width:22px;height:22px}
+.mt-chip .mt-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.top>div{min-width:0}
 body.on-feed .top{position:absolute;left:0;right:0;height:0;margin:0;visibility:hidden}
 /* the "waiting for signal" note (outbox.js) floats over the full-screen feed, where posting lands you */
 body.on-feed #outbox-chip{visibility:visible;position:fixed;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;min-height:36px}
@@ -188,7 +190,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .land{margin-inline:-16px;padding-bottom:30px}
 .land-hero{position:relative;height:min(548px,66vh);overflow:hidden;background:#cfd6dc}
 .land-hero img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;display:block}
-.land-top{position:absolute;top:0;left:0;right:0;height:56px;padding:env(safe-area-inset-top,0px) 16px 0;display:flex;align-items:center;justify-content:space-between}
+.land-top{position:absolute;top:0;left:0;right:0;height:calc(56px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 16px 0;display:flex;align-items:center;justify-content:space-between}
 .land-top .brand{color:#fff;font-size:22px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
 .land-top button{color:#fff;font-weight:600;font-size:15px;background:none;border:0;min-height:44px;padding:0 4px;text-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer}
 .land-hero .rec{position:absolute;top:calc(60px + env(safe-area-inset-top,0px));left:16px}
@@ -249,8 +251,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .reel-item .poster{position:absolute;inset:0;display:grid;place-items:center;background:var(--dark-2)}
 .reel-item .poster .tname{font-family:var(--display);font-stretch:125%;font-weight:800;font-size:40px}
 .reel-item .shade{position:absolute;left:0;right:0;bottom:0;height:360px;background:linear-gradient(rgba(17,19,22,0),rgba(17,19,22,.88));pointer-events:none}
-.reel-item .brk{left:12px;right:12px;top:64px;bottom:300px}
-.reel-item > .rec{position:absolute;top:76px;left:26px;z-index:2}
+.reel-item .brk{left:12px;right:12px;top:calc(64px + env(safe-area-inset-top,0px));bottom:300px}
+.reel-item > .rec{position:absolute;top:calc(76px + env(safe-area-inset-top,0px));left:26px;z-index:2}
 .feed-tabs{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));left:0;right:0;z-index:5;display:flex;justify-content:center;gap:24px;pointer-events:none}
 .feed-tabs button{pointer-events:auto;background:none;border:0;min-height:44px;padding:0 0 6px;font-weight:600;font-size:16px;color:rgba(255,255,255,.75);
   border-bottom:3px solid transparent;text-shadow:0 1px 3px rgba(0,0,0,.5);cursor:pointer;text-transform:lowercase}
@@ -275,16 +277,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .reel-end{height:60%;display:grid;place-items:center;padding:24px;scroll-snap-align:start;color:var(--on-dark);text-align:center}
 .reel-end .sub,.reel-end p{color:var(--on-dark-2)}
 .reel-end .btn{min-height:var(--btn)}
-.verdict{position:absolute;top:120px;right:20px;z-index:2;transform:rotate(-7deg);width:150px}
+.verdict{position:absolute;top:calc(120px + env(safe-area-inset-top,0px));right:20px;z-index:2;transform:rotate(-7deg);width:150px}
 .verdict.bailed{width:130px}
 
 /* Judge: video on top, the call underneath */
 .judge-item{display:grid;grid-template-rows:1fr auto;background:var(--dark)}
 .judge-item .jv{position:relative;overflow:hidden;min-height:0}
 .judge-item .jv video{position:absolute;inset:0}
-.judge-item .jv .rec{position:absolute;top:58px;left:16px}
-.judge-item .jv .brk{left:10px;right:10px;top:50px;bottom:14px}
-.jtop{position:absolute;top:0;left:0;right:0;z-index:4;height:56px;padding:env(safe-area-inset-top,0px) 16px 0;display:flex;align-items:center;gap:22px}
+.judge-item .jv .rec{position:absolute;top:calc(58px + env(safe-area-inset-top,0px));left:16px}
+.judge-item .jv .brk{left:10px;right:10px;top:calc(50px + env(safe-area-inset-top,0px));bottom:14px}
+.jtop{position:absolute;top:0;left:0;right:0;z-index:4;height:calc(56px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 16px 0;display:flex;align-items:center;gap:22px}
 .jtop button{background:none;border:0;min-height:44px;color:#fff;font-weight:600;font-size:16px;opacity:.85;padding:0;border-bottom:3px solid transparent;text-shadow:0 1px 3px rgba(0,0,0,.45);cursor:pointer}
 .jtop button.on{opacity:1;font-weight:700;border-bottom-color:var(--hot)}
 .jprog{height:6px;background:rgba(255,255,255,.18)}
@@ -2979,7 +2981,7 @@ function render(force = false){
   if (!signedIn){ document.body.classList.remove('on-feed', 'on-judge'); $('view').innerHTML = views.auth(); return; }
   const meTab = S.tab === 'profile' && S.profile && S.profile.id === myId();
   $('brand').textContent = meTab ? '@' + S.me.username : 'STOMPED';
-  $('me-chip').innerHTML = S.me.home_resort ? `${esc(mtTab())}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>` : 'pick mountain';
+  $('me-chip').innerHTML = S.me.home_resort ? `<span class="mt-name">${esc(mtTab())}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>` : 'pick mountain';
   $('acct-chip').innerHTML = GEAR_IC;
   const judgeCount = judgeQueue().length;
   const duelCount = S.duels.filter(d => d.status === 'active' && d.turn === myId()).length
