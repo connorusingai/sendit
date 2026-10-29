@@ -519,6 +519,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 @media (prefers-reduced-motion:reduce){.gate.step2 .g-new{clip-path:none}}
 @keyframes scan{0%{left:0;opacity:1}100%{left:100%;opacity:1}}
 .gate .g-old,.gate .g-new{transition:none}
+.gate.done .g-new{clip-path:none}
+.gate.done .g-scan,.gate.done .g-old{visibility:hidden}
 .splash{position:fixed;inset:0;z-index:50;background:var(--snow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px 16px}
 .splash .hint{margin-top:10px}
 
