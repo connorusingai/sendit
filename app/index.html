@@ -257,7 +257,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .feed-tabs button{pointer-events:auto;background:none;border:0;min-height:44px;padding:0 0 6px;font-weight:600;font-size:16px;color:rgba(255,255,255,.75);
   border-bottom:3px solid transparent;text-shadow:0 1px 3px rgba(0,0,0,.5);cursor:pointer;text-transform:lowercase}
 .feed-tabs button.on{color:#fff;font-weight:700;border-bottom-color:var(--hot)}
-.feed-tabs button.cu{text-transform:none}
 .fi-info{position:absolute;left:16px;right:72px;bottom:24px;z-index:2;display:grid;gap:8px}
 .fi-info .who{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
 .fi-info .who .avatar{width:32px;height:32px}
@@ -691,8 +690,8 @@ const S = {
   squad: store.get('squad', 'friends'),
   friends: [], duels: [], duelId: null, duelMoves: {}, duelSport: null, duelTrick: null, watchMove: null,
   search: {q: '', results: null},
-  feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false, scope: store.get('feed-scope', '')},   // mode: 'clips' (watch) or 'judge'; scope: mt / crew / all ('' = your mountain if it has clips, else CU)
-  board: {scope: store.get('board-scope', 'mt'), period: 'week', resort: '', rows: [], pass: {}},   // scope: mt / global / friends / crews
+  feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false, scope: store.get('feed-scope', '')},   // mode: 'clips' (watch) or 'judge'; scope: mt / crew / all ('' = your mountain if it has clips, else all)
+  board: {scope: store.get('board-scope', 'global'), period: 'week', resort: '', rows: [], pass: {}},   // scope: global (Everyone) / mt / friends / crews (crews lives inside the Friends tab)
   myClips: [], mtRank: null, blocked: new Set(), blockedNames: new Map(), firstRun: null, signupMt: null, clipFilter: 'all', passMenu: false,
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
@@ -1930,7 +1929,7 @@ const views = {
   },
 
   feed(){
-    // Feed (A): full screen, one clip at a time. Tabs: your mountain / crew / CU. Clips that still need calls carry Bailed / Landed.
+    // Feed (A): full screen, one clip at a time. Tabs: your mountain / crew / all. Clips that still need calls carry Bailed / Landed.
     // Judge mode (from Base "clips need your call", and the first run): video up top, the call underneath.
     const F = S.feed, J = S.judge;
     if (F.mode === 'judge'){
@@ -1949,7 +1948,7 @@ const views = {
     const inScope = c => c.id === pinId || scope === 'all' || (scope === 'mt' ? c.resort === home : ids.has(c.user_id));
     const waiting = (S.myClips || []).filter(c => c.status === 'pending');   // your own clips still being called come first
     const seen = new Set(), list = [...waiting, ...F.rows.filter(inScope)].filter(c => !seen.has(c.id) && seen.add(c.id) && shownClip(c));
-    const tabs = [home && ['mt', mtTab(), ''], ['crew', 'crew', ''], ['all', 'CU', 'cu']].filter(Boolean);
+    const tabs = [home && ['mt', mtTab(), ''], ['crew', 'crew', ''], ['all', 'all', '']].filter(Boolean);
     let end;
     if (!F.loaded) end = '<p class="sub">Loading…</p>';
     else if (F.more) end = '<p class="sub">Loading more…</p>';
@@ -1992,15 +1991,16 @@ const views = {
     return `<div class="rec-page"><h2>${title}</h2>${ctxLine}${body}</div>`;
   },
 
-  // Crew (A): mountain / CU / friends board with a podium of the top 3 passes, then your crew, friends and duels.
+  // Crew (A): everyone / mountain / friends board (crews inside Friends) with a podium of the top 3 passes, then your crew, friends and duels.
   duels(){
     if (S.duelId) return duelDetail();
     const b = S.board, home = S.me.home_resort;
-    const scopes = [home && ['mt', mtShort(home)], ['global', 'CU'], ['friends', 'Friends'], S.crew.ready && ['crews', 'Crews']].filter(Boolean);
-    const where = b.scope === 'mt' ? mtTab() : b.scope === 'global' ? 'CU' : b.scope;
+    const scopes = [['global', 'Everyone'], home && ['mt', mtShort(home)], ['friends', 'Friends']].filter(Boolean);
+    const where = b.scope === 'mt' ? mtTab() : b.scope === 'global' ? 'everyone' : b.scope;
+    const inFriends = b.scope === 'friends' || b.scope === 'crews';
     const head = `<div class="crew-h">${esc(where)}, ${b.period === 'week' ? 'this week' : 'this season'}</div>
-      <div class="seg" role="group" aria-label="Which board">${scopes.map(([k, l]) => `<button class="${b.scope === k ? 'on' : ''}" data-act="scope" data-k="${k}">${esc(l)}</button>`).join('')}</div>
-      <div class="row" style="justify-content:flex-end"><button class="linkish" data-act="period" data-k="${b.period === 'week' ? 'all' : 'week'}">${b.period === 'week' ? 'show the whole season' : 'show this week'}</button></div>`;
+      <div class="seg" role="group" aria-label="Which board">${scopes.map(([k, l]) => `<button class="${b.scope === k || (k === 'friends' && inFriends) ? 'on' : ''}" data-act="scope" data-k="${k}">${esc(l)}</button>`).join('')}</div>
+      <div class="row" style="justify-content:flex-end">${inFriends && S.crew.ready ? `<button class="linkish" data-act="scope" data-k="${b.scope === 'crews' ? 'friends' : 'crews'}">${b.scope === 'crews' ? 'show friends' : 'show crews'}</button>` : ''}<button class="linkish" data-act="period" data-k="${b.period === 'week' ? 'all' : 'week'}">${b.period === 'week' ? 'show the whole season' : 'show this week'}</button></div>`;
     const incoming = S.friends.filter(f => f.status === 'pending' && f.incoming);
     const myTurn = S.duels.filter(d => d.status === 'active' && d.turn === myId()).length;
     const sq = ['friends', 'crew', 'duels'].includes(S.squad) ? S.squad : 'friends';

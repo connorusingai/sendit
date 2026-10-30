@@ -6,7 +6,7 @@ What it checks:
   1. A clip that got called landed shows the STOMPED moment; Collect leads into the rank-up (pass taps the gate).
   2. Base: the season pass, today's trick + Film it, "clips need your call", the week in 3 numbers.
   3. Judge: video on top, landed or bailed?, and the stamp after a call.
-  4. Feed: full screen, mountain / crew / CU tabs, Bailed / Landed on clips that still need calls.
+  4. Feed: full screen, mountain / crew / all tabs, Bailed / Landed on clips that still need calls.
   5. Crew: podium of 3 passes + the list. Me: pass, 6 stats, your bag, contact sheet. Settings. Record.
   6. Someone else's pass: report + block. The landing page and the signup mountain pick.
   7. First run: ski or snowboard, mountain, call 3 clips, then the green pass.
@@ -191,7 +191,7 @@ def main():
         pg.click("#tabs [data-tab=feed]")
         pg.wait_for_timeout(1200)
         check("feed: full screen, header hidden", pg.locator(".top").is_hidden())
-        check("feed: eldora / crew / CU", pg.locator(".feed-tabs").inner_text().split() == ["eldora", "crew", "CU"], pg.locator(".feed-tabs").inner_text().split())
+        check("feed: eldora / crew / all", pg.locator(".feed-tabs").inner_text().split() == ["eldora", "crew", "all"], pg.locator(".feed-tabs").inner_text().split())
         check("feed: REC + brackets", pg.locator(".reel-item .rec").count() > 0 and pg.locator(".reel-item .brk").count() > 0)
         check("feed: Bailed / Landed on a clip that needs calls", pg.locator(".has-calls .fi-calls .call").count() >= 2)
         check("feed: on-clip calls glove size", tall(pg, ".has-calls .fi-calls .call") >= 56, tall(pg, ".has-calls .fi-calls .call"))
@@ -202,7 +202,14 @@ def main():
         # Crew
         pg.click("#tabs [data-tab=duels]")
         pg.wait_for_timeout(1200)
-        check("crew: title", "eldora, this week" in pg.locator(".crew-h").inner_text(), pg.locator(".crew-h").inner_text())
+        check("crew: title", "everyone, this week" in pg.locator(".crew-h").inner_text().lower(), pg.locator(".crew-h").inner_text())
+        board_tabs = pg.locator('.seg[aria-label="Which board"]')
+        check("crew: everyone / eldora / friends, no CU", board_tabs.inner_text().lower().split() == ["everyone", "eldora", "friends"], board_tabs.inner_text())
+        board_tabs.locator("[data-k=friends]").click()
+        pg.wait_for_timeout(300)
+        check("crew: friends tab opens", "friends, this week" in pg.locator(".crew-h").inner_text().lower(), pg.locator(".crew-h").inner_text())
+        pg.locator('.seg[aria-label="Which board"] [data-k=global]').click()
+        pg.wait_for_timeout(300)
         check("crew: podium of 3 passes", pg.locator(".podium .pass").count() == 3)
         check("crew: ranked list", pg.locator(".board li").count() >= 1)
         pg.screenshot(path=SHOTS / "rebrand-8-crew.png", full_page=True)
