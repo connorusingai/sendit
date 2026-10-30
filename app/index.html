@@ -333,6 +333,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .big-cam svg{display:none}
 .cam > video[controls]{object-fit:contain}
 #post-form .btns .btn{min-height:var(--btn)}
+/* Live camera takes the whole screen: no tabs beside the stop button */
+body.cam-on .top,body.cam-on .tabs,body.cam-on .rec-page > h2,body.cam-on .rec-page > .sub{display:none}
+body.cam-on .cam{position:fixed;inset:0;z-index:40;max-height:none;aspect-ratio:auto;border-radius:0}
+body.cam-on .cam .timer{top:calc(14px + env(safe-area-inset-top,0px))}
+body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.cam-ctx{position:absolute;top:calc(52px + env(safe-area-inset-top,0px));left:16px;right:16px;text-align:center;color:#fff;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+/* Review: small preview so the form starts on screen, Post always in reach above the tabs */
+.cam.review{aspect-ratio:auto;height:24vh}
+#post-form .btns{position:sticky;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px));z-index:2;background:var(--paper);padding:10px 0}
+.cant-reach{display:grid;gap:14px;align-content:center;min-height:calc(100vh - 80px);padding-top:env(safe-area-inset-top,0px)}
+.cant-reach h2{margin:0}
+.cant-reach p{margin:0;color:var(--ink-2)}
+.cant-reach .btn{min-height:var(--btn)}
+.cant-reach .linkish{justify-self:start}
 
 /* Crew */
 .crew-h{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:1;font-size:34px;margin:18px 0 14px}
@@ -1850,6 +1864,12 @@ const daysOnSnow = clips => new Set(clips.map(c => dayKey(c.created_at))).size;
 const mtTab = () => S.me.home_resort ? mtShort(S.me.home_resort).toLowerCase() : '';
 
 const views = {
+  cantReach(){
+    return `<div class="cant-reach"><h2>can't reach stomped.</h2>
+      <p>You're still signed in. Could be the signal. Trying again by itself.</p>
+      <button class="btn primary" data-act="retry-load">Try again</button>
+      <button class="linkish" data-act="load-signout">Sign out</button></div>`;
+  },
   // Base (A): your pass big, today's trick + Film it, clips that need your call, your week in 3 numbers. No clip replays here.
   lodge(){
     const jq = judgeQueue(), mine = S.myClips || [], wk = mine.filter(c => Date.parse(c.created_at) > weekAgo());
@@ -1972,14 +1992,15 @@ const views = {
     if (!canRecord) body = `<div class="cam"><div class="cam-empty"><div>
         <strong>camera not available</strong>
         <p>This browser can't record here. Open Stomped from getstomped.app in Safari or Chrome.</p></div></div></div>`;
-    else if (R.mode === 'review') body = `<div class="cam"><video src="${R.url}" controls playsinline loop autoplay muted></video></div>
+    else if (R.mode === 'review') body = `<div class="cam review"><video src="${R.url}" controls playsinline loop autoplay muted></video></div>
       ${ctx ? duelReviewForm(ctx) : postForm()}`;
     else if (R.mode === 'live' || R.mode === 'recording') body = `<div class="cam">
         <video id="rec-live" autoplay muted playsinline></video>${brackets()}
         <div class="timer ${R.mode === 'recording' ? 'live' : ''}" id="rec-timer">${R.mode === 'recording' ? 'REC 0.0s' : `max ${MAX_SECONDS}s`}</div>
+        ${ctx ? `<div class="cam-ctx">${ctx.kind === 'set' ? 'Setting' : 'Matching'} ${esc(trickById(ctx.trickId).name)} vs ${esc(ctx.otherName)}</div>` : ''}
         <div class="controls">
           <button class="cam-side" data-act="cam-close" aria-label="Close camera">${ic('x', 24)}</button>
-          <button class="shutter ${R.mode === 'recording' ? 'stop' : ''}" data-act="${R.mode === 'recording' ? 'rec-stop' : 'rec-start'}" aria-label="Record or stop"></button>
+          <button class="shutter ${R.mode === 'recording' ? 'stop' : ''}" data-act="${R.mode === 'recording' ? 'rec-stop' : 'rec-start'}" aria-label="${R.mode === 'recording' ? 'Stop recording' : 'Start recording'}"></button>
           <button class="cam-side" data-act="cam-flip" aria-label="Flip camera">${ic('turn', 24)}</button>
         </div></div>`;
     else body = `${ctx ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
@@ -1988,6 +2009,7 @@ const views = {
         <strong>tap to film</strong>
         <span>Up to ${MAX_SECONDS} seconds. Have a friend film you, or prop your phone up.</span></div></div>${brackets()}</div>
       ${ctx ? '<button class="linkish" data-act="rec-cancel" style="margin-top:12px">Cancel duel attempt</button>' : ''}`;
+    if (R.mode === 'review' && !ctx) return `<div class="rec-page">${body}</div>`;
     return `<div class="rec-page"><h2>${title}</h2>${ctxLine}${body}</div>`;
   },
 
@@ -2507,9 +2529,9 @@ async function startRecording(){
   if (R.useMotion) motion.start();
   R.startedAt = Date.now(); R.mode = 'recording';
   // Update just the button and timer, so the live preview keeps running
-  const shutter = document.querySelector('.shutter'); shutter.classList.add('stop'); shutter.dataset.act = 'rec-stop';
+  const shutter = document.querySelector('.shutter'); shutter.classList.add('stop'); shutter.dataset.act = 'rec-stop'; shutter.setAttribute('aria-label', 'Stop recording');
   const timer = $('rec-timer'); timer.classList.add('live');
-  R.tick = setInterval(() => { timer.textContent = `● ${((Date.now() - R.startedAt) / 1000).toFixed(1)}s / ${MAX_SECONDS}s`; }, 100);
+  R.tick = setInterval(() => { timer.textContent = `${((Date.now() - R.startedAt) / 1000).toFixed(1)}s / ${MAX_SECONDS}s`; }, 100);
   R.stopTimer = setTimeout(() => { if (R.recorder && R.recorder.state === 'recording') R.recorder.stop(); }, MAX_SECONDS * 1000);
 }
 function resetRecorder(keepContext){
@@ -2536,7 +2558,7 @@ function postForm(){
       <div class="field"><label class="label" for="post-grab">Grab</label>
         <select id="post-grab">${sp.grabs.map(g => `<option>${g}</option>`).join('')}</select></div>
     </div>
-    <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick"></select></div>
+    <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick" required></select></div>
     <div class="field" id="post-combo" hidden></div>
     <div class="field"><label class="label" for="post-resort">Resort</label>
       <select id="post-resort" required>${S.me.home_resort ? '' : '<option value="" selected disabled>Where did you ride?</option>'}${
@@ -2562,12 +2584,13 @@ function syncPost(){
   const cat = $('post-cat'); if (!cat) return;
   if (S.postPreset && sportOf(trickById(S.postPreset)) === S.sport) cat.value = trickById(S.postPreset).category;
   const sel = $('post-trick'), prev = S.postPreset || sel.value;
-  sel.innerHTML = tricksFor(S.sport, cat.value)
+  // No default trick: a wrong label costs judges' time and the rider's points, so it's always a real choice
+  sel.innerHTML = '<option value="" disabled selected>Pick your trick</option>' + tricksFor(S.sport, cat.value)
     .map(t => `<option value="${t.id}">${S.landed.has(t.id) ? '✓ ' : ''}${esc(t.name)}${isTotd(t.id) ? ' 🔥' : ''}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   S.postPreset = null;
   syncCombo(cat.value === 'Rails' ? sel.value : null);
-  const p = sel.value ? payout(sel.value, $('post-grab').value, S.postCombo) : {pts: 0, why: ''};
+  const p = sel.value ? payout(sel.value, $('post-grab').value, S.postCombo) : {pts: 0, why: 'Pick a trick to see what it pays'};
   $('post-pts').textContent = p.pts;
   $('post-why').textContent = p.why;
 }
@@ -2978,7 +3001,7 @@ function render(force = false){
   const signedIn = !!(S.session && S.me);
   $('tabbar').hidden = !signedIn; $('me-chip').hidden = !signedIn; $('acct-chip').hidden = !signedIn;
   document.body.classList.toggle('signed-out', !signedIn);
-  if (!signedIn){ document.body.classList.remove('on-feed', 'on-judge'); $('view').innerHTML = views.auth(); return; }
+  if (!signedIn){ document.body.classList.remove('on-feed', 'on-judge', 'cam-on'); $('view').innerHTML = S.session && S.loadFailed ? views.cantReach() : views.auth(); return; }
   const meTab = S.tab === 'profile' && S.profile && S.profile.id === myId();
   $('brand').textContent = meTab ? '@' + S.me.username : 'STOMPED';
   $('me-chip').innerHTML = S.me.home_resort ? `<span class="mt-name">${esc(mtTab())}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>` : 'pick mountain';
@@ -2995,6 +3018,7 @@ function render(force = false){
       <svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}${badge ? `<span class="badge">${badge}</span>` : ''}</button>`;
   }).join('');
   document.body.classList.toggle('on-feed', S.tab === 'feed');
+  document.body.classList.toggle('cam-on', S.tab === 'record' && ['live', 'recording'].includes(S.rec.mode));
   // Don't rebuild screens that are mid-use: the reel, the camera, or the post form
   if (!force && ((['judge', 'feed'].includes(S.tab) && $('reel')) || (S.tab === 'record' && S.rec.mode !== 'idle'))) return;
   const keep = {}; KEEP.forEach(id => { const el = $(id); if (el) keep[id] = el.value; });
@@ -3190,6 +3214,7 @@ function closeSplash(){
   s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; showRecHint(); }, 200);
 }
 async function refresh(force = false){
+  const wasFailed = S.loadFailed;
   try {
     await loadAll();
     await loadFeed();
@@ -3198,8 +3223,15 @@ async function refresh(force = false){
     if (S.tab === 'profile' && S.profile) await loadProfile(S.profile.id);
     if (S.tab === 'duels' && S.duelId) await loadDuelMoves(S.duelId);
     if (S.tab === 'book' && S.book) await loadBook(S.book.id, S.book.name);
-  } catch (err){ console.error(err); toast(/fetch|network|load failed|timeout|offline/i.test(err.message) ? err.message : "Couldn't load the latest. It retries by itself in a few seconds."); }
-  render(force);
+  } catch (err){
+    console.error(err);
+    if (S.me) toast(/fetch|network|load failed|timeout|offline/i.test(err.message) ? err.message : "Couldn't load the latest. It retries by itself in a few seconds.");
+  }
+  // Signed in but nothing loaded yet: the can't-reach screen, never the signed-out page. Retries until it works.
+  S.loadFailed = !!(S.session && !S.me);
+  render(force || wasFailed);
+  if (S.loadFailed){ clearTimeout(S.retryTimer); S.retryTimer = setTimeout(() => refresh(true), 5000); }
+  else if (wasFailed) enterApp();
 }
 
 async function openTab(tab, focusId){
@@ -3860,6 +3892,8 @@ document.addEventListener('click', async e => {
     case 'cam-open': return openCamera();
     case 'cam-flip': if (S.rec.mode === 'recording') return; S.rec.facing = S.rec.facing === 'environment' ? 'user' : 'environment'; return openCamera();
     case 'cam-close': dropDraft(); resetRecorder(true); return render(true);
+    case 'retry-load': return refresh(true);
+    case 'load-signout': clearTimeout(S.retryTimer); return db.auth.signOut();
     case 'rec-start': return startRecording();
     case 'rec-stop': if (S.rec.recorder && S.rec.recorder.state === 'recording') S.rec.recorder.stop(); return;
     case 'retake': dropDraft(); resetRecorder(true); return openCamera();
@@ -4057,6 +4091,8 @@ async function openPendingClip(){
   const el = $('clip-' + id); if (el) el.scrollIntoView({block: 'start'});
 }
 // ---------- start ----------
+// Runs once the first load works (right after sign-in, or later if the first try couldn't reach the database).
+async function enterApp(){ await applySignupMt(); const setup = showOnboarding(); if (!setup) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); if (!setup){ offerInviter(); setTimeout(offerInstall, 6000); } }
 // Supabase warns against awaiting its own calls inside this callback, so hand off with setTimeout.
 db.auth.onAuthStateChange((event, session) => {
   setTimeout(async () => {
@@ -4064,7 +4100,7 @@ db.auth.onAuthStateChange((event, session) => {
     S.session = session;
     if (!now){ S.me = null; seenStatus = null; S.tab = 'lodge'; S.splashDone = false; render(true); return; }
     if (event === 'PASSWORD_RECOVERY') S.splashDone = true;   // the new-password box beats the rank splash
-    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me){ await applySignupMt(); const setup = showOnboarding(); if (!setup) showSplash(); flushOutbox(); offerPendingCrew(); openPendingClip(); if (!setup){ offerInviter(); setTimeout(offerInstall, 6000); } } }
+    if (was !== now){ S.tab = 'lodge'; await refresh(true); if (S.me) await enterApp(); }
     if (event === 'PASSWORD_RECOVERY') showNewPassword();
   }, 0);
 });
