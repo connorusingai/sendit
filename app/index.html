@@ -510,34 +510,48 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .reward .rw-why{font-size:15px;color:var(--mute)}
 .reward .rw-next{display:grid;gap:8px;margin-top:14px}
 .reward .rw-next .row{font-size:13px;color:var(--mute)}
+.reward .rw-next.up .bar{height:12px}
+.reward .rw-next.up .bar i{transition:none}
+.reward .rw-flash{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0}
+.reward.crossed .rw-flash{animation:rw-flash .7s ease-out both}
+.reward.crossed .rw-next .row span:first-child{font-family:var(--display);font-stretch:125%;font-weight:900;font-size:26px;line-height:1;transform-origin:left center;animation:rw-pop .5s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes rw-flash{0%{opacity:0}15%{opacity:.75}100%{opacity:0}}
+@keyframes rw-pop{0%{transform:scale(2.2);opacity:0}100%{transform:none;opacity:1}}
 .reward .rw-go{margin-top:20px;min-height:60px;font-size:18px;width:100%}
 .shake{animation:shake .4s}
 @keyframes shake{20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(2px,0)}}
 
-/* rank-up: the pass taps the reader, the gate goes green, the same pass turns into the next tier */
-.gate{position:fixed;inset:0;z-index:62;background:var(--snow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px 16px;overflow:hidden}
-.gate .g-word{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;font-size:40px;line-height:1;text-align:center}
-.gate .g-sub{color:var(--ink-2);text-align:center}
-.gate .g-card{position:relative;width:min(340px,88vw);aspect-ratio:340/214}
-.gate .g-card .pass{position:absolute;inset:0;width:100%;max-width:none}
-.gate .g-new{clip-path:inset(0 100% 0 0)}
-.gate .g-scan{position:absolute;top:-6%;bottom:-6%;left:0;width:3px;background:#fff;box-shadow:0 0 0 1px rgba(17,19,22,.15);opacity:0}
-.gate .g-reader{width:min(220px,60vw);height:110px;border-radius:10px;background:var(--dark);display:grid;place-items:center;position:relative}
-.gate .g-reader::before{content:"";width:60%;height:8px;border-radius:4px;background:#3a4047}
-.gate .g-light{position:absolute;top:14px;right:16px;width:14px;height:14px;border-radius:50%;background:#5a2a20}
-.gate.lit .g-light{background:#2fd06b}
-.gate .g-go{min-height:var(--btn);min-width:200px;font-size:17px}
-.gate.step1 .g-card{transform:translateY(46px) scale(.96)}
-@media (prefers-reduced-motion:no-preference){
-  .gate .g-card{transition:transform .45s cubic-bezier(.3,1.3,.5,1)}
-  .gate.step2 .g-new{transition:clip-path .9s linear;clip-path:inset(0 0 0 0)}
-  .gate.step2 .g-scan{animation:scan .9s linear forwards}
-}
-@media (prefers-reduced-motion:reduce){.gate.step2 .g-new{clip-path:none}}
-@keyframes scan{0%{left:0;opacity:1}100%{left:100%;opacity:1}}
-.gate .g-old,.gate .g-new{transition:none}
-.gate.done .g-new{clip-path:none}
-.gate.done .g-scan,.gate.done .g-old{visibility:hidden}
+/* rank-up (approved mock, 10/30): the pass lifts to the TAP PASS reader, the light goes green with a flash, a scan line turns
+   the SAME pass into the next tier, RANK UP slams on. Tap skips to the end. */
+.gate{position:fixed;inset:0;z-index:62;background:var(--dark);color:var(--on-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;overflow:hidden}
+.gate .g-flash{position:absolute;inset:0;background:rgba(47,211,107,.16);opacity:0;pointer-events:none;animation:ru-flash 1s ease-out 1.22s both}
+.gate .g-stage{position:relative;width:300px;height:540px;flex:none}
+.gate .g-reader{position:absolute;left:70px;top:0;width:160px;height:170px;animation:ru-bump .2s ease-out 1.09s both}
+.gate .g-light{fill:#3a4047;animation:ru-green .17s linear 1.22s both}
+.gate .g-card{position:absolute;left:0;top:230px;width:300px;height:189px;animation:ru-tap 1.53s cubic-bezier(.3,0,.3,1) .51s both}
+.gate .g-in{position:relative;width:100%;height:100%;animation:ru-pop .6s ease-out 3.49s both}
+.gate .g-card .pass{position:absolute;inset:0;width:100%;max-width:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55))}
+.gate .g-new{animation:ru-wipe 1.2s cubic-bezier(.4,0,.2,1) 2.3s both}
+.gate .g-scan{position:absolute;top:-4px;bottom:-4px;width:4px;border-radius:2px;background:#fff;animation:ru-line 1.2s cubic-bezier(.4,0,.2,1) 2.3s both}
+.gate .g-stamp{position:absolute;right:-10px;top:375px;width:230px;height:84px;animation:ru-stamp .48s cubic-bezier(.3,0,.2,1) 3.83s both}
+.gate .g-text{position:absolute;left:0;right:0;top:470px;display:grid;gap:8px;text-align:center;animation:ru-fade .7s ease-out 4.4s both}
+.gate .g-word{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;font-size:40px;line-height:1}
+.gate .g-sub{color:var(--on-dark-2)}
+.gate .g-go{min-height:var(--btn);width:min(358px,100%);flex:none;font-size:17px;animation:ru-up .7s ease-out 4.4s both}
+@keyframes ru-tap{0%{transform:translateY(0) scale(1)}38%{transform:translateY(-196px) scale(.9) rotate(-3deg)}44%,62%{transform:translateY(-188px) scale(.9) rotate(-3deg)}100%{transform:translateY(0) scale(1)}}
+@keyframes ru-bump{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes ru-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes ru-line{0%{left:-6px;opacity:0}3%{opacity:1}95%{opacity:1}100%{left:300px;opacity:0}}
+@keyframes ru-pop{0%,100%{transform:scale(1)}40%{transform:scale(1.05)}}
+@keyframes ru-green{from{fill:#3a4047}to{fill:#2fd36b}}
+@keyframes ru-flash{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+@keyframes ru-stamp{0%{transform:scale(2.4) rotate(-8deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
+@keyframes ru-fade{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes ru-up{from{transform:translateY(14px);opacity:0;visibility:hidden}to{transform:none;opacity:1;visibility:visible}}
+.gate.done *{animation:none!important}
+.gate.done .g-light{fill:#2fd36b}
+.gate.done .g-stamp{transform:rotate(-8deg)}
+.gate.done .g-flash,.gate.done .g-scan,.gate.done .g-old{visibility:hidden}
 .splash{position:fixed;inset:0;z-index:50;background:var(--snow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px 16px}
 .splash .hint{margin-top:10px}
 
@@ -1131,9 +1145,9 @@ function totdResetsIn(){
 const SEASON = '26/27';
 function rankInfo(value, table){
   const t = table.find(x => value >= x.min), i = table.indexOf(t), next = i > 0 ? table[i - 1] : null;
-  if (!next) return {tier: t, div: 0, label: t.name, pct: 100, toNext: 0, nextLabel: null, next: null};
+  if (!next) return {tier: t, div: 0, label: t.name, pct: 100, toNext: 0, nextLabel: null, next: null, value};
   const span = next.min - t.min, into = value - t.min;
-  return {tier: t, div: 0, label: t.name, pct: into / span * 100, toNext: next.min - value, nextLabel: next.name, next};
+  return {tier: t, div: 0, label: t.name, pct: into / span * 100, toNext: next.min - value, nextLabel: next.name, next, value};
 }
 // Pass art per tier: background gradient, foil edge (silver / gold / orange on the top three), holo sheen
 const PASS_ART = {
@@ -1400,7 +1414,7 @@ function noticeResults(before){
       if (seenStatus[c.id] !== 'pending' || c.status === 'pending') continue;
       const name = clipName(c);
       if (c.status === 'verified'){
-        const a = rankInfo(before ? before.points : 0, TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
+        const a = rankInfo(before ? before.points : Math.max(0, S.me.points - (c.points_awarded || 0)), TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
         showReward(c, a.label !== b.label ? {from: a, to: b} : null);
       } else toast(`The community didn't verify your ${name}`, 4500);
     }
@@ -1466,18 +1480,18 @@ async function loadGate(){
   const a = sfxCtx(); if (!a || GATE.buf || GATE.tried) return; GATE.tried = true;
   try { const r = await fetch('sounds/gate.mp3'); if (r.ok) GATE.buf = await a.decodeAudioData(await r.arrayBuffer()); } catch (e) {}
 }
-// The STOMPED moment: your clip, the stamp slams on, points count up, the bar to your next pass. A rank-up follows Collect.
+// The STOMPED moment: your clip, the stamp slams on, points count up and the bar climbs (breaking into the next rank on a rank-up). The tap follows Collect.
 function showReward(c, rankUp){
-  const pts = c.points_awarded || 0, r = rankInfo(S.me.points, TRICK_TIERS);
+  const pts = c.points_awarded || 0, r = rankUp ? rankUp.from : rankInfo(S.me.points, TRICK_TIERS);
   $('overlay').innerHTML = `<div class="reward" id="reward" role="dialog" aria-label="Stomped: your clip was called landed">
     <div class="rw-shot">${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}" autoplay muted loop playsinline></video>` : ''}${brackets()}<span class="rec">${recCode(hashNum(c.id))}</span></div>
     <div class="rw-stamp">${stampSVG('STOMPED', '#ff5a1f', '#edf1f4')}</div>
-    <div class="rw-body reward-card">
+    ${rankUp ? `<div class="rw-flash" style="background:${PASS_ART[rankUp.to.tier.key].g[0]}"></div>` : ''}<div class="rw-body reward-card">
       <div class="rw-pts"><b>${pts ? '+<span id="reward-n">0</span>' : 'repeat'}</b><span>${pts ? 'pts' : 'already in your bag'}</span></div>
       <span class="rw-trick">${esc(clipName(c))}${c.totd ? ', double points day' : ''}</span>
       <span class="rw-why">Riders called it landed.</span>
-      <div class="rw-next"><div class="row"><span>${esc(r.label)}</span><span>${r.nextLabel ? `${r.toNext} to ${esc(r.nextLabel)}` : 'top of the mountain'}</span></div>
-        <div class="bar"><i style="width:${Math.max(2, r.pct)}%"></i></div></div>
+      <div class="rw-next ${rankUp ? 'up' : ''}"><div class="row"><span id="rw-rank">${esc(r.label)}</span><span id="rw-left">${r.nextLabel ? `${r.toNext} to ${esc(r.nextLabel)}` : 'top of the mountain'}</span></div>
+        <div class="bar"><i id="rw-bar" style="width:${Math.max(2, r.pct)}%${rankUp ? `;background:${PASS_ART[r.tier.key].g[0]}` : ''}"></i></div></div>
       <button class="btn primary rw-go" data-act="reward-collect">Collect</button>
     </div></div>`;
   S.rewardRankUp = rankUp;
@@ -1485,7 +1499,32 @@ function showReward(c, rankUp){
   if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
   buzz([25, 40, 25]);
   sfx('stomp');
-  if (pts){ let n = 0; const num = $('reward-n'), step = () => { n = Math.min(pts, n + Math.ceil(pts / 28)); if (num) num.textContent = n; if (n < pts) requestAnimationFrame(step); }; step(); }
+  if (!pts) return;
+  // Points count up. On a rank-up the bar fills, breaks through into the next rank with a hit, and keeps climbing as that rank's bar.
+  const dur = rankUp ? 1600 : 800, need = rankUp ? rankUp.from.toNext : 0, to = rankUp && rankUp.to;
+  el._at = ms => {
+    const n = Math.min(pts, Math.ceil(pts * Math.min(1, ms / dur)));
+    $('reward-n').textContent = n;
+    if (!rankUp) return;
+    const bar = $('rw-bar'), left = $('rw-left');
+    if (n < need){
+      bar.style.width = `${rankUp.from.pct + (100 - rankUp.from.pct) * n / need}%`;
+      left.textContent = `${need - n} to ${to.label}`;
+      return;
+    }
+    if (!el.classList.contains('crossed')){
+      el.classList.add('crossed');
+      $('rw-rank').textContent = to.label;
+      bar.style.background = PASS_ART[to.tier.key].g[0];
+      el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+      buzz([40, 30, 80]); sfx('stomp');
+    }
+    bar.style.width = `${Math.max(2, to.pct * (pts > need ? (n - need) / (pts - need) : 1))}%`;
+    left.textContent = to.nextLabel ? `${to.toNext + pts - n} to ${to.nextLabel}` : 'top of the mountain';
+  };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return el._at(dur);
+  const t0 = performance.now(), tick = () => { if ($('reward') !== el) return; const t = performance.now() - t0; el._at(t); if (t < dur) requestAnimationFrame(tick); };
+  tick();
 }
 // Vibrate (Android; iPhones have no vibration for websites). Only after a tap, and never when sounds are off.
 function buzz(p){
@@ -3180,34 +3219,35 @@ function showSplash(){
   if (S.splashDone) return;
   S.splashDone = true;
 }
-// Rank-up (BRAND-DECISIONS.md): the pass taps the reader, the gate light goes green with the beep, then the SAME pass
-// turns into the next tier as a scan line sweeps across it. No new card. The first green pass starts from a blank one.
+// Rank-up: the mock's tap (see the .gate styles for the timing). The first green pass starts from a blank one and has no stamp.
 // First tap skips to the end; the button closes it.
 function showRankUp(r, from = null){
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches, me = S.me;
   const oldKey = from && from.tier.key !== r.tier.key ? from.tier.key : null;
-  const old = oldKey ? passSVG(me, {tier: oldKey, cls: 'g-old'}) : passSVG({...me, points: 0}, {tier: 'green', cls: 'g-old', photo: ''}).replace('class="pass g-old', 'style="filter:grayscale(1) brightness(1.5)" class="pass g-old');
+  const old = oldKey ? passSVG({...me, points: from.value}, {cls: 'g-old'}) : passSVG({...me, points: 0}, {tier: 'green', cls: 'g-old', photo: ''}).replace('class="pass g-old', 'style="filter:grayscale(1) brightness(1.5)" class="pass g-old');
+  const word = oldKey ? r.label : `${r.label}. you're in.`, sub = r.nextLabel ? `${r.toNext} pts to ${r.nextLabel}` : 'top of the mountain';
   $('overlay').innerHTML = `<div class="gate" id="splash" data-act="rankup-tap" role="dialog" aria-label="${oldKey ? 'Rank up' : 'Your pass'}: ${esc(r.label)}">
-    <div class="g-word" id="g-word">${oldKey ? 'tap in.' : 'your pass.'}</div>
-    <div class="g-card">${old}${passSVG(me, {cls: 'g-new'})}<span class="g-scan"></span></div>
-    <div class="g-reader" aria-hidden="true"><span class="g-light"></span></div>
-    <div class="g-sub" id="g-sub">&nbsp;</div>
-    <button class="btn primary g-go ru-go" data-act="close-splash" id="g-go" hidden>let's go</button>
+    <div class="g-flash"></div>
+    <div class="g-stage">
+      <svg class="g-reader" viewBox="0 0 160 170" aria-hidden="true"><rect width="160" height="170" rx="16" fill="#2b3036"/><rect x="6" y="6" width="148" height="158" rx="12" fill="none" stroke="#3a4047" stroke-width="2"/>
+        <rect class="g-light" x="30" y="20" width="100" height="10" rx="5"/>
+        <g fill="none" stroke="#f1f3f4" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"><path d="M68 82a16 16 0 0 1 0 28"/><path d="M80 72a30 30 0 0 1 0 48"/><path d="M92 62a44 44 0 0 1 0 68"/></g>
+        <circle cx="58" cy="96" r="5" fill="#f1f3f4" fill-opacity=".55"/>
+        <text x="80" y="152" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:1px" fill="#f1f3f4" fill-opacity=".45">TAP PASS</text></svg>
+      <div class="g-card"><div class="g-in">${old}${passSVG(me, {cls: 'g-new'})}<span class="g-scan"></span></div></div>
+      ${oldKey ? `<svg class="g-stamp" viewBox="0 0 300 110" aria-hidden="true"><rect x="6" y="6" width="288" height="98" rx="8" fill="#111316" stroke="#ff5a1f" stroke-width="8"/>
+        <text x="150" y="74" text-anchor="middle" textLength="250" lengthAdjust="spacingAndGlyphs" style="font:900 54px Archivo,sans-serif;font-stretch:125%" fill="#ff5a1f">RANK UP</text></svg>` : ''}
+      <div class="g-text"><div class="g-word" id="g-word">${esc(word)}</div><div class="g-sub" id="g-sub">${esc(sub)}</div></div>
+    </div>
+    <button class="btn primary g-go ru-go" data-act="close-splash" id="g-go">let's go</button>
   </div>`;
   loadGate();
   const el = $('splash'), at = (ms, fn) => setTimeout(() => { if ($('splash') === el && !el.classList.contains('done')) fn(); }, still ? 0 : ms);
-  const finish = () => {
-    el.classList.remove('step1'); el.classList.add('lit', 'step2', 'done');
-    $('g-word').textContent = oldKey ? `${r.label}.` : `${r.label}. you're in.`;
-    $('g-sub').textContent = r.nextLabel ? `${r.toNext} pts to ${r.nextLabel}` : 'top of the mountain';
-    $('g-go').hidden = false;
-  };
+  const finish = () => { el.classList.add('lit', 'done'); };
   el._finish = finish;
   if (still){ el.classList.add('lit'); sfx('gate'); return finish(); }
-  at(450, () => el.classList.add('step1'));                                  // the pass dips to the reader
-  at(900, () => { el.classList.add('lit'); sfx('gate'); buzz([30, 40, 90]); });   // beep, green light
-  at(1150, () => { el.classList.remove('step1'); el.classList.add('step2'); }); // scan line turns it into the next tier
-  at(2150, finish);
+  at(1220, () => { el.classList.add('lit'); sfx('gate'); buzz([30, 40, 90]); });   // beep, green light
+  at(5100, finish);
 }
 function closeSplash(){
   const s = $('splash'); if (!s) return;

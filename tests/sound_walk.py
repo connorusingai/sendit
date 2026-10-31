@@ -26,6 +26,7 @@ COUNT = """(() => { window.__notes = 0;
 
 
 def main():
+    w.ME["points"] = 105; w.CLIP["points_awarded"] = 105   # a clip that really crosses into blue, so the gate beep plays
     ok = []
     srv = w.serve()
     with sync_playwright() as p:

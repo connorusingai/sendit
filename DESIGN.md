@@ -51,9 +51,10 @@ STOMPED + season (26/27) on top, the tier's trail mark, the tier name, @handle, 
   Diamond→triple black, Legend→park rat.
 - **Season reset (soft):** on opening day everyone drops about one tier (`start_season()` in supabase/024) and last
   season's pass stays on the profile as a trophy.
-- **Rank-up:** the pass dips and taps the gate reader, the light turns green with the gate beep (placeholder until
-  Connor records the real one, to-do #10: drop it in `app/sounds/gate.mp3`), a vibration (only with sounds on), then a
-  scan line sweeps across and the SAME pass becomes the next tier. No new card.
+- **Rank-up:** dark screen. The pass lifts and taps the TAP PASS reader, the light turns green with a flash, the gate beep
+  (placeholder until Connor records the real one, to-do #10: drop it in `app/sounds/gate.mp3`) and a vibration (only with
+  sounds on), then a scan line sweeps across and the SAME pass becomes the next tier, and RANK UP slams on. No new card.
+  About 5s; a tap skips to the end. The reward before it shows the rank you're leaving.
 - No real brands (Ikon, Red Bull...) anywhere.
 
 ## Layout

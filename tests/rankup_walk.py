@@ -43,21 +43,24 @@ def main():
         pg.goto(w.URL, wait_until="networkidle")
         pg.wait_for_selector("[data-act=reward-collect]", timeout=8000)
         pg.wait_for_timeout(1500)
+        pg.wait_for_timeout(500)
+        ok.append(("reward bar breaks through into blue", pg.locator(".reward.crossed").count() == 1 and pg.locator("#rw-rank").inner_text() == "blue"))
         pg.click("[data-act=reward-collect]")
         pg.wait_for_selector(".gate", timeout=3000)
         txt = lambda s: pg.locator(s).inner_text() if pg.locator(s).count() else ""
         # The gate (DESIGN.md 10/28): the old pass taps the reader, the light goes green, the SAME pass scans into the next tier
         ok.append(("rank up opens on the old green pass", "green" in pg.locator(".gate .g-old").inner_html()))
         ok.append(("...with the next tier underneath it", "blue" in pg.locator(".gate .g-new").inner_html()))
-        ok.append(("says tap in.", txt("#g-word") == "tap in."))
+        ok.append(("reader says TAP PASS", "TAP PASS" in pg.locator(".gate .g-reader").inner_html()))
+        ok.append(("old pass shows the points before this clip", "0 / 100 PTS" in pg.locator(".gate .g-old").inner_html()))
         at = 0
-        for ms, name in [(300, "1-ready"), (700, "2-tap"), (1000, "3-beep"), (1600, "4-scan"), (2600, "5-done")]:
+        for ms, name in [(300, "1-ready"), (1100, "2-tap"), (1500, "3-beep"), (2900, "4-scan"), (5400, "5-done")]:
             pg.wait_for_timeout(ms - at)
             at = ms
             pg.screenshot(path=w.SHOTS / f"rankup-{name}.png")
             if name == "3-beep":
                 ok.append(("gate light turns green on the tap", pg.locator(".gate.lit").count() == 1))
-        ok.append(("ends on blue.", txt("#g-word") == "blue."))
+        ok.append(("ends on blue with RANK UP", txt("#g-word") == "blue" and pg.locator(".gate .g-stamp").count() == 1))
         ok.append(("says how far to black", "to black" in txt("#g-sub")))
         pg.mouse.click(195, 120)                     # tap the background once it's done: closes
         pg.wait_for_timeout(500)

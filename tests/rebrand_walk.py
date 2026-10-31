@@ -151,7 +151,7 @@ def main():
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome")
         # ---------- a regular rider: double black, Eldora ----------
-        pg = page_for(b, UID, "walker", 840, "Eldora", seen={"m0": "pending"}, store={f"sendit-onboarded-{UID}": "1"})
+        pg = page_for(b, UID, "walker", 700, "Eldora", seen={"m0": "pending"}, store={f"sendit-onboarded-{UID}": "1"})
         pg.goto(URL, wait_until="networkidle")
         pg.wait_for_timeout(3500)
         check("STOMPED moment shows", pg.locator("#reward .stamp-svg").count() == 1)
@@ -161,7 +161,7 @@ def main():
         pg.wait_for_timeout(1300)
         check("rank-up: pass taps the gate", pg.locator(".gate .g-reader").count() == 1 and pg.locator(".gate .g-card .pass").count() == 2)
         pg.screenshot(path=SHOTS / "rebrand-2-rankup-mid.png")
-        pg.wait_for_timeout(1400)
+        pg.wait_for_timeout(4100)
         check("rank-up ends on the new tier", "double black" in pg.locator("#g-word").inner_text(), pg.locator("#g-word").inner_text())
         pg.screenshot(path=SHOTS / "rebrand-3-rankup-end.png")
         pg.click(".g-go")
