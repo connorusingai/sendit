@@ -70,6 +70,18 @@ h3{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-
 .mt-chip{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:none;cursor:pointer;text-transform:lowercase;max-width:min(52vw,220px);min-width:0}
 .me-chip{display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;border:0;background:none;cursor:pointer;color:var(--ink)}
 .me-chip svg{width:22px;height:22px}
+/* notifications: the bell + the inbox screen */
+.bell{position:relative}
+.bell .badge{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--hot);color:var(--hot-ink);font-size:10px;font-weight:800;display:grid;place-items:center}
+.inbox h2{margin-top:6px}
+.inbox .label{margin:18px 0 4px}
+.nt{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;width:100%;min-height:56px;padding:10px 4px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.nt .nt-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--paper);border:1px solid var(--line)}
+.nt .nt-txt{line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.nt .nt-when{font-size:12px;color:var(--mute)}
+.nt.new .nt-ic{background:var(--hot);border-color:var(--hot);color:var(--hot-ink)}
+.nt.new .nt-txt{font-weight:600}
+.inbox .empty{color:var(--mute);padding:28px 0;text-align:center}
 .mt-chip .mt-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .top>div{min-width:0}
 body.on-feed .top{position:absolute;left:0;right:0;height:0;margin:0;visibility:hidden}
@@ -596,6 +608,7 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
     <div style="display:flex;gap:8px;align-items:center">
       <button class="pill wait" id="outbox-chip" data-act="flush" hidden></button>
       <button class="mt-chip" data-act="tab" data-tab="ranks" data-focus="home-resort" id="me-chip" aria-label="Home mountain" hidden></button>
+      <button class="me-chip bell" data-act="tab" data-tab="inbox" id="bell-chip" aria-label="Notifications" title="Notifications" hidden></button>
       <button class="me-chip" data-act="tab" data-tab="ranks" data-focus="profile-card" id="acct-chip" aria-label="Settings" title="Settings" hidden></button>
     </div>
   </header>
@@ -1291,6 +1304,7 @@ async function loadAll(){
   await loadFilmers(S.clips);
   loadSeenStatus();
   noticeResults(before);
+  try { await loadInbox(); } catch (e){ console.warn('inbox', e); }   // a bell problem must never stop the app loading
 }
 // Your crew and its members. If 010_crews.sql isn't installed yet, crews just stay hidden.
 async function loadCrew(){
@@ -1428,6 +1442,142 @@ function loadSeenStatus(){
   try { const s = localStorage.getItem('seen-status-' + myId()); if (s) seenStatus = JSON.parse(s); } catch (e) {}
 }
 
+// ---------- notifications, part 1: the in-app inbox (the bell) ----------
+// No new database table: every notification is built from rows the app can already read
+// (your clips, likes + comments on them, friend requests, duels, clips friends filmed of you).
+// Which ones you've seen is remembered on this phone (localStorage), per account.
+// Part 2 (later) = real phone alerts, which needs a server to send them.
+const INBOX_DAYS = 30, INBOX_MAX = 40;
+let inboxMem = null;   // {seen: Set of keys, first: {key: when we first saw it}, rank: last rank label}
+function inboxLoadMem(){
+  if (inboxMem && inboxMem.user === myId()) return inboxMem;
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem('sendit-inbox-' + myId()) || 'null'); } catch (e) {}
+  inboxMem = {user: myId(), fresh: !raw, seen: new Set(raw ? raw.seen : []), first: raw ? raw.first || {} : {}, rank: raw ? raw.rank : null};
+  return inboxMem;
+}
+function inboxSaveMem(){
+  const M = inboxMem; if (!M) return;
+  try { localStorage.setItem('sendit-inbox-' + M.user, JSON.stringify({seen: [...M.seen], first: M.first, rank: M.rank})); } catch (e) {}
+}
+// Likes + comments other riders left on my clips. Best effort: if it fails, the rest of the inbox still works.
+async function loadInboxActivity(){
+  const ids = (S.myClips || []).slice(0, 60).map(c => c.id);
+  if (!ids.length) return {likes: [], comments: []};
+  const since = new Date(Date.now() - INBOX_DAYS * 864e5).toISOString();
+  const [l, c] = await Promise.all([
+    db.from('likes').select('clip_id, user_id, created_at, profiles(username)').in('clip_id', ids).neq('user_id', myId())
+      .gte('created_at', since).order('created_at', {ascending: false}).limit(100),
+    db.from('comments').select('id, clip_id, user_id, body, created_at, hidden, profiles(username)').in('clip_id', ids).neq('user_id', myId())
+      .gte('created_at', since).order('created_at', {ascending: false}).limit(40),
+  ]);
+  return {likes: l.error ? [] : l.data, comments: c.error ? [] : c.data.filter(m => !m.hidden)};
+}
+const atName = name => '@' + esc(name || 'rider');
+// Turns everything into one list: {key, time, icon, html, go: {act, id}}. Newest first.
+function buildInbox(act){
+  const out = [], me = myId(), mine = new Map((S.myClips || []).map(c => [c.id, c]));
+  const name = c => `<b>${esc(clipName(c))}</b>`;
+  for (const c of S.myClips || []){
+    if (c.status === 'verified') out.push({key: 'ok:' + c.id, time: c.verified_at, fallback: c.created_at, icon: 'check', go: {act: 'clip', id: c.id},
+      html: `Your ${name(c)} got verified${c.points_awarded ? `. +${c.points_awarded} pts` : ''}`});
+    if (c.status === 'rejected') out.push({key: 'bail:' + c.id, time: null, fallback: c.created_at, icon: 'x', go: {act: 'clip', id: c.id},
+      html: `Riders called your ${name(c)} a bail. Film it again?`});
+  }
+  // Likes: one line per clip, so 5 fires don't make 5 lines
+  const byClip = new Map();
+  for (const l of act.likes){ if (S.blocked.has(l.user_id)) continue; if (!byClip.has(l.clip_id)) byClip.set(l.clip_id, []); byClip.get(l.clip_id).push(l); }
+  for (const [id, ls] of byClip){
+    const c = mine.get(id); if (!c) continue;
+    const others = ls.length - 1;
+    out.push({key: 'fire:' + id + ':' + ls[0].created_at, time: ls[0].created_at, icon: 'fire', go: {act: 'clip', id},
+      html: `${atName(ls[0].profiles && ls[0].profiles.username)}${others ? ` and ${others} other${others > 1 ? 's' : ''}` : ''} fired your ${name(c)}`});
+  }
+  for (const m of act.comments){
+    const c = mine.get(m.clip_id); if (!c || S.blocked.has(m.user_id)) continue;
+    const body = m.body.length > 60 ? m.body.slice(0, 57) + '…' : m.body;
+    out.push({key: 'cmt:' + m.id, time: m.created_at, icon: 'chat', go: {act: 'comment', id: m.clip_id},
+      html: `${atName(m.profiles && m.profiles.username)} on your ${name(c)}: “${esc(body)}”`});
+  }
+  for (const f of S.friends){
+    if (!f.other || S.blocked.has(f.other.id)) continue;
+    if (f.status === 'pending' && f.incoming) out.push({key: 'freq:' + f.other.id, time: f.created_at, icon: 'wave', go: {act: 'friends'},
+      html: `${atName(f.other.username)} wants to be friends`});
+    if (f.status === 'accepted' && !f.incoming) out.push({key: 'facc:' + f.other.id, time: null, fallback: f.created_at, icon: 'wave', go: {act: 'profile', id: f.other.id},
+      html: `${atName(f.other.username)} accepted your friend request`});
+  }
+  for (const d of S.duels){
+    if (!d.other) continue;
+    const who = atName(d.other.username);
+    if (d.status === 'active' && d.turn === me){
+      const isNew = d.challenger !== me && Math.abs(Date.parse(d.updated_at) - Date.parse(d.created_at)) < 5000;
+      out.push({key: 'turn:' + d.id + ':' + d.updated_at, time: d.updated_at, icon: 'trophy', go: {act: 'duel', id: d.id},
+        html: isNew ? `${who} challenged you to S.K.I.` : `Your turn in S.K.I. vs ${who}`});
+    }
+    if (d.status === 'done' && d.winner) out.push({key: 'done:' + d.id, time: d.updated_at, icon: 'crown', go: {act: 'duel', id: d.id},
+      html: d.winner === me ? `You beat ${who} at S.K.I.` : `${who} won your S.K.I. game`});
+  }
+  for (const c of S.filmedForMe || []){
+    const by = c.filmed_by && S.filmers[c.filmed_by];
+    out.push({key: 'film:' + c.id, time: c.created_at, icon: 'cam', go: {act: 'base'},
+      html: `${atName(by)} filmed you doing ${name(c)}. Keep it?`});
+  }
+  return out;
+}
+// Rank-ups aren't stored anywhere, so the inbox notices when your rank goes up since last time.
+function inboxRank(M, items){
+  const now = rankInfo(S.me.points || 0, TRICK_TIERS).label;
+  const order = TRICK_TIERS.map(t => t.name).reverse();   // lowest first
+  if (M.rank && order.indexOf(now) > order.indexOf(M.rank)){
+    const key = 'rank:' + now + ':' + Date.now();
+    M.first[key] = new Date().toISOString();
+  }
+  M.rank = now;   // a season reset moves you down quietly, no notification
+  for (const key of Object.keys(M.first).filter(k => k.startsWith('rank:')))
+    items.push({key, time: M.first[key], icon: 'crown', go: {act: 'me'}, html: `You ranked up to <b>${esc(key.split(':')[1])}</b>`});
+}
+async function loadInbox(){
+  if (!S.me) return;
+  let act = {likes: [], comments: []};
+  try { act = await loadInboxActivity(); } catch (e) {}
+  const M = inboxLoadMem(), items = buildInbox(act);
+  inboxRank(M, items);
+  const nowIso = new Date().toISOString(), cutoff = Date.now() - INBOX_DAYS * 864e5;
+  for (const it of items){
+    // Things with no timestamp (a bail, an accepted request) use the moment the app first noticed them
+    if (!it.time) it.time = M.first[it.key] || (M.first[it.key] = M.fresh ? it.fallback : nowIso);
+    // First time on this phone: only the last day counts as new, so nobody opens to 40 old notifications
+    if (M.fresh && Date.now() - Date.parse(it.time) > 864e5) M.seen.add(it.key);
+  }
+  const list = items.filter(it => Date.parse(it.time) >= cutoff).sort((a, b) => Date.parse(b.time) - Date.parse(a.time)).slice(0, INBOX_MAX);
+  // Forget keys that no longer exist at all (a deleted clip, an old like count), so the saved data stays small.
+  // Old-but-still-there ones are kept, or an old bail would come back as "new".
+  const keep = new Set(items.map(it => it.key));
+  M.seen = new Set([...M.seen].filter(k => keep.has(k)));
+  for (const k of Object.keys(M.first)) if (!keep.has(k)) delete M.first[k];
+  M.fresh = false;
+  inboxSaveMem();
+  S.inbox = list;
+}
+const inboxUnread = () => (S.inbox || []).filter(it => !inboxMem || !inboxMem.seen.has(it.key)).length;
+// Opening the inbox shows what's new (highlighted) once, then counts it as seen
+function inboxMarkAllSeen(){
+  if (!inboxMem) return;
+  for (const it of S.inbox || []) inboxMem.seen.add(it.key);
+  inboxSaveMem();
+}
+async function inboxGo(i){
+  const it = (S.inbox || [])[i]; if (!it) return;
+  logEvent('inbox_tap', it.key.split(':')[0]);
+  const g = it.go;
+  if (g.act === 'clip' || g.act === 'comment'){ await openClip(g.id); if (g.act === 'comment' && S.openComments !== g.id) toggleComments(g.id); return; }
+  if (g.act === 'duel') return openDuel(g.id);
+  if (g.act === 'profile') return openProfile(g.id);
+  if (g.act === 'me') return openProfile(myId());
+  if (g.act === 'friends'){ S.squad = 'friends'; store.set('squad', 'friends'); return openTab('duels'); }
+  return openTab('lodge');
+}
+
 // Game sounds, made in code (no audio files): votes, the reward, the rank up. Off switch: gear > Sounds.
 // iPhone: 'ambient' means the silent switch mutes them and they mix with your music instead of stopping it.
 // Browsers only allow sound after a tap, so the first tap anywhere wakes the audio up.
@@ -1542,6 +1692,7 @@ const ICON = {
 };
 // Line icons, one stroke weight (DESIGN.md: no emoji as icons). ic('book') -> inline SVG that takes the text color.
 const ICO = {
+  chat: 'M4 5h16v11H10l-5 4v-4H4z',
   spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20',
   fire: 'M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z',
@@ -2073,6 +2224,19 @@ const views = {
   },
 
   // Settings (the gear). Still the 'ranks' screen id, because links like "pick your home mountain" open it.
+  // The bell: everything that happened to you, newest first. New ones are orange until you've seen them.
+  inbox(){
+    const list = S.inbox || [], M = inboxMem;
+    if (!list.length) return `<div class="inbox"><h2>notifications</h2>
+      <p class="empty">Nothing yet. When riders verify your clips, fire them, or challenge you, it shows up here.</p></div>`;
+    const day = 864e5, row = (it, i) => `<button class="nt ${M && !M.seen.has(it.key) ? 'new' : ''}" data-act="inbox-go" data-k="${i}">
+        <span class="nt-ic">${ic(it.icon, 18)}</span><span class="nt-txt">${it.html}</span><span class="nt-when">${ago(it.time)}</span></button>`;
+    const today = list.map((it, i) => [it, i]).filter(([it]) => Date.now() - Date.parse(it.time) < day);
+    const older = list.map((it, i) => [it, i]).filter(([it]) => Date.now() - Date.parse(it.time) >= day);
+    return `<div class="inbox"><h2>notifications</h2>
+      ${today.length ? `<div class="label">Today</div>${today.map(([it, i]) => row(it, i)).join('')}` : ''}
+      ${older.length ? `<div class="label">Earlier</div>${older.map(([it, i]) => row(it, i)).join('')}` : ''}</div>`;
+  },
   ranks(){
     const me = S.me;
     return `<div class="settings"><h2>settings</h2>
@@ -3034,17 +3198,21 @@ const needsMyVote = c => c.status === 'pending' && c.user_id !== myId() && c.fil
 const judgeQueue = () => { const q = S.clips.filter(needsMyVote); return isFounder() ? q.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)) : q; };
 const judgeable = c => c.status === 'pending' && c.user_id !== myId() && (!S.myVotes.has(c.id) || c.id in S.judge.voted);
 const KEEP = ['board-resort', 'friend-q', 'crew-code', 'crew-name', 'crew-tag', 'auth-user', 'auth-email'];  // keep what's typed/picked across redraws
-const GEAR_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+const BELL_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>';
+const GEAR_IC ='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
 
 function render(force = false){
   const signedIn = !!(S.session && S.me);
-  $('tabbar').hidden = !signedIn; $('me-chip').hidden = !signedIn; $('acct-chip').hidden = !signedIn;
+  $('tabbar').hidden = !signedIn; $('me-chip').hidden = !signedIn; $('acct-chip').hidden = !signedIn; $('bell-chip').hidden = !signedIn;
   document.body.classList.toggle('signed-out', !signedIn);
   if (!signedIn){ document.body.classList.remove('on-feed', 'on-judge', 'cam-on'); $('view').innerHTML = S.session && S.loadFailed ? views.cantReach() : views.auth(); return; }
   const meTab = S.tab === 'profile' && S.profile && S.profile.id === myId();
   $('brand').textContent = meTab ? '@' + S.me.username : 'STOMPED';
   $('me-chip').innerHTML = S.me.home_resort ? `<span class="mt-name">${esc(mtTab())}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>` : 'pick mountain';
   $('acct-chip').innerHTML = GEAR_IC;
+  const unread = S.tab === 'inbox' ? 0 : inboxUnread();
+  $('bell-chip').innerHTML = BELL_IC + (unread ? `<span class="badge">${unread > 9 ? '9+' : unread}</span>` : '');
+  $('bell-chip').setAttribute('aria-label', unread ? `Notifications, ${unread} new` : 'Notifications');
   const judgeCount = judgeQueue().length;
   const duelCount = S.duels.filter(d => d.status === 'active' && d.turn === myId()).length
     + S.friends.filter(f => f.status === 'pending' && f.incoming).length;
@@ -3072,6 +3240,7 @@ function render(force = false){
   watchPlayers();
   if (S.tab === 'judge' || S.tab === 'feed') watchReel();
   if (S.tab === 'record' && (S.rec.mode === 'live' || S.rec.mode === 'recording')) attachStream();
+  if (S.tab === 'inbox') inboxMarkAllSeen();   // drawn highlighted this once; next time they're read
 }
 
 // First run (BRAND-DECISIONS.md): ski or snowboard, home mountain (if signup didn't pick one), then call 3 clips and get
@@ -3788,6 +3957,7 @@ document.addEventListener('click', async e => {
   const act = b.dataset.act, id = b.dataset.id;
   switch (act){
     case 'tab': return openTab(b.dataset.tab, b.dataset.focus);
+    case 'inbox-go': return inboxGo(+b.dataset.k);
     case 'authmode': S.authMode = S.authMode === 'signup' ? 'signin' : 'signup'; return render(true);
     case 'forgot': return sendReset(b);
     case 'join': {
@@ -4120,8 +4290,12 @@ async function openPendingClip(){
   const id = store.get('pending-clip', '');
   if (!id) return;
   store.set('pending-clip', '');
+  await openClip(id);
+}
+// Opens one clip at the top of the feed (a shared link, or a tap in the inbox)
+async function openClip(id){
   const r = await db.from('clips').select(CLIP_SELECT).eq('id', id).maybeSingle();
-  if (r.error){ toast("Couldn't open that clip. Check your signal and tap the link again.", 4500); return; }
+  if (r.error){ toast("Couldn't open that clip. Check your signal and try again.", 4500); return; }
   if (!r.data || !shownClip(r.data)){ toast("That clip was removed, so it can't be shown.", 4500); return; }
   await loadFilmers([r.data]);
   S.feed.pin = findClip(id) || r.data;
