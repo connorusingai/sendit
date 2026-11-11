@@ -41,6 +41,7 @@ create table storage.buckets (id text primary key, name text, public boolean,
   file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (bucket_id text, name text);
 alter table storage.objects enable row level security;
+grant all on storage.objects to anon, authenticated;   -- Supabase does the same; the policies decide the rest
 create function storage.foldername(name text) returns text[] language sql immutable as
   $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
 """
@@ -539,6 +540,88 @@ def main():
     oops = str(uuid.uuid4())
     q("insert into auth.users (id, email, raw_user_meta_data) values (%s, 'oops@test', jsonb_build_object('username', 'oops28', 'crew', 'NOPE'))", oops)
     check("...a broken code never blocks sign-up", (one("select count(*) from public.profiles where id = %s", oops), crew_of(oops)), (1, None))
+
+    print("\n-- Audit fixes (029) --")
+    # 1. storage: you can see (so list + delete) your own files, nobody else's
+    f1, f2 = user("files1"), user("files2")
+    for bucket, name in [("clips", f"{f1}/a.mp4"), ("clips", f"{f1}/a.motion.json"), ("passes", f"{f1}/pass-1.jpg"), ("clips", f"{f2}/b.mp4")]:
+        q("insert into storage.objects (bucket_id, name) values (%s, %s)", bucket, name)
+    check("you can list your own files (3 of them)", len(as_user(f1, "select name from storage.objects")), 3)
+    check("...and nobody else's", [r[0] for r in as_user(f2, "select name from storage.objects")], [f"{f2}/b.mp4"])
+    as_user(f1, "delete from storage.objects where bucket_id = 'clips' and name like %s", f"{f1}/%")
+    check("deleting your videos really deletes them", one("select count(*) from storage.objects where name like %s and bucket_id = 'clips'", f"{f1}/%"), 0)
+    as_user(f1, "delete from storage.objects where name like %s", f"{f2}/%")
+    check("...and can't touch another rider's", one("select count(*) from storage.objects where name like %s", f"{f2}/%"), 1)
+    with conn.transaction():
+        q("set local role anon")
+        seen_anon = conn.execute("select count(*) from storage.objects").fetchone()[0]
+    check("signed-out visitors can't list files", seen_anon, 0)
+    check("the founder sees every file (to remove bad ones)", as_user(boss, "select count(*) from storage.objects")[0][0] >= 2, True)
+
+    # 2. comments: real length + speed limit
+    talker, quiet = user("talker29"), user("quiet29")
+    spot = post(quiet, "180")
+    padded = as_user(talker, "insert into public.comments (clip_id, body) values (%s, repeat(' ', 5000) || 'sick' || repeat(' ', 5000)) returning body", spot)[0][0]
+    check("a comment padded with 10,000 spaces is stored trimmed", padded, "sick")
+    check("281 real characters is too long", blocked(talker, "insert into public.comments (clip_id, body) values (%s, repeat('a', 281))", spot), True)
+    check("280 is fine", blocked(talker, "insert into public.comments (clip_id, body) values (%s, repeat('a', 280))", spot), False)
+    check("only blank lines is not a comment", blocked(talker, "insert into public.comments (clip_id, body) values (%s, E'\\n\\n\\t')", spot), True)
+    for i in range(8):
+        as_user(talker, "insert into public.comments (clip_id, body) values (%s, %s)", spot, f"c{i}")
+    check("the 11th comment in a minute is refused", blocked(talker, "insert into public.comments (clip_id, body) values (%s, 'spam')", spot), True)
+    check("...but another rider can still comment", blocked(quiet, "insert into public.comments (clip_id, body) values (%s, 'hi')", spot), False)
+    q("update public.comments set created_at = now() - interval '2 minutes' where user_id = %s", talker)
+    check("...and a minute later you can again", blocked(talker, "insert into public.comments (clip_id, body) values (%s, 'back')", spot), False)
+    check("feedback can't be padded past 1000 either",
+          blocked(talker, "insert into public.feedback (kind, body) values ('bug', repeat(' ', 5000) || 'x')"), True)
+
+    # 3. usernames
+    real, faker = user("RealRider"), user("faker29")
+    check("can't rename yourself to someone's name in other capitals", blocked(faker, "update public.profiles set username = 'realrider' where id = %s", faker), True)
+    check("can't put spaces or code in a username", blocked(faker, "update public.profiles set username = '<b>hi</b> there' where id = %s", faker), True)
+    check("a normal rename still works", blocked(faker, "update public.profiles set username = 'faker_29.b' where id = %s", faker), False)
+    def signup_blocked(name):
+        try:
+            with conn.transaction():
+                q("insert into auth.users (id, email, raw_user_meta_data) values (%s, %s, jsonb_build_object('username', %s::text))",
+                  str(uuid.uuid4()), f"{uuid.uuid4()}@test", name)
+            return False
+        except psycopg.Error:
+            return True
+    check("can't sign up as REALRIDER when RealRider exists", signup_blocked("REALRIDER"), True)
+    check("can't sign up with a username the app wouldn't allow", signup_blocked("bad name!"), True)
+    check("a fresh username signs up fine", signup_blocked("fresh.name-29"), False)
+
+    # 4. Game of S.K.I. proof
+    s1, s2 = user("setter29"), user("matcher29")
+    as_user(s1, "insert into public.friendships (addressee) values (%s)", s2)
+    as_user(s2, "update public.friendships set status = 'accepted' where requester = %s", s1)
+    duel29 = as_user(s1, "select public.start_duel(%s)", s2)[0][0]
+    wrong = as_user(s1, "insert into public.clips (trick_id) values ('180') returning id")[0][0]
+    check("a clip of a different trick is not proof", blocked(s1, "select public.duel_move(%s, true, '540', %s)", duel29, wrong), True)
+    dusty = as_user(s1, "insert into public.clips (trick_id) values ('540') returning id")[0][0]
+    q("update public.clips set created_at = now() - interval '2 days' where id = %s", dusty)
+    check("an old clip is not proof", blocked(s1, "select public.duel_move(%s, true, '540', %s)", duel29, dusty), True)
+    good = as_user(s1, "insert into public.clips (trick_id) values ('540') returning id")[0][0]
+    check("a fresh clip of the trick is", blocked(s1, "select public.duel_move(%s, true, '540', %s)", duel29, good), False)
+    theirs = as_user(s2, "insert into public.clips (trick_id) values ('180') returning id")[0][0]
+    check("matching needs a clip of the trick that was set", blocked(s2, "select public.duel_move(%s, true, null, %s)", duel29, theirs), True)
+    match = as_user(s2, "insert into public.clips (trick_id) values ('540') returning id")[0][0]
+    check("...and takes the right one", blocked(s2, "select public.duel_move(%s, true, null, %s)", duel29, match), False)
+    check("the same clip can't be proof twice", blocked(s1, "select public.duel_move(%s, true, '540', %s)", duel29, good), True)
+    check("bailing still needs no clip", blocked(s1, "select public.duel_move(%s, false, '540', null)", duel29), False)
+
+    # 5. the database stamps the time
+    check("can't back-date an activity row", blocked(talker, "insert into public.events (name, at) values ('tab', now() - interval '9 days')"), True)
+    check("...a normal one still saves", blocked(talker, "insert into public.events (name, detail) values ('tab', 'feed')"), False)
+    check("can't back-date a report", blocked(talker, "insert into public.reports (clip_id, reason, created_at) values (%s, 'spam', now() - interval '9 days')", spot), True)
+    check("...a normal report still saves", blocked(talker, "insert into public.reports (clip_id, reason) values (%s, 'spam')", spot), False)
+
+    # 6. pass photo path
+    check("a pass photo path can't wander out of your folder",
+          blocked(talker, "update public.profiles set pass_photo = %s where id = %s", f"{talker}/../{quiet}/pass-1.jpg", talker), True)
+    check("...a plain file in your folder is fine",
+          blocked(talker, "update public.profiles set pass_photo = %s where id = %s", f"{talker}/pass-1731300000000.jpg", talker), False)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
