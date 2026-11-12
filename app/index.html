@@ -1470,7 +1470,7 @@ async function loadCallsLeft(){
   if (!ids.length) return;
   try {
     const r = await db.rpc('calls_left', {p_clips: ids});
-    if (!r.error && Array.isArray(r.data)) S.callsLeft = Object.fromEntries(r.data.map(x => [x.clip_id, x.calls_left]));
+    if (!r.error && Array.isArray(r.data)) S.callsLeft = Object.fromEntries(r.data.map(x => [x.clip_id, Math.max(0, parseInt(x.calls_left, 10) || 0)]));
   } catch (e) {}
 }
 const callsLeft = c => (S.callsLeft && c.status === 'pending' && S.callsLeft[c.id]) || 0;
