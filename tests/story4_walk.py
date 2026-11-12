@@ -6,6 +6,8 @@ Two of my clips got called landed while the app was closed (+60, then +140). 120
 
 Run:  .venv-test\\Scripts\\python.exe tests\\story4_walk.py        (from the app folder)
 """
+import datetime as dt
+
 from playwright.sync_api import sync_playwright
 
 import story_kit as k
@@ -14,13 +16,18 @@ from story_kit import w
 ME = {**w.ME, "points": 320}
 
 
-def mine(cid, trick, pts, when):
+def ago(hours):
+    return (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def mine(cid, trick, pts, hours):
+    # posted a day before it was verified; verified a few hours ago (the bell only counts the last day as new)
     return {"id": cid, "user_id": k.UID, "trick_id": trick, "combo": [], "grab": "No grab", "status": "verified", "points_awarded": pts,
-            "created_at": f"2026-11-10T{when}:00:00Z", "verified_at": f"2026-11-11T{when}:00:00Z", "video_path": f"{k.UID}/{cid}.mp4",
+            "created_at": ago(hours + 24), "verified_at": ago(hours), "video_path": f"{k.UID}/{cid}.mp4",
             "resort": "Eldora", "profiles": {"username": "walker", "points": 320}, "likes": [{"count": 0}], "comments": [{"count": 0}]}
 
 
-CLIPS = [mine("m2", "cork720", 140, "15"), mine("m1", "backflip", 60, "12")]      # newest first, like the database sends them
+CLIPS = [mine("m2", "cork720", 140, 2), mine("m1", "backflip", 60, 5)]      # newest first, like the database sends them
 
 
 def handle(route, req):
