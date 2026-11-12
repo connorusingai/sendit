@@ -71,10 +71,11 @@ p{margin:0}
 /* ---------- hero: the clip, the REC corner, the stamp ---------- */
 .hero{position:relative;height:min(548px,66svh);min-height:400px;overflow:hidden;background:#aeb9c3}
 .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.hero::before{content:"";position:absolute;z-index:1;inset:0 0 auto 0;height:130px;background:linear-gradient(rgba(17,19,22,.4),rgba(17,19,22,0))}
 .hero::after{content:"";position:absolute;inset:auto 0 0 0;height:46%;background:linear-gradient(to top,rgba(237,241,244,.94),rgba(237,241,244,.62) 46%,rgba(237,241,244,0))}
 .hero-top{position:absolute;z-index:2;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
   height:calc(56px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) var(--gut) 0;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
-.hero-top .wordmark{font-size:22px;color:#fff}
+.hero-top .wordmark{font-size:22px;color:#fff;display:inline-flex;align-items:center;min-height:44px}
 .hero-top a.in{color:#fff;font-weight:600;font-size:15px;display:inline-flex;align-items:center;min-height:44px;padding:0 4px;text-decoration:none}
 .hero-top a.in:hover{text-decoration:underline}
 .rec{position:absolute;z-index:2;top:calc(62px + env(safe-area-inset-top,0px));left:var(--gut);display:inline-flex;align-items:center;gap:7px;
@@ -132,8 +133,10 @@ main{padding:22px var(--gut) 0;display:grid;gap:44px}
 footer{padding:36px var(--gut) 28px;color:var(--mute);font-size:14px;display:grid;gap:8px}
 footer b{color:var(--ink);font:800 20px/1.1 var(--display);font-stretch:125%;letter-spacing:-.02em}
 footer a{color:var(--ink-2)}
-footer nav{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
-footer nav a{display:inline-flex;align-items:center;min-height:44px}
+footer nav{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+footer nav a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px}
+footer span a,.faq p a{position:relative}
+footer span a::after,.faq p a::after{content:"";position:absolute;inset:-14px -4px}
 
 /* ---------- the one button: always in reach at the bottom of the screen ---------- */
 .cta{position:sticky;bottom:0;z-index:40;padding:12px var(--gut) calc(12px + env(safe-area-inset-bottom,0px));display:grid;gap:6px;justify-items:center;
@@ -221,32 +224,32 @@ footer nav a{display:inline-flex;align-items:center;min-height:44px}
       <section class="faq" aria-labelledby="faq">
         <h2 id="faq">questions</h2>
         <details>
-          <summary>Is it free?</summary>
+          <summary>is it free?</summary>
           <p>Yes. Free to join, post and judge. No ads, and we don't sell your data.</p>
         </details>
         <details>
-          <summary>Who sees my clips?</summary>
+          <summary>who sees my clips?</summary>
           <p>Once you post a clip it's public: riders see it in the feed, and anyone you send the link to can watch it. Your email is never shown to anyone.</p>
           <p>You can delete a clip, or your whole account, any time in the app. More in <a href="app/privacy.html">Privacy</a>.</p>
         </details>
         <details>
-          <summary>How do points work?</summary>
+          <summary>how do points work?</summary>
           <p>Every trick has a value: a 180 is 10, a 540 is 35, a cork 720 is 70. You get the points the first time riders call it landed. A new grab on a trick you already have adds 20%. Repeats pay nothing, so nobody climbs by spamming 180s.</p>
           <p>Your pass turns blue at 100 points, black at 300, double black at 600, triple black at 1,000 and park rat at 1,500.</p>
         </details>
         <details>
-          <summary>Do I have to be good?</summary>
+          <summary>do i have to be good?</summary>
           <p>No. A straight air is 5 points and a 180 is 10. Everyone starts on a green pass, and bails get posted too.</p>
         </details>
         <details>
-          <summary>Is it in the App Store?</summary>
+          <summary>is it in the app store?</summary>
           <p>Not yet. Stomped runs in your phone's browser (Safari or Chrome). Add it to your home screen and it opens like any other app.</p>
         </details>
       </section>
     </main>
 
     <footer>
-      <b>Built by two college riders.</b>
+      <b>built by two college riders.</b>
       <span>Question, or something broke? Message <a href="https://www.instagram.com/stomped.app/" rel="noopener">@stomped.app</a> on Instagram.</span>
       <nav aria-label="Legal"><a href="app/privacy.html">Privacy</a><a href="app/terms.html">Terms</a><a href="app/?join=in" data-keep-src>Sign in</a></nav>
     </footer>

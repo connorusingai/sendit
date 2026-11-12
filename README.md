@@ -3,7 +3,7 @@
 A social app for skiers and snowboarders. Film a trick in the app, other riders verify it, and verified
 tricks earn points that rank you up from Bronze to Legend. Challenge friends to Game of S.K.I. duels.
 
-**Live: https://connorusingai.github.io/sendit/** · installable to your phone's home screen, works with no signal
+**Live: https://getstomped.app** · installable to your phone's home screen, works with no signal
 
 <p>
   <img src="docs/screens/desktop.png" alt="Stomped on a laptop: sidebar, feed, and a HUD with rank, conditions and Trick of the Day" width="100%">
