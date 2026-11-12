@@ -1,18 +1,261 @@
 <!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stomped · the trick app for skiers & snowboarders</title>
-<meta name="description" content="Film a trick in the app. Other riders judge it, anonymously. Landed tricks earn points and rank your season pass up from green to park rat.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stomped · land it. prove it.</title>
+<meta name="description" content="The trick app for skiers and snowboarders. Film a trick in the app, riders call it landed or bailed, and landed tricks rank your season pass up from green to park rat. Free.">
+<link rel="canonical" href="https://getstomped.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Stomped">
-<meta property="og:title" content="Stomped · Land it. Prove it.">
-<meta property="og:description" content="The trick app for skiers & snowboarders. Film it, riders call it, rank your season pass up from green to park rat.">
+<meta property="og:url" content="https://getstomped.app/">
+<meta property="og:title" content="Stomped · land it. prove it.">
+<meta property="og:description" content="The trick app for skiers and snowboarders. Film it, riders call it, rank your season pass up from green to park rat.">
 <meta property="og:image" content="https://getstomped.app/app/icons/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="app/icons/icon-192.png">
-<script>location.replace("app/"+location.search+location.hash)</script><!-- keeps ?src=ig etc. -->
-<noscript><meta http-equiv="refresh" content="0; url=app/"></noscript>
 <meta name="theme-color" content="#edf1f4">
-<style>body{margin:0;background:#edf1f4;color:#111316;font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh}a{color:#111316;font-weight:700}</style>
-<p>Opening <a href="app/">STOMPED</a>…</p>
+<link rel="icon" href="app/icons/icon-192.png">
+<link rel="apple-touch-icon" href="app/icons/apple-touch-icon.png">
+<script>
+// This page is plain HTML and works with scripts off. The script only does two small jobs:
+// 1. Links that belong to the app go straight there: a clip, crew or friend invite (?clip= ?crew= ?from=), a
+//    password-reset or sign-in link from an email (#access_token...), and riders who are already signed in
+//    or opened Stomped from their home screen. (?home=1 shows this page anyway.)
+// 2. ?src=ig and friends ride along on the buttons, so sign-ups still say where they came from.
+(function(){
+  var q = new URLSearchParams(location.search), h = location.hash || '';
+  var deep = ['clip', 'crew', 'from', 'join'].some(function(k){ return q.has(k); });
+  var mail = /access_token=|type=recovery|error_code=|error_description=/.test(h) || q.has('code') || q.has('token_hash');
+  var mine = false;
+  try { mine = !!localStorage.getItem('sb-kyabslzotdtcwtjcygew-auth-token'); } catch (e) {}
+  var installed = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if (deep || mail || ((mine || installed) && !q.has('home'))){ location.replace('app/' + location.search + h); return; }
+  var src = q.get('src');
+  if (!src || !/^[\w-]{1,24}$/.test(src)) return;
+  src = src.toLowerCase();
+  try { if (!localStorage.getItem('sendit-signup-src')) localStorage.setItem('sendit-signup-src', src); } catch (e) {}
+  document.addEventListener('DOMContentLoaded', function(){
+    [].forEach.call(document.querySelectorAll('a[data-keep-src]'), function(a){
+      a.setAttribute('href', a.getAttribute('href') + '&src=' + encodeURIComponent(src));
+    });
+  });
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap">
+<style>
+/* Stomped front page. Same look as the app ("the ski edit", DESIGN.md): cool snow, film grain, one orange, the REC corner. */
+:root{
+  color-scheme:light;
+  --snow:#edf1f4; --paper:#f7f9fa; --ink:#111316; --ink-2:#2a2f35; --mute:#5b6168; --line:#cfd6dc; --line-2:#9aa3ab;
+  --hot:#ff5a1f; --rec:#ff3b1f;
+  --display:Archivo,"Arial Narrow",sans-serif;
+  --body:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --gut:16px; --bar:104px;
+}
+*{box-sizing:border-box}
+html{background:var(--snow);scroll-behavior:smooth;scrollbar-color:var(--line-2) var(--snow)}
+body{margin:0;color:var(--ink);font:400 16px/1.5 var(--body);background:var(--snow);-webkit-text-size-adjust:100%}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.08;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E")}
+a{color:var(--ink);text-underline-offset:3px;text-decoration-thickness:1.5px}
+:focus-visible{outline:2px solid var(--hot);outline-offset:3px}
+::selection{background:var(--hot);color:var(--ink)}
+h1,h2,h3{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:.95;margin:0;text-wrap:balance}
+p{margin:0}
+.wordmark{font-family:var(--display);font-stretch:125%;font-weight:900;letter-spacing:-.01em;text-decoration:none}
+
+/* ---------- hero: the clip, the REC corner, the stamp ---------- */
+.hero{position:relative;height:min(548px,66svh);min-height:400px;overflow:hidden;background:#aeb9c3}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:46%;background:linear-gradient(to top,rgba(237,241,244,.94),rgba(237,241,244,.62) 46%,rgba(237,241,244,0))}
+.hero-top{position:absolute;z-index:2;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
+  height:calc(56px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) var(--gut) 0;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.hero-top .wordmark{font-size:22px;color:#fff}
+.hero-top a.in{color:#fff;font-weight:600;font-size:15px;display:inline-flex;align-items:center;min-height:44px;padding:0 4px;text-decoration:none}
+.hero-top a.in:hover{text-decoration:underline}
+.rec{position:absolute;z-index:2;top:calc(62px + env(safe-area-inset-top,0px));left:var(--gut);display:inline-flex;align-items:center;gap:7px;
+  font:700 12px var(--mono);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.rec::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--rec)}
+.brk i{position:absolute;z-index:2;width:22px;height:22px;border:0 solid rgba(255,255,255,.9)}
+.brk i:nth-child(1){top:calc(96px + env(safe-area-inset-top,0px));left:var(--gut);border-top-width:2px;border-left-width:2px}
+.brk i:nth-child(2){top:calc(96px + env(safe-area-inset-top,0px));right:var(--gut);border-top-width:2px;border-right-width:2px}
+.hero .stamp-svg{position:absolute;z-index:2;left:43%;top:36%;width:206px;max-width:52%;transform:rotate(-9deg);display:block}
+.hero h1{position:absolute;z-index:2;left:var(--gut);right:var(--gut);bottom:16px;font-size:clamp(46px,15vw,62px);line-height:.9}
+
+/* ---------- the pitch ---------- */
+main{padding:22px var(--gut) 0;display:grid;gap:44px}
+.lede{font-size:18px;line-height:1.45;color:var(--ink-2);max-width:36ch}
+.rule-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:16px;font-size:24px}
+
+/* ---------- three steps, each with the real thing next to it ---------- */
+.steps{list-style:none;margin:14px 0 0;padding:0;counter-reset:s}
+.steps>li{counter-increment:s;display:grid;grid-template-columns:38px 1fr;column-gap:10px;row-gap:6px;padding:20px 0;border-top:1px solid var(--line)}
+.steps>li::before{content:counter(s);grid-row:1 / span 3;font:900 30px/1 var(--display);font-stretch:125%}
+.steps h3{font-size:22px;align-self:center}
+.steps p{color:var(--ink-2);max-width:42ch}
+.thing{margin-top:10px;min-width:0}
+/* 1: the record button from the app's tab bar */
+.shutter{display:flex;align-items:center;gap:14px;color:var(--mute);font-size:14px;font-weight:600}
+.shutter i{flex:none;width:56px;height:56px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center}
+.shutter i::after{content:"";width:38px;height:38px;border-radius:50%;background:var(--hot)}
+.shutter b{font:700 12px var(--mono);color:var(--ink);display:block}
+/* 2: the judge panel */
+.judge{background:var(--ink);border-radius:6px;padding:14px;display:grid;gap:12px;max-width:340px}
+.judge strong{font:800 24px/1 var(--display);font-stretch:125%;letter-spacing:-.03em;color:#fff}
+.judge div{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.judge span{min-height:56px;border-radius:4px;display:grid;place-items:center;font-weight:700;font-size:17px;border:1px solid #4b525a;color:#fff}
+.judge span.yes{background:var(--hot);border-color:var(--hot);color:var(--ink)}
+.judge small{font-size:13px;color:#aab1b8}
+/* 3: the six passes, green to park rat */
+.passes{list-style:none;margin:0 calc(-1 * var(--gut)) 0 -48px;padding:4px var(--gut) 12px 48px;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
+.passes::-webkit-scrollbar{display:none}
+.passes li{flex:none;width:min(62vw,236px);scroll-snap-align:start;scroll-margin-left:48px}
+.pass{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 12px rgba(17,19,22,.22))}
+
+/* ---------- questions ---------- */
+.faq h2{font-size:30px;margin-bottom:12px}
+.faq details{border-top:1px solid var(--line)}
+.faq details:last-of-type{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:60px;padding:8px 0;cursor:pointer;
+  font:800 19px/1.15 var(--display);font-stretch:125%;letter-spacing:-.02em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"";flex:none;width:10px;height:10px;margin-right:4px;border-right:2.5px solid var(--ink);border-bottom:2.5px solid var(--ink);transform:translateY(-3px) rotate(45deg);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.faq details[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+.faq details p{padding:0 0 18px;color:var(--ink-2);max-width:60ch}
+.faq details p+p{margin-top:-8px}
+
+/* ---------- foot ---------- */
+footer{padding:36px var(--gut) 28px;color:var(--mute);font-size:14px;display:grid;gap:8px}
+footer b{color:var(--ink);font:800 20px/1.1 var(--display);font-stretch:125%;letter-spacing:-.02em}
+footer a{color:var(--ink-2)}
+footer nav{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
+footer nav a{display:inline-flex;align-items:center;min-height:44px}
+
+/* ---------- the one button: always in reach at the bottom of the screen ---------- */
+.cta{position:sticky;bottom:0;z-index:40;padding:12px var(--gut) calc(12px + env(safe-area-inset-bottom,0px));display:grid;gap:6px;justify-items:center;
+  background:linear-gradient(to top,var(--snow) 72%,rgba(237,241,244,0))}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:448px;min-height:56px;border-radius:4px;background:var(--hot);color:var(--ink);
+  font-weight:700;font-size:17px;text-decoration:none;transition:transform .08s,background-color .15s}
+.btn:hover{background:#ff6c38}
+.btn:active{transform:translateY(1px)}
+.cta small{font-size:14px;color:var(--mute)}
+
+/* the stamp slams on once (DESIGN.md: scale 2.2 to 1); the REC dot blinks like a camcorder */
+@media (prefers-reduced-motion:no-preference){
+  .hero .stamp-svg{animation:slam .5s cubic-bezier(.16,1,.3,1) .55s backwards}
+  .rec::before{animation:blink 1.6s steps(1) 3 1.2s}
+}
+@keyframes slam{from{opacity:0;transform:rotate(-9deg) scale(2.2)}}
+@keyframes blink{50%{opacity:.25}}
+
+/* ---------- wide screens: the clip stays up on the left, the page scrolls on the right ---------- */
+@media (min-width:900px){
+  :root{--gut:40px}
+  .page{display:grid;grid-template-columns:minmax(380px,44vw) minmax(0,1fr);align-items:start}
+  .hero{position:sticky;top:0;height:100svh;min-height:560px}
+  .hero img{object-position:50% 22%}
+  .hero h1{font-size:clamp(64px,6.4vw,104px);bottom:36px}
+  .hero .stamp-svg{width:min(300px,52%);top:33%}
+  .col{min-width:0;max-width:680px}
+  main{padding-top:64px;gap:64px}
+  .lede{font-size:22px}
+  .rule-h{font-size:30px}
+  .steps>li{grid-template-columns:54px 1fr;padding:26px 0}
+  .steps>li::before{font-size:40px}
+  .steps h3{font-size:26px}
+  .passes{margin-left:-64px;padding-left:64px}
+  .passes li{width:236px;scroll-margin-left:64px}
+  .faq h2{font-size:38px}
+  .cta{justify-items:start;background:linear-gradient(to top,var(--snow) 78%,rgba(237,241,244,0))}
+  .cta .btn{max-width:340px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="hero">
+    <img src="app/icons/landing.jpg" alt="A skier upside down in the middle of a backflip over a park jump" width="780" height="1387" fetchpriority="high">
+    <div class="hero-top"><a class="wordmark" href="./?home=1" aria-label="Stomped">STOMPED</a><a class="in" href="app/?join=in" data-keep-src>sign in</a></div>
+    <span class="rec" aria-hidden="true">REC 00:03:05</span>
+    <span class="brk" aria-hidden="true"><i></i><i></i></span>
+    <svg class="stamp-svg" viewBox="0 0 300 110" aria-hidden="true"><defs><filter id="st1r" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4"/></filter><filter id="st1s"><feTurbulence type="fractalNoise" baseFrequency="1.3" numOctaves="1" seed="12"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 -3 2.1"/></filter><mask id="st1m"><rect width="300" height="110" fill="#fff" filter="url(#st1s)"/></mask></defs><g filter="url(#st1r)" mask="url(#st1m)"><rect x="6" y="6" width="288" height="98" rx="8" fill="none" stroke="#ff5a1f" stroke-width="8"/><text x="150" y="74" text-anchor="middle" textLength="250" lengthAdjust="spacingAndGlyphs" style="font: 900 54px Archivo, sans-serif; font-stretch: 125%" fill="#ff5a1f">STOMPED</text></g></svg>
+    <h1>land it.<br>prove it.</h1>
+  </header>
+
+  <div class="col">
+    <main>
+      <p class="lede">Film a trick in the app. Riders who weren't there call it landed or bailed. Landed tricks earn points and rank your season pass up.</p>
+
+      <section aria-labelledby="how">
+        <h2 class="rule-h" id="how">landed or bailed? you call it.</h2>
+        <ol class="steps">
+          <li>
+            <h3>film it</h3>
+            <p>Record in the app, up to 20 seconds. No uploads from your camera roll, so nobody posts last season's edit or someone else's clip.</p>
+            <div class="thing shutter" aria-hidden="true"><i></i><span><b>REC 00:00:07</b>have a friend film, or prop your phone up</span></div>
+          </li>
+          <li>
+            <h3>riders call it</h3>
+            <p>Other riders watch your clip and call it. Nobody sees who called what, and you can't call your own.</p>
+            <div class="thing judge" aria-hidden="true"><strong>landed or bailed?</strong><div><span>Bailed</span><span class="yes">Landed</span></div><small>needs 2 more calls. Your call is anonymous.</small></div>
+          </li>
+          <li>
+            <h3>rank up</h3>
+            <p>Every new trick pays points, and points move your season pass up the mountain: green, blue, black, double black, triple black, park rat.</p>
+            <ul class="thing passes" aria-label="The six season passes, green to park rat">
+      <li><svg class="pass " viewBox="0 0 340 214" role="img" aria-label="The green season pass"><defs><linearGradient id="lp0g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34b36c"/><stop offset="1" stop-color="#155e38"/></linearGradient><linearGradient id="lp0s" x1="0" y1="0" x2="1" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".13"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="lp0c"><rect x="1" y="1" width="338" height="212" rx="16"/></clipPath><clipPath id="lp0p"><rect x="246" y="40" width="76" height="96" rx="5"/></clipPath></defs><g clip-path="url(#lp0c)"><rect width="340" height="214" fill="url(#lp0g)"/><g fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="1.2"><path d="M-10 40 C70 6 120 62 200 32 S300 0 360 26"/><path d="M-10 56 C70 22 120 78 200 48 S300 16 360 42"/><path d="M-10 72 C70 38 120 94 200 64 S300 32 360 58"/><path d="M-10 88 C70 54 120 110 200 80 S300 48 360 74"/><path d="M-10 104 C70 70 120 126 200 96 S300 64 360 90"/><path d="M-10 120 C70 86 120 142 200 112 S300 80 360 106"/><path d="M-10 136 C70 102 120 158 200 128 S300 96 360 122"/><path d="M-10 152 C70 118 120 174 200 144 S300 112 360 138"/><path d="M-10 168 C70 134 120 190 200 160 S300 128 360 154"/><path d="M-10 184 C70 150 120 206 200 176 S300 144 360 170"/><path d="M-10 200 C70 166 120 222 200 192 S300 160 360 186"/><path d="M-10 216 C70 182 120 238 200 208 S300 176 360 202"/></g><path d="M0 214V158l38-22 22 12 44-46 26 20 40-44 34 34 24-16 40 34 30-18 42 24V214z" fill="#fff" fill-opacity=".08"/><path d="M0 214V186l52-20 34 14 58-34 46 28 40-18 50 22 60-14V214z" fill="#fff" fill-opacity=".09"/><rect width="340" height="214" fill="url(#lp0s)"/></g><rect x="2.5" y="2.5" width="335" height="209" rx="14.5" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="3"/><text x="20" y="31" style="font: 900 14px Archivo, sans-serif; font-stretch: 125%; letter-spacing: .4px" fill="#fff">STOMPED</text><text x="226" y="31" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace" fill="#fff" fill-opacity=".8">26/27</text><circle cx="34" cy="66" r="14" fill="#fff"/><text x="20" y="116" style="font: 800 26px Archivo, sans-serif; font-stretch: 112%; letter-spacing: -.4px" fill="#fff">green</text><text x="20" y="137" style="font: 600 13px Figtree, sans-serif" fill="#fff" fill-opacity=".85">@you</text><rect x="246" y="40" width="76" height="96" rx="5" fill="#fff" fill-opacity=".07"/><circle cx="255" cy="50" r="3" fill="#ff3b1f"/><text x="261" y="53" style="font: 700 7.5px 'JetBrains Mono', monospace" fill="#fff">REC</text><path d="M240 46v-10h10M318 36h10v10M328 130v10h-10M250 140h-10v-10" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="20" y="168" width="300" height="4" rx="2" fill="#fff" fill-opacity=".2"/><rect class="pass-fill" x="20" y="168" width="6.0" height="4" rx="2" fill="#fff"/><text x="20" y="194" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".85">0 / 100 PTS</text><text x="320" y="194" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".6"></text></svg></li>
+      <li><svg class="pass " viewBox="0 0 340 214" role="img" aria-label="The blue season pass"><defs><linearGradient id="lp1g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4386ea"/><stop offset="1" stop-color="#173f94"/></linearGradient><linearGradient id="lp1s" x1="0" y1="0" x2="1" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".13"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="lp1c"><rect x="1" y="1" width="338" height="212" rx="16"/></clipPath><clipPath id="lp1p"><rect x="246" y="40" width="76" height="96" rx="5"/></clipPath></defs><g clip-path="url(#lp1c)"><rect width="340" height="214" fill="url(#lp1g)"/><g fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="1.2"><path d="M-10 40 C70 6 120 62 200 32 S300 0 360 26"/><path d="M-10 56 C70 22 120 78 200 48 S300 16 360 42"/><path d="M-10 72 C70 38 120 94 200 64 S300 32 360 58"/><path d="M-10 88 C70 54 120 110 200 80 S300 48 360 74"/><path d="M-10 104 C70 70 120 126 200 96 S300 64 360 90"/><path d="M-10 120 C70 86 120 142 200 112 S300 80 360 106"/><path d="M-10 136 C70 102 120 158 200 128 S300 96 360 122"/><path d="M-10 152 C70 118 120 174 200 144 S300 112 360 138"/><path d="M-10 168 C70 134 120 190 200 160 S300 128 360 154"/><path d="M-10 184 C70 150 120 206 200 176 S300 144 360 170"/><path d="M-10 200 C70 166 120 222 200 192 S300 160 360 186"/><path d="M-10 216 C70 182 120 238 200 208 S300 176 360 202"/></g><path d="M0 214V158l38-22 22 12 44-46 26 20 40-44 34 34 24-16 40 34 30-18 42 24V214z" fill="#fff" fill-opacity=".08"/><path d="M0 214V186l52-20 34 14 58-34 46 28 40-18 50 22 60-14V214z" fill="#fff" fill-opacity=".09"/><rect width="340" height="214" fill="url(#lp1s)"/></g><rect x="2.5" y="2.5" width="335" height="209" rx="14.5" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="3"/><text x="20" y="31" style="font: 900 14px Archivo, sans-serif; font-stretch: 125%; letter-spacing: .4px" fill="#fff">STOMPED</text><text x="226" y="31" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace" fill="#fff" fill-opacity=".8">26/27</text><rect x="20" y="52" width="28" height="28" fill="#fff"/><text x="20" y="116" style="font: 800 26px Archivo, sans-serif; font-stretch: 112%; letter-spacing: -.4px" fill="#fff">blue</text><text x="20" y="137" style="font: 600 13px Figtree, sans-serif" fill="#fff" fill-opacity=".85">@you</text><rect x="246" y="40" width="76" height="96" rx="5" fill="#fff" fill-opacity=".07"/><circle cx="255" cy="50" r="3" fill="#ff3b1f"/><text x="261" y="53" style="font: 700 7.5px 'JetBrains Mono', monospace" fill="#fff">REC</text><path d="M240 46v-10h10M318 36h10v10M328 130v10h-10M250 140h-10v-10" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="20" y="168" width="300" height="4" rx="2" fill="#fff" fill-opacity=".2"/><rect class="pass-fill" x="20" y="168" width="6.0" height="4" rx="2" fill="#fff"/><text x="20" y="194" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".85">100 / 300 PTS</text><text x="320" y="194" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".6"></text></svg></li>
+      <li><svg class="pass " viewBox="0 0 340 214" role="img" aria-label="The black season pass"><defs><linearGradient id="lp2g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#363c43"/><stop offset="1" stop-color="#131518"/></linearGradient><linearGradient id="lp2s" x1="0" y1="0" x2="1" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".13"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="lp2c"><rect x="1" y="1" width="338" height="212" rx="16"/></clipPath><clipPath id="lp2p"><rect x="246" y="40" width="76" height="96" rx="5"/></clipPath></defs><g clip-path="url(#lp2c)"><rect width="340" height="214" fill="url(#lp2g)"/><g fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="1.2"><path d="M-10 40 C70 6 120 62 200 32 S300 0 360 26"/><path d="M-10 56 C70 22 120 78 200 48 S300 16 360 42"/><path d="M-10 72 C70 38 120 94 200 64 S300 32 360 58"/><path d="M-10 88 C70 54 120 110 200 80 S300 48 360 74"/><path d="M-10 104 C70 70 120 126 200 96 S300 64 360 90"/><path d="M-10 120 C70 86 120 142 200 112 S300 80 360 106"/><path d="M-10 136 C70 102 120 158 200 128 S300 96 360 122"/><path d="M-10 152 C70 118 120 174 200 144 S300 112 360 138"/><path d="M-10 168 C70 134 120 190 200 160 S300 128 360 154"/><path d="M-10 184 C70 150 120 206 200 176 S300 144 360 170"/><path d="M-10 200 C70 166 120 222 200 192 S300 160 360 186"/><path d="M-10 216 C70 182 120 238 200 208 S300 176 360 202"/></g><path d="M0 214V158l38-22 22 12 44-46 26 20 40-44 34 34 24-16 40 34 30-18 42 24V214z" fill="#fff" fill-opacity=".08"/><path d="M0 214V186l52-20 34 14 58-34 46 28 40-18 50 22 60-14V214z" fill="#fff" fill-opacity=".09"/><rect width="340" height="214" fill="url(#lp2s)"/></g><rect x="2.5" y="2.5" width="335" height="209" rx="14.5" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="3"/><text x="20" y="31" style="font: 900 14px Archivo, sans-serif; font-stretch: 125%; letter-spacing: .4px" fill="#fff">STOMPED</text><text x="226" y="31" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace" fill="#fff" fill-opacity=".8">26/27</text><path d="M34 52l14 14l-14 14l-14 -14z" fill="#fff"/><text x="20" y="116" style="font: 800 26px Archivo, sans-serif; font-stretch: 112%; letter-spacing: -.4px" fill="#fff">black</text><text x="20" y="137" style="font: 600 13px Figtree, sans-serif" fill="#fff" fill-opacity=".85">@you</text><rect x="246" y="40" width="76" height="96" rx="5" fill="#fff" fill-opacity=".07"/><circle cx="255" cy="50" r="3" fill="#ff3b1f"/><text x="261" y="53" style="font: 700 7.5px 'JetBrains Mono', monospace" fill="#fff">REC</text><path d="M240 46v-10h10M318 36h10v10M328 130v10h-10M250 140h-10v-10" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="20" y="168" width="300" height="4" rx="2" fill="#fff" fill-opacity=".2"/><rect class="pass-fill" x="20" y="168" width="6.0" height="4" rx="2" fill="#fff"/><text x="20" y="194" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".85">300 / 600 PTS</text><text x="320" y="194" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".6"></text></svg></li>
+      <li><svg class="pass " viewBox="0 0 340 214" role="img" aria-label="The double black season pass"><defs><linearGradient id="lp3g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c3137"/><stop offset="1" stop-color="#0d0f11"/></linearGradient><linearGradient id="lp3s" x1="0" y1="0" x2="1" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".13"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="lp3e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#8d96a0"/><stop offset="1" stop-color="#e6eaee"/></linearGradient><clipPath id="lp3c"><rect x="1" y="1" width="338" height="212" rx="16"/></clipPath><clipPath id="lp3p"><rect x="246" y="40" width="76" height="96" rx="5"/></clipPath></defs><g clip-path="url(#lp3c)"><rect width="340" height="214" fill="url(#lp3g)"/><g fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="1.2"><path d="M-10 40 C70 6 120 62 200 32 S300 0 360 26"/><path d="M-10 56 C70 22 120 78 200 48 S300 16 360 42"/><path d="M-10 72 C70 38 120 94 200 64 S300 32 360 58"/><path d="M-10 88 C70 54 120 110 200 80 S300 48 360 74"/><path d="M-10 104 C70 70 120 126 200 96 S300 64 360 90"/><path d="M-10 120 C70 86 120 142 200 112 S300 80 360 106"/><path d="M-10 136 C70 102 120 158 200 128 S300 96 360 122"/><path d="M-10 152 C70 118 120 174 200 144 S300 112 360 138"/><path d="M-10 168 C70 134 120 190 200 160 S300 128 360 154"/><path d="M-10 184 C70 150 120 206 200 176 S300 144 360 170"/><path d="M-10 200 C70 166 120 222 200 192 S300 160 360 186"/><path d="M-10 216 C70 182 120 238 200 208 S300 176 360 202"/></g><path d="M0 214V158l38-22 22 12 44-46 26 20 40-44 34 34 24-16 40 34 30-18 42 24V214z" fill="#fff" fill-opacity=".08"/><path d="M0 214V186l52-20 34 14 58-34 46 28 40-18 50 22 60-14V214z" fill="#fff" fill-opacity=".09"/><rect width="340" height="214" fill="url(#lp3s)"/></g><rect x="2.5" y="2.5" width="335" height="209" rx="14.5" fill="none" stroke="url(#lp3e)" stroke-width="3"/><text x="20" y="31" style="font: 900 14px Archivo, sans-serif; font-stretch: 125%; letter-spacing: .4px" fill="#fff">STOMPED</text><text x="226" y="31" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace" fill="#fff" fill-opacity=".8">26/27</text><path d="M34 52l14 14l-14 14l-14 -14z" fill="#fff"/><path d="M64.1 52l14 14l-14 14l-14 -14z" fill="#fff"/><text x="20" y="116" style="font: 800 26px Archivo, sans-serif; font-stretch: 112%; letter-spacing: -.4px" fill="#fff">double black</text><text x="20" y="137" style="font: 600 13px Figtree, sans-serif" fill="#fff" fill-opacity=".85">@you</text><rect x="246" y="40" width="76" height="96" rx="5" fill="#fff" fill-opacity=".07"/><circle cx="255" cy="50" r="3" fill="#ff3b1f"/><text x="261" y="53" style="font: 700 7.5px 'JetBrains Mono', monospace" fill="#fff">REC</text><path d="M240 46v-10h10M318 36h10v10M328 130v10h-10M250 140h-10v-10" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="20" y="168" width="300" height="4" rx="2" fill="#fff" fill-opacity=".2"/><rect class="pass-fill" x="20" y="168" width="6.0" height="4" rx="2" fill="#fff"/><text x="20" y="194" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".85">600 / 1,000 PTS</text><text x="320" y="194" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".6"></text></svg></li>
+      <li><svg class="pass " viewBox="0 0 340 214" role="img" aria-label="The triple black season pass"><defs><linearGradient id="lp4g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#25292e"/><stop offset="1" stop-color="#070809"/></linearGradient><linearGradient id="lp4s" x1="0" y1="0" x2="1" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".13"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="lp4e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1b0"/><stop offset=".5" stop-color="#c48a0c"/><stop offset="1" stop-color="#ffe27a"/></linearGradient><linearGradient id="lp4h" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e96ae0"/><stop offset=".33" stop-color="#7d70ff"/><stop offset=".66" stop-color="#2fc4ac"/><stop offset="1" stop-color="#f2d01f"/></linearGradient><clipPath id="lp4c"><rect x="1" y="1" width="338" height="212" rx="16"/></clipPath><clipPath id="lp4p"><rect x="246" y="40" width="76" height="96" rx="5"/></clipPath></defs><g clip-path="url(#lp4c)"><rect width="340" height="214" fill="url(#lp4g)"/><g fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="1.2"><path d="M-10 40 C70 6 120 62 200 32 S300 0 360 26"/><path d="M-10 56 C70 22 120 78 200 48 S300 16 360 42"/><path d="M-10 72 C70 38 120 94 200 64 S300 32 360 58"/><path d="M-10 88 C70 54 120 110 200 80 S300 48 360 74"/><path d="M-10 104 C70 70 120 126 200 96 S300 64 360 90"/><path d="M-10 120 C70 86 120 142 200 112 S300 80 360 106"/><path d="M-10 136 C70 102 120 158 200 128 S300 96 360 122"/><path d="M-10 152 C70 118 120 174 200 144 S300 112 360 138"/><path d="M-10 168 C70 134 120 190 200 160 S300 128 360 154"/><path d="M-10 184 C70 150 120 206 200 176 S300 144 360 170"/><path d="M-10 200 C70 166 120 222 200 192 S300 160 360 186"/><path d="M-10 216 C70 182 120 238 200 208 S300 176 360 202"/></g><path d="M0 214V158l38-22 22 12 44-46 26 20 40-44 34 34 24-16 40 34 30-18 42 24V214z" fill="#fff" fill-opacity=".08"/><path d="M0 214V186l52-20 34 14 58-34 46 28 40-18 50 22 60-14V214z" fill="#fff" fill-opacity=".09"/><rect width="340" height="214" fill="url(#lp4h)" opacity=".16"/><rect width="340" height="214" fill="url(#lp4s)"/></g><rect x="2.5" y="2.5" width="335" height="209" rx="14.5" fill="none" stroke="url(#lp4e)" stroke-width="3"/><text x="20" y="31" style="font: 900 14px Archivo, sans-serif; font-stretch: 125%; letter-spacing: .4px" fill="#fff">STOMPED</text><text x="226" y="31" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace" fill="#fff" fill-opacity=".8">26/27</text><path d="M34 52l14 14l-14 14l-14 -14z" fill="#fff"/><path d="M64.1 52l14 14l-14 14l-14 -14z" fill="#fff"/><path d="M94.19999999999999 52l14 14l-14 14l-14 -14z" fill="#fff"/><text x="20" y="116" style="font: 800 26px Archivo, sans-serif; font-stretch: 112%; letter-spacing: -.4px" fill="#fff">triple black</text><text x="20" y="137" style="font: 600 13px Figtree, sans-serif" fill="#fff" fill-opacity=".85">@you</text><rect x="246" y="40" width="76" height="96" rx="5" fill="#fff" fill-opacity=".07"/><circle cx="255" cy="50" r="3" fill="#ff3b1f"/><text x="261" y="53" style="font: 700 7.5px 'JetBrains Mono', monospace" fill="#fff">REC</text><path d="M240 46v-10h10M318 36h10v10M328 130v10h-10M250 140h-10v-10" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="20" y="168" width="300" height="4" rx="2" fill="#fff" fill-opacity=".2"/><rect class="pass-fill" x="20" y="168" width="6.0" height="4" rx="2" fill="#fff"/><text x="20" y="194" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".85">1,000 / 1,500 PTS</text><text x="320" y="194" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".6"></text></svg></li>
+      <li><svg class="pass " viewBox="0 0 340 214" role="img" aria-label="The park rat season pass"><defs><linearGradient id="lp5g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d2024"/><stop offset="1" stop-color="#060708"/></linearGradient><linearGradient id="lp5s" x1="0" y1="0" x2="1" y2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".13"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="lp5e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb08a"/><stop offset=".5" stop-color="#ff5a1f"/><stop offset="1" stop-color="#ffd0b8"/></linearGradient><linearGradient id="lp5h" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e96ae0"/><stop offset=".33" stop-color="#7d70ff"/><stop offset=".66" stop-color="#2fc4ac"/><stop offset="1" stop-color="#f2d01f"/></linearGradient><clipPath id="lp5c"><rect x="1" y="1" width="338" height="212" rx="16"/></clipPath><clipPath id="lp5p"><rect x="246" y="40" width="76" height="96" rx="5"/></clipPath></defs><g clip-path="url(#lp5c)"><rect width="340" height="214" fill="url(#lp5g)"/><g fill="none" stroke="#ff5a1f" stroke-opacity=".09" stroke-width="1.2"><path d="M-10 40 C70 6 120 62 200 32 S300 0 360 26"/><path d="M-10 56 C70 22 120 78 200 48 S300 16 360 42"/><path d="M-10 72 C70 38 120 94 200 64 S300 32 360 58"/><path d="M-10 88 C70 54 120 110 200 80 S300 48 360 74"/><path d="M-10 104 C70 70 120 126 200 96 S300 64 360 90"/><path d="M-10 120 C70 86 120 142 200 112 S300 80 360 106"/><path d="M-10 136 C70 102 120 158 200 128 S300 96 360 122"/><path d="M-10 152 C70 118 120 174 200 144 S300 112 360 138"/><path d="M-10 168 C70 134 120 190 200 160 S300 128 360 154"/><path d="M-10 184 C70 150 120 206 200 176 S300 144 360 170"/><path d="M-10 200 C70 166 120 222 200 192 S300 160 360 186"/><path d="M-10 216 C70 182 120 238 200 208 S300 176 360 202"/></g><path d="M0 214V158l38-22 22 12 44-46 26 20 40-44 34 34 24-16 40 34 30-18 42 24V214z" fill="#fff" fill-opacity=".08"/><path d="M0 214V186l52-20 34 14 58-34 46 28 40-18 50 22 60-14V214z" fill="#fff" fill-opacity=".09"/><rect width="340" height="214" fill="url(#lp5h)" opacity=".16"/><rect width="340" height="214" fill="url(#lp5s)"/></g><rect x="2.5" y="2.5" width="335" height="209" rx="14.5" fill="none" stroke="url(#lp5e)" stroke-width="3"/><text x="20" y="31" style="font: 900 14px Archivo, sans-serif; font-stretch: 125%; letter-spacing: .4px" fill="#fff">STOMPED</text><text x="226" y="31" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace" fill="#fff" fill-opacity=".8">26/27</text><rect x="20" y="52" width="56" height="28" rx="14" fill="#ff5a1f"/><text x="48" y="71.88" text-anchor="middle" style="font: 900 15.400000000000002px Archivo, sans-serif" fill="#111316">PARK</text><text x="20" y="116" style="font: 800 26px Archivo, sans-serif; font-stretch: 112%; letter-spacing: -.4px" fill="#ff5a1f">park rat</text><text x="20" y="137" style="font: 600 13px Figtree, sans-serif" fill="#fff" fill-opacity=".85">@you</text><rect x="246" y="40" width="76" height="96" rx="5" fill="#fff" fill-opacity=".07"/><circle cx="255" cy="50" r="3" fill="#ff3b1f"/><text x="261" y="53" style="font: 700 7.5px 'JetBrains Mono', monospace" fill="#fff">REC</text><path d="M240 46v-10h10M318 36h10v10M328 130v10h-10M250 140h-10v-10" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="20" y="168" width="300" height="4" rx="2" fill="#fff" fill-opacity=".2"/><rect class="pass-fill" x="20" y="168" width="300.0" height="4" rx="2" fill="#ff5a1f"/><text x="20" y="194" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".85">1,500 PTS</text><text x="320" y="194" text-anchor="end" style="font: 700 10px 'JetBrains Mono', monospace; letter-spacing: .3px" fill="#fff" fill-opacity=".6"></text></svg></li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <section class="faq" aria-labelledby="faq">
+        <h2 id="faq">questions</h2>
+        <details>
+          <summary>Is it free?</summary>
+          <p>Yes. Free to join, post and judge. No ads, and we don't sell your data.</p>
+        </details>
+        <details>
+          <summary>Who sees my clips?</summary>
+          <p>Once you post a clip it's public: riders see it in the feed, and anyone you send the link to can watch it. Your email is never shown to anyone.</p>
+          <p>You can delete a clip, or your whole account, any time in the app. More in <a href="app/privacy.html">Privacy</a>.</p>
+        </details>
+        <details>
+          <summary>How do points work?</summary>
+          <p>Every trick has a value: a 180 is 10, a 540 is 35, a cork 720 is 70. You get the points the first time riders call it landed. A new grab on a trick you already have adds 20%. Repeats pay nothing, so nobody climbs by spamming 180s.</p>
+          <p>Your pass turns blue at 100 points, black at 300, double black at 600, triple black at 1,000 and park rat at 1,500.</p>
+        </details>
+        <details>
+          <summary>Do I have to be good?</summary>
+          <p>No. A straight air is 5 points and a 180 is 10. Everyone starts on a green pass, and bails get posted too.</p>
+        </details>
+        <details>
+          <summary>Is it in the App Store?</summary>
+          <p>Not yet. Stomped runs in your phone's browser (Safari or Chrome). Add it to your home screen and it opens like any other app.</p>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <b>Built by two college riders.</b>
+      <span>Question, or something broke? Message <a href="https://www.instagram.com/stomped.app/" rel="noopener">@stomped.app</a> on Instagram.</span>
+      <nav aria-label="Legal"><a href="app/privacy.html">Privacy</a><a href="app/terms.html">Terms</a><a href="app/?join=in" data-keep-src>Sign in</a></nav>
+    </footer>
+
+    <div class="cta">
+      <a class="btn" id="join" href="app/?join=1" data-keep-src>Make an account</a>
+      <small>Free. Takes about a minute.</small>
+    </div>
+  </div>
+</div>
+</body>
+</html>

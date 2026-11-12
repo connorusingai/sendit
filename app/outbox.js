@@ -113,26 +113,36 @@
     if (/jwt|token.*expired|expired.*token|invalid.*signature/i.test(e.message)) e.auth = true;
     return e;
   }
-  async function call(api, method, path, {body, headers = {}, timeout = 30000} = {}){
-    const once = async token => {
-      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
-      try {
-        return await fetch(api.url + path, {method, body, signal: ctl.signal,
-          headers: {apikey: api.key, Authorization: 'Bearer ' + token, ...headers}});
-      } catch (e){
-        throw netError(e && e.name === 'AbortError' ? 'Upload timed out' : 'No signal');
-      } finally { clearTimeout(t); }
-    };
-    let res = await once(await api.token());
-    let text = await res.text().catch(() => ''), data;
-    try { data = text ? JSON.parse(text) : null; } catch (e){ data = text; }
+  // One request, answered as {ok, status, text}. With onProgress (the app page, sending the video) it goes through
+  // XMLHttpRequest, the only way a web page can watch an upload move. The service worker has no XMLHttpRequest
+  // and nobody watching, so it uses fetch.
+  function request(api, method, path, token, {body, headers = {}, timeout = 30000, onProgress}){
+    const all = {apikey: api.key, Authorization: 'Bearer ' + token, ...headers};
+    if (onProgress && typeof XMLHttpRequest !== 'undefined') return new Promise((res, rej) => {
+      const x = new XMLHttpRequest();
+      x.open(method, api.url + path); x.timeout = timeout;
+      for (const k of Object.keys(all)) x.setRequestHeader(k, all[k]);
+      x.upload.onprogress = e => { if (e.lengthComputable && e.total) onProgress(Math.min(99, Math.round(100 * e.loaded / e.total))); };
+      x.onload = () => res({ok: x.status >= 200 && x.status < 300, status: x.status, text: x.responseText || ''});
+      x.onerror = x.onabort = () => rej(netError('No signal'));
+      x.ontimeout = () => rej(netError('Upload timed out'));
+      x.send(body);
+    });
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+    return fetch(api.url + path, {method, body, signal: ctl.signal, headers: all})
+      .then(async r => ({ok: r.ok, status: r.status, text: await r.text().catch(() => '')}),
+            e => { throw netError(e && e.name === 'AbortError' ? 'Upload timed out' : 'No signal'); })
+      .finally(() => clearTimeout(t));
+  }
+  async function call(api, method, path, opts = {}){
+    const parse = text => { try { return text ? JSON.parse(text) : null; } catch (e){ return text; } };
+    let res = await request(api, method, path, await api.token(), opts), data = parse(res.text);
     if (!res.ok){
       const err = httpError(res.status, data);
       if ((res.status === 401 || err.auth) && api.refresh){   // the login ran out while waiting for signal: renew once
         const fresh = await api.refresh().catch(() => null);
         if (fresh){
-          res = await once(fresh); text = await res.text().catch(() => '');
-          try { data = text ? JSON.parse(text) : null; } catch (e){ data = text; }
+          res = await request(api, method, path, fresh, opts); data = parse(res.text);
           if (res.ok) return data;
           throw httpError(res.status, data);
         }
@@ -147,16 +157,21 @@
   const alreadyThere = e => e.status === 409 || e.code === '409' || /already exists|duplicate/i.test(e.message);
 
   // Upload one item, resuming from its last finished step. Throws on failure (the item keeps its progress).
-  async function send(it, api){
+  // onProgress(0-100): how much of the video has gone up (100 = the video is up, the rest is quick).
+  async function send(it, api, onProgress){
     const step = patch => { Object.assign(it, patch); return it.memory ? null : put(it); };   // memory: phone storage is off
+    const say = p => { if (onProgress) try { onProgress(p); } catch (e) {} };
     if (!it.path) await step({path: `${it.uid}/${crypto.randomUUID()}.${extOf(it.blob.type || 'video/webm')}`});
     if (!it.uploaded){
+      say(0);
       try {
         await call(api, 'POST', `/storage/v1/object/${BUCKET}/${it.path}`, {body: it.blob, timeout: uploadTimeout(it.blob.size),
+          onProgress: onProgress ? say : null,
           headers: {'Content-Type': it.blob.type || 'video/webm', 'x-upsert': 'false', 'cache-control': '3600'}});
       } catch (e){ if (!alreadyThere(e)) throw e; }   // an earlier try got through before the signal dropped
       await step({uploaded: true});
     }
+    say(100);
     if (!it.clipId){
       let clipId = null;
       if (it.triedInsert){   // the last try may have made the clip and lost the answer: look before posting twice
@@ -193,7 +208,7 @@
   }
 
   // ---------- flush: upload everything that's due ----------
-  // opts: {api, uid, force (ignore the backoff wait), first (id to try first), only (just that one), onStart(it)}
+  // opts: {api, uid, force (ignore the backoff wait), first (id to try first), only (just that one), onStart(it), onProgress(it, pct)}
   // Returns {sent: [items], failed: [items the server refused this time], waiting, stuck, nextTry}. Runs one at a time; a call made while one runs waits its turn.
   let chain = Promise.resolve();
   function flush(opts){
@@ -201,7 +216,7 @@
     chain = p.catch(() => {});
     return p;
   }
-  async function flushNow({api, uid, force = false, first = null, only = false, onStart} = {}){
+  async function flushNow({api, uid, force = false, first = null, only = false, onStart, onProgress} = {}){
     const out = {sent: [], failed: [], waiting: 0, stuck: 0, nextTry: 0};
     let list = await waiting(uid);
     if (first) list = only ? list.filter(i => i.id === first) : [...list.filter(i => i.id === first), ...list.filter(i => i.id !== first)];
@@ -214,7 +229,7 @@
       it.uid = it.uid || uid;
       try {
         if (onStart) onStart(it, out.sent.length);
-        await send(it, api);
+        await send(it, api, onProgress && (p => onProgress(it, p)));
         await remove(it.id);
         out.sent.push(it);
       } catch (err){

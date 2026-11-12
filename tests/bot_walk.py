@@ -138,8 +138,8 @@ def main():
             pg.select_option("#post-trick", index=1)
             pg.click("#post-btn")
             pg.wait_for_timeout(3000)
-            # After posting: 'Save to camera roll?' and Save hands the video to the share sheet
-            sheet = pg.locator("#save-sheet").count() == 1
+            # After posting: the "posted. riders call it next." sheet carries Save video, which hands the video to the share sheet
+            sheet = pg.locator("#posted-sheet [data-act=save-go]").count() == 1
             pg.click("[data-act=save-go]") if sheet else None
             pg.wait_for_selector("[data-act=share-ready]", timeout=15000)   # the STOMPED stamp goes on first (10/28)
             pg.click("[data-act=share-ready]")

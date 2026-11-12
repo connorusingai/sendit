@@ -491,6 +491,28 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .install-sheet ol{margin:0;padding-left:20px;display:grid;gap:6px}
 .install-sheet ol svg{width:18px;height:18px;vertical-align:-3px}
 .install-sheet .btns .btn{min-height:var(--btn)}
+/* after a post: posted -> riders call it -> points (the dot shows where your clip is) */
+.next3{list-style:none;padding:0 !important;margin:0;display:grid;gap:0 !important}
+.next3 li{display:grid;grid-template-columns:14px 1fr;column-gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.next3 li::before{content:"";grid-row:span 2;width:12px;height:12px;margin-top:5px;border-radius:50%;border:2px solid var(--line-2)}
+.next3 li.done::before{background:var(--ink);border-color:var(--ink)}
+.next3 li.now::before{background:var(--hot);border-color:var(--hot)}
+.next3 b{font-size:16px}
+.next3 span{color:var(--ink-2);font-size:14px;line-height:1.35}
+/* the Post button fills as the video uploads */
+.btn.loading{background:linear-gradient(90deg,var(--hot) var(--p,0%),#ffc9b3 var(--p,0%));border-color:var(--hot);color:var(--hot-ink);font-variant-numeric:tabular-nums}
+.btn.loading:disabled{opacity:1}
+/* "needs 2 more calls" on clips that are still being judged */
+.calls-left{color:#fff;font-weight:700}
+.jfoot .calls-left{color:var(--on-dark)}
+.calls.duel-turn b{color:var(--ink)}
+.calls.duel-turn>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+/* sign-up opened from the front page: the form first, no second pitch */
+.land.direct{padding-top:env(safe-area-inset-top,0px)}
+.direct-top{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px}
+.direct-top .brand{text-decoration:none;font-size:20px}
+.land.direct .land-body{padding-top:4px}
+.land.direct .auth-h{margin-top:6px;font-size:34px}
 .onboard{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;justify-content:safe center;gap:14px;padding:24px 16px;overflow-y:auto;background:var(--snow)}
 .onboard h2{font-size:40px;margin:0}
 .onboard .ob-step{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--mute)}
@@ -733,7 +755,7 @@ const S = {
   search: {q: '', results: null},
   feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false, scope: store.get('feed-scope', '')},   // mode: 'clips' (watch) or 'judge'; scope: mt / crew / all ('' = your mountain if it has clips, else all)
   board: {scope: store.get('board-scope', 'global'), period: 'week', resort: '', rows: [], pass: {}},   // scope: global (Everyone) / mt / friends / crews (crews lives inside the Friends tab)
-  myClips: [], mtRank: null, blocked: new Set(), blockedNames: new Map(), firstRun: null, signupMt: null, clipFilter: 'all', passMenu: false,
+  myClips: [], callsLeft: null, rewards: [], mtRank: null, blocked: new Set(), blockedNames: new Map(), firstRun: null, signupMt: null, clipFilter: 'all', passMenu: false,
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
   sport: store.get('sport', 'ski'),
@@ -1302,6 +1324,7 @@ async function loadAll(){
   await loadFounderQueue();
   await loadFilmedForMe();
   await loadFilmers(S.clips);
+  await loadCallsLeft();
   loadSeenStatus();
   noticeResults(before);
   try { await loadInbox(); } catch (e){ console.warn('inbox', e); }   // a bell problem must never stop the app loading
@@ -1419,20 +1442,37 @@ async function loadFeed(){
   F.rows = list;
 }
 const activeDuelWith = id => S.duels.find(d => d.status === 'active' && d.other && d.other.id === id);
+// How many more calls each clip that's still being judged needs (supabase/030 works it out, so every phone agrees).
+// Best effort: until 030 is pasted the function isn't there, S.callsLeft stays null and the number just isn't shown.
+async function loadCallsLeft(){
+  const ids = [...new Set([...S.clips, ...(S.myClips || []), ...S.feed.rows].filter(c => c.status === 'pending').map(c => c.id))].slice(0, 200);
+  if (!ids.length) return;
+  try {
+    const r = await db.rpc('calls_left', {p_clips: ids});
+    if (!r.error && Array.isArray(r.data)) S.callsLeft = Object.fromEntries(r.data.map(x => [x.clip_id, x.calls_left]));
+  } catch (e) {}
+}
+const callsLeft = c => (S.callsLeft && c.status === 'pending' && S.callsLeft[c.id]) || 0;
+// "needs 2 more calls", or '' when we don't know
+const callsLine = (c, more = ' more') => { const n = callsLeft(c); return n ? `needs ${n}${more} call${n > 1 ? 's' : ''}` : ''; };
 
 // Toast when one of my clips gets decided while the app is open.
 function noticeResults(before){
   // S.myClips, not the feed: on a busy day your clip drops out of the newest 80 before it's verified (audit 11/10)
   const mine = (S.myClips && S.myClips.length ? S.myClips : S.clips.filter(c => c.user_id === myId())).filter(c => c.rider_ok !== false);
   if (seenStatus){
-    for (const c of mine){
-      if (seenStatus[c.id] !== 'pending' || c.status === 'pending') continue;
-      const name = clipName(c);
-      if (c.status === 'verified'){
-        const a = rankInfo(before ? before.points : Math.max(0, S.me.points - (c.points_awarded || 0)), TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
-        showReward(c, a.label !== b.label ? {from: a, to: b} : null);
-      } else toast(`The community didn't verify your ${name}`, 4500);
+    const decided = mine.filter(c => seenStatus[c.id] === 'pending' && c.status !== 'pending');
+    const won = decided.filter(c => c.status === 'verified').sort((a, b) => Date.parse(a.verified_at || a.created_at) - Date.parse(b.verified_at || b.created_at));
+    const lost = decided.filter(c => c.status === 'rejected');
+    // Two clips verified since you last looked: each gets its own moment, oldest first, with the points it really
+    // started from (before this, only the last one showed).
+    let pts = Math.max(0, S.me.points - won.reduce((s, c) => s + (c.points_awarded || 0), 0));
+    for (const c of won){
+      const a = rankInfo(pts, TRICK_TIERS), b = rankInfo(pts += c.points_awarded || 0, TRICK_TIERS);
+      S.rewards.push({c, rankUp: a.label !== b.label ? {from: a, to: b} : null, at: b});
     }
+    if (lost.length) toast(lost.length > 1 ? `Riders called ${lost.length} of your clips bails. Film them again?` : `Riders called your ${clipName(lost[0])} a bail. Film it again?`, 4500);
+    nextReward();
   }
   seenStatus = Object.fromEntries(mine.map(c => [c.id, c.status]));
   try { localStorage.setItem('seen-status-' + myId(), JSON.stringify(seenStatus)); } catch (e) {}
@@ -1632,15 +1672,21 @@ async function loadGate(){
   try { const r = await fetch('sounds/gate.mp3'); if (r.ok) GATE.buf = await a.decodeAudioData(await r.arrayBuffer()); } catch (e) {}
 }
 // The STOMPED moment: your clip, the stamp slams on, points count up and the bar climbs (breaking into the next rank on a rank-up). The tap follows Collect.
-function showReward(c, rankUp){
-  const pts = c.points_awarded || 0, r = rankUp ? rankUp.from : rankInfo(S.me.points, TRICK_TIERS);
+// Show the next waiting reward, unless something is already on screen (a reward, the rank-up, first-time setup)
+function nextReward(){
+  if (!S.rewards.length || $('overlay').firstElementChild) return;
+  const r = S.rewards.shift(); showReward(r.c, r.rankUp, r.at);
+}
+// at = your pass right after this clip's points (with two rewards in a row, that isn't where you are now)
+function showReward(c, rankUp, at){
+  const pts = c.points_awarded || 0, r = rankUp ? rankUp.from : at || rankInfo(S.me.points, TRICK_TIERS);
   $('overlay').innerHTML = `<div class="reward" id="reward" role="dialog" aria-label="Stomped: your clip was called landed">
     <div class="rw-shot">${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}" autoplay muted loop playsinline></video>` : ''}${brackets()}<span class="rec">${recCode(hashNum(c.id))}</span></div>
     <div class="rw-stamp">${stampSVG('STOMPED', '#ff5a1f', '#edf1f4')}</div>
     ${rankUp ? `<div class="rw-flash" style="background:${PASS_ART[rankUp.to.tier.key].g[0]}"></div>` : ''}<div class="rw-body reward-card">
       <div class="rw-pts"><b>${pts ? '+<span id="reward-n">0</span>' : 'repeat'}</b><span>${pts ? 'pts' : 'already in your bag'}</span></div>
       <span class="rw-trick">${esc(clipName(c))}${c.totd ? ', double points day' : ''}</span>
-      <span class="rw-why">Riders called it landed.</span>
+      <span class="rw-why">Riders called it landed.${S.rewards.length ? ` <b>${S.rewards.length} more to collect.</b>` : ''}</span>
       <div class="rw-next ${rankUp ? 'up' : ''}"><div class="row"><span id="rw-rank">${esc(r.label)}</span><span id="rw-left">${r.nextLabel ? `${r.toNext} to ${esc(r.nextLabel)}` : 'top of the mountain'}</span></div>
         <div class="bar"><i id="rw-bar" style="width:${Math.max(2, r.pct)}%${rankUp ? `;background:${PASS_ART[r.tier.key].g[0]}` : ''}"></i></div></div>
       <button class="btn primary rw-go" data-act="reward-collect">Collect</button>
@@ -1798,7 +1844,7 @@ function feedItem(c){
   const liked = S.myLikes.has(c.id), open = S.openComments === c.id, pts = c.profiles ? c.profiles.points : 0;
   const verdict = c.status === 'verified' ? stampSVG('STOMPED') : c.status === 'rejected' ? stampSVG('BAILED', '#c3c8ce') : '';
   const line = c.status === 'verified' ? (c.points_awarded ? `stomped. <b>+${c.points_awarded}</b> pts` : 'stomped. already in the book')
-    : c.status === 'rejected' ? 'bailed. riders didn’t call it' : mine ? 'riders are calling it' : 'still being called';
+    : c.status === 'rejected' ? 'bailed. riders didn’t call it' : (mine ? 'riders are calling it' : 'still being called') + (callsLine(c) ? ` · <span class="calls-left">${callsLine(c)}</span>` : '');
   return `<article class="reel-item feed-item" id="clip-${c.id}" data-id="${c.id}">
     ${c.video_path ? `<video class="fit" data-act="play" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>`
       : `<div class="poster"><div class="tname">${esc(t.name)}</div></div>`}
@@ -1996,7 +2042,7 @@ async function shareClipVideo(id){
 const clipFile = (blob, name) => new File([blob], `stomped-${String(name).replace(/\W+/g, '-').toLowerCase()}.${/mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm'}`, {type: blob.type || 'video/mp4'});
 // Phones only open the share sheet straight after a tap, and stamping takes as long as the clip, so: stamp, then one more tap
 function readyToShare(file){
-  hideSave(); hideInstall(); S.readyFile = file;
+  hideSave(); hideInstall(); hidePosted(); S.readyFile = file;
   const sh = document.createElement('section');
   sh.id = 'save-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Your stamped clip is ready');
   sh.innerHTML = `<h3>stamped. ready to go.</h3><p>Save it to your camera roll or send it anywhere.${isIOS() ? ' iPhone: tap <b>Save Video</b> in the next sheet.' : ''}</p>
@@ -2066,6 +2112,8 @@ const views = {
     const jq = judgeQueue(), mine = S.myClips || [], wk = mine.filter(c => Date.parse(c.created_at) > weekAgo());
     const totdK = ridesSports().find(k => S.totds[k] && trickById(S.totds[k])), totd = totdK && trickById(S.totds[totdK]);
     const next = !totd && nextPicks()[0];
+    const turns = S.duels.filter(d => d.status === 'active' && d.turn === myId() && d.other && !S.blocked.has(d.other.id));   // S.K.I. games waiting on you
+    const chev = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
     const thumbs = jq.slice(0, 3).map(c => c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline preload="metadata" aria-hidden="true"
       style="width:34px;height:34px;object-fit:cover;border-radius:4px;border:2px solid var(--snow);margin-left:-10px;background:var(--ink-2)"></video>` : '<i></i>').join('');
     return `<section class="base">
@@ -2079,6 +2127,10 @@ const views = {
       <div>
         <button class="calls" data-act="tab" data-tab="judge"><span>${jq.length ? `${jq.length} clip${jq.length > 1 ? 's' : ''} need${jq.length > 1 ? '' : 's'} your call` : 'all caught up. no clips to call'}</span>
           <span class="thumbs"><span style="padding-left:10px">${thumbs}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
+        ${turns.slice(0, 2).map(d => `<button class="calls duel-turn" data-act="open-duel" data-id="${d.id}"><span><b>your turn</b> vs @${esc(d.other.username)} · ${
+            d.phase === 'match' ? 'match the ' + esc(trickById(d.trick_id).name.toLowerCase()) : 'set a trick'}</span>
+          <span class="thumbs"><span class="ski">${lettersHtml(d.challenger === myId() ? d.letters_challenger : d.letters_opponent, true)}</span>${chev}</span></button>`).join('')}
+        ${turns.length > 2 ? `<button class="calls duel-turn" data-act="tab" data-tab="duels"><span>+${turns.length - 2} more duel${turns.length > 3 ? 's' : ''} waiting on you</span>${chev}</button>` : ''}
         <div class="week3">
           <div class="num"><b>${wk.filter(c => c.status === 'verified').length}</b><span>landed this week</span></div>
           <div class="num"><b>${wk.filter(c => c.status === 'rejected').length}</b><span>bailed</span></div>
@@ -2092,29 +2144,31 @@ const views = {
   },
   auth(){
     // Signed out = the landing page: Connor's backflip, land it. prove it., how it works, then the form.
-    const up = S.authMode === 'signup';
-    return `<section class="land">
-      <div class="land-hero">
+    // Opened from the front page's button (?join=1): they just read the pitch, so it's the form and nothing else.
+    const up = S.authMode === 'signup', direct = !!S.joinDirect;
+    return `<section class="land ${direct ? 'direct' : ''}">
+      ${direct ? `<div class="direct-top"><a class="brand" href="../?home=1" aria-label="Stomped front page">STOMPED</a><button class="linkish" data-act="authmode">${up ? 'sign in' : 'make an account'}</button></div>`
+      : `<div class="land-hero">
         <img src="icons/landing.jpg" alt="A rider mid-backflip over a park jump" onerror="this.remove()">
         <div class="land-top"><span class="brand">STOMPED</span><button data-act="join" data-mode="signin">sign in</button></div>
         <span class="rec">REC 00:03:05</span>
         ${stampSVG('STOMPED')}
         <h1>land it.<br>prove it.</h1>
-      </div>
+      </div>`}
       ${inviteCrew ? `<a class="card sent-you" href="#auth-top"><b>You're invited to ${esc(inviteCrew.name)}.</b> Make an account or sign in and you're in the crew.</a>`
         : store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Make an account and it opens right after.</a>`
         : store.get('pending-from', '') ? `<a class="card sent-you" href="#auth-top"><b>@${esc(store.get('pending-from', ''))} invited you.</b> Make an account and you can add them right away.</a>` : ''}
       ${inAppBrowser() ? `<div class="card sent-you inapp-note"><b>Open this in ${realBrowser()} first.</b> Tap ••• at the top, then Open in ${realBrowser()}. ${inAppBrowser()}'s browser can't keep Stomped on your home screen or keep you signed in.</div>` : ''}
       <div class="land-body">
-        <p class="lede">Film a trick in the app. Riders who weren't there call it landed or bailed. Landed tricks earn points and rank your season pass up.</p>
-        <div class="land-cta"><button class="btn primary" data-act="join" data-mode="signup">Make an account</button><span>Free. Built at CU Boulder.</span></div>
+        ${direct ? '' : `<p class="lede">Film a trick in the app. Riders who weren't there call it landed or bailed. Landed tricks earn points and rank your season pass up.</p>
+        <div class="land-cta"><button class="btn primary" data-act="join" data-mode="signup">Make an account</button><span>Free. Built by two college riders.</span></div>
         <div class="land-rule"><span>landed or bailed? you call it.</span>${ic('down', 20)}</div>
         <ol class="land-how">
           <li><b>film it</b><span>Record in the app, up to 20 seconds. No uploads, so no old or borrowed clips.</span></li>
           <li><b>riders call it</b><span>Other riders call it landed or bailed. Your call is anonymous.</span></li>
           <li><b>rank up</b><span>New tricks pay points. Your pass goes green, blue, black, double, triple, park rat.</span></li>
         </ol>
-        <div class="land-tiers" aria-label="The six passes">${TRICK_TIERS.slice().reverse().map(t => passSVG({username: 'you', points: t.min}, {tier: t.key, photo: ''})).join('')}</div>
+        <div class="land-tiers" aria-label="The six passes">${TRICK_TIERS.slice().reverse().map(t => passSVG({username: 'you', points: t.min}, {tier: t.key, photo: ''})).join('')}</div>`}
         <h2 id="auth-top" class="auth-h">${up ? 'make an account' : 'sign in'}</h2>
         <p class="sub">${up ? `Pick a username. Your email stays private.${Date.now() < Date.parse(FOUNDER_UNTIL) ? ' Join before Dec 15 and keep the <b>Founder</b> badge.' : ''}` : 'Sign in to film, call clips and climb the board.'}</p>
         <form class="form" id="auth-form">
@@ -2135,7 +2189,7 @@ const views = {
           <button class="btn ghost" type="button" data-act="authmode">${up ? 'I already have an account' : 'Make an account'}</button>
           ${up ? '' : '<button class="linkish" type="button" data-act="forgot" style="justify-self:center">Forgot password?</button>'}
         </form>
-        <footer class="foot">Stomped · built at CU Boulder<br><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>
+        <footer class="foot">Stomped · built by two college riders<br><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>
       </div></section>`;
   },
 
@@ -2362,7 +2416,7 @@ const views = {
         ${shown.length ? `<div class="sheet-grid">${shown.map(c => `<div class="tile-wrap">
           <button class="tile" data-act="playtile" aria-label="Play ${esc(trickById(c.trick_id).name)}">
             ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline loop preload="metadata"></video>` : ''}
-            ${c.status === 'verified' ? stampSVG('STOMPED') : c.status === 'rejected' ? stampSVG('BAILED', '#c3c8ce') : '<span class="wait-tag">calling</span>'}
+            ${c.status === 'verified' ? stampSVG('STOMPED') : c.status === 'rejected' ? stampSVG('BAILED', '#c3c8ce') : `<span class="wait-tag">${callsLeft(c) ? `${callsLeft(c)} call${callsLeft(c) > 1 ? 's' : ''} to go` : 'calling'}</span>`}
             <span class="tn">${esc(trickById(c.trick_id).name)}${c.status === 'verified' && c.points_awarded ? ' · +' + c.points_awarded : ''}</span></button>
           ${mine ? `<button class="tile-del" data-act="${c.status === 'pending' ? 'delete' : 'remove-clip'}" data-id="${c.id}" aria-label="Delete ${esc(trickById(c.trick_id).name)}">${ICON.trash}</button>` : ''}</div>`).join('')}</div>`
           : `<div class="empty"><strong>No clips here</strong>${mine ? 'Film your first trick.' : ''}</div>`}</div>
@@ -2549,7 +2603,7 @@ function reelItem(c){
         <div class="jmeta"><span>${what}</span><span class="mono">${n} of ${total}</span></div>
         <h1>landed or bailed?</h1>
         ${voted ? `<div class="jbtns"><span></span><span></span></div>` : asking ? reasons(true) : `<div class="jbtns">${calls}</div>`}
-        <div class="jfoot"><span>Your call is anonymous.</span>${S.firstRun ? '' : `<button class="round skip" data-act="skip" data-id="${c.id}">Skip</button>`}</div>
+        <div class="jfoot"><span>${callsLine(c) ? `<b class="calls-left">${callsLine(c)}.</b> ` : ''}Your call is anonymous.</span>${S.firstRun ? '' : `<button class="round skip" data-act="skip" data-id="${c.id}">Skip</button>`}</div>
       </div></div>
     </section>`;
   }
@@ -2559,7 +2613,7 @@ function reelItem(c){
     <div class="fi-info">
       <div class="who"><span class="avatar" aria-hidden="true">?</span><span>rider</span><span class="where">${esc(dots(mtShort(c.resort).toUpperCase(), ago(c.created_at)))}</span></div>
       <div class="trick">${esc(clipName(c))}</div>
-      <div class="meta">needs your call. what's yours?${c.totd ? ' · 2× day' : ''}</div>
+      <div class="meta">${callsLine(c) ? `<span class="calls-left">${callsLine(c)}</span>. what's yours?` : `needs your call. what's yours?`}${c.totd ? ' · 2× day' : ''}</div>
       ${voted ? '' : asking ? reasons(true) : `<div class="fi-calls">${calls}</div>`}
     </div>
   </article>`;
@@ -2640,7 +2694,7 @@ async function feedMore(){
   const F = S.feed;
   if (S.tab !== 'feed' || F.mode !== 'clips' || !F.more || feedLoading) return;
   feedLoading = true; F.limit += FEED_PAGE;
-  try { await loadFeed(); } catch (err){ toast(err.message); }
+  try { await loadFeed(); await loadCallsLeft(); } catch (err){ toast(err.message); }
   feedLoading = false; render(true);
 }
 function maybeBreak(){
@@ -2835,6 +2889,12 @@ async function queueClip(item){
   return it;
 }
 let obTimer = null, obSending = '';
+// The Post button fills up as the video goes up, so you can see it's moving (and how far) on slow mountain signal
+function postProgress(p){
+  const b = $('post-btn') || $('duel-send'); if (!b) return;
+  b.classList.add('loading'); b.style.setProperty('--p', p + '%');
+  b.textContent = p >= 100 ? 'Posting…' : `Uploading ${p}%`;
+}
 async function updateOutboxChip(){
   const chip = $('outbox-chip'); if (!chip) return;
   let list = []; try { if (myId()) list = await OB.waiting(myId()); } catch (e) {}
@@ -2849,7 +2909,8 @@ async function flushOutbox(force = true, first = null, only = false){
   let r;
   try {
     r = await OB.flush({api: outboxApi(), uid: myId(), force, first, only,
-      onStart: (it, done) => { if (it.id !== first){ obSending = `Posting saved clip${done ? ` (${done + 1})` : ''}…`; updateOutboxChip(); } }});
+      onStart: (it, done) => { if (it.id !== first){ obSending = `Posting saved clip${done ? ` (${done + 1})` : ''}…`; updateOutboxChip(); } },
+      onProgress: (it, p) => { if (it.id === first) postProgress(p); }});
   } catch (e){ obSending = ''; updateOutboxChip(); return null; }   // phone storage unavailable (private browsing)
   obSending = '';
   for (const it of r.sent){
@@ -2880,7 +2941,7 @@ async function postSaved(item){
     if (/MB/.test(e.message)) throw e;
     // The phone can't store it (private browsing): upload straight from memory, like before.
     it = {uid: myId(), ...item, memory: true};
-    try { await OB.send(it, outboxApi()); }
+    try { await OB.send(it, outboxApi(), postProgress); }
     catch (err){ throw OB.isTransient(err) ? new Error("No signal, and this browser can't save clips. Keep the app open and try again.") : err; }
     runTrickAI(it.clipId, it.blob, trickById(it.fields.trick_id));
     logEvent('clip_posted', it.fields.rider ? 'for_friend' : trickById(it.fields.trick_id).category);
@@ -3367,6 +3428,31 @@ function offerSave(blob, trickId){
   hideInstall(); document.body.appendChild(sh);
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
 }
+// Right after a post: what happens next, in three steps. It carries Save to camera roll too, so two sheets never stack.
+function showPosted(clipId, blob, trickId, worth){
+  hideInstall(); hideSave(); hidePosted();
+  const t = trickById(trickId), c = (S.myClips || []).find(x => x.id === clipId), n = c ? callsLeft(c) : 0, q = judgeQueue().length;
+  const canSave = !!blob && store.get('save-ask', 'on') !== 'off';
+  if (canSave){
+    const ext = /mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm';
+    S.saveFile = new File([blob], `stomped-${(t.name || 'clip').replace(/\W+/g, '-').toLowerCase()}.${ext}`, {type: blob.type || 'video/mp4'});
+    S.saveTrick = t.name || '';
+  }
+  const sh = document.createElement('section');
+  sh.id = 'posted-sheet'; sh.className = 'card install-sheet posted-sheet'; sh.setAttribute('role', 'status'); sh.setAttribute('aria-label', 'Your clip is posted');
+  sh.innerHTML = `<h3>posted. riders call it next.</h3>
+    <ol class="next3">
+      <li class="done"><b>posted</b><span>Your ${esc((t.name || 'clip').toLowerCase())} is in the feed.</span></li>
+      <li class="now"><b>riders call it</b><span>${n ? `It needs ${n} call${n > 1 ? 's' : ''}. ` : ''}Landed or bailed, and nobody sees who called what.</span></li>
+      <li><b>${worth ? `+${worth} pts` : 'the stamp'}</b><span>${worth ? 'Yours if they call it landed.' : "It's already in your bag, so no new points."} The bell tells you when it's decided.</span></li>
+    </ol>
+    <div class="btns">${canSave ? '<button class="btn" data-act="save-go">Save video</button>' : ''}${q
+      ? `<button class="btn primary" data-act="posted-judge">Call ${q} clip${q > 1 ? 's' : ''}</button>` : '<button class="btn primary" data-act="posted-done">Done</button>'}</div>
+    ${q ? '<button class="linkish" data-act="posted-done" style="justify-self:center">Done</button>' : ''}`;
+  document.body.appendChild(sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+}
+function hidePosted(){ const sh = $('posted-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
 function hideSave(){ S.saveFile = null; S.readyFile = null; const sh = $('save-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
 // Save adds the STOMPED stamp first (BRAND-DECISIONS.md: exported clips carry it), then hands over with one more tap
 async function saveGo(b){
@@ -3421,7 +3507,7 @@ function showRankUp(r, from = null){
 }
 function closeSplash(){
   const s = $('splash'); if (!s) return;
-  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; showRecHint(); }, 200);
+  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; showRecHint(); nextReward(); }, 200);
 }
 async function refresh(force = false){
   const wasFailed = S.loadFailed;
@@ -3603,13 +3689,13 @@ async function report(target, reason, clipId){
   S.menuFor = null;
   const r = await db.from('reports').insert({...target, reason});
   if (r.error){
-    toast(r.error.code === '23505' ? 'You already reported this.' : notInstalled(r.error) || notSetUp(r.error) ? "Reporting this isn't switched on yet (update 025)." : 'Report failed: ' + r.error.message);
+    toast(r.error.code === '23505' ? 'You already reported this.' : notInstalled(r.error) || notSetUp(r.error) ? "Reporting this isn't switched on yet (update 025)." : /reports today/.test(r.error.message) ? r.error.message : 'Report failed: ' + r.error.message, 6000);
     return render(true);
   }
   // Out of your sight right away, whatever anyone else decides
   if (target.clip_id){ S.clips = S.clips.filter(c => c.id !== target.clip_id); S.feed.rows = S.feed.rows.filter(c => c.id !== target.clip_id); }
   if (target.comment_id && S.comments[clipId]) S.comments[clipId] = S.comments[clipId].filter(m => m.id !== target.comment_id);
-  toast(target.profile_id ? 'Thanks, reported. Three reports take the photo down, and Connor checks every one.' : 'Thanks, reported. You won\'t see it again.');
+  toast(target.profile_id ? 'Thanks, reported. We look at every report.' : 'Thanks, reported. You won\'t see it again.');
   render(true);
 }
 async function removeClip(id){
@@ -3809,24 +3895,27 @@ async function submitPost(){
   const rider = S.postRider && acceptedFriends().map(f => f.other).find(p => p && p.id === S.postRider);
   if (rider) fields.rider = rider.id;
   const blob = S.rec.blob, mot = S.rec.motion;
-  S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
+  S.busy = true; const b = $('post-btn'); b.disabled = true; postProgress(0);
   try {
     if (!blob || !blob.size) throw new Error('Nothing recorded');
-    if ((await postSaved({kind: 'post', fields, blob, motion: mot})).status === 'waiting'){
+    const worth = payout(fields.trick_id, fields.grab, fields.combo).pts;   // what it pays if riders call it landed
+    const posted = await postSaved({kind: 'post', fields, blob, motion: mot});
+    if (posted.status === 'waiting'){
       resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0); offerSave(blob, fields.trick_id);
       toast(WAITING_MSG, 5000);
       return;
     }
-    resetRecorder(); S.postCombo = []; offerSave(blob, fields.trick_id);
+    resetRecorder(); S.postCombo = [];
     if (rider){   // stay on the camera: you're probably filming the next run too
+      offerSave(blob, fields.trick_id);
       toast(`Sent to @${rider.username}. It shows up once they tap Keep.`, 4000);
       render(true); return;
     }
-    toast('Posted. Riders are judging it now.');
     S.tab = 'feed'; S.feed.mode = 'clips'; await refresh(true); window.scrollTo(0, 0);
+    showPosted(posted.item.clipId, blob, fields.trick_id, worth);
   } catch (err){
     console.error(err); toast('Post failed: ' + err.message, 5000);
-    b.disabled = false; b.textContent = 'Post';
+    b.disabled = false; b.classList.remove('loading'); b.textContent = 'Post';
   } finally { S.busy = false; }
 }
 
@@ -3879,7 +3968,7 @@ function startDuelRecording(kind){
 async function sendDuelClip(){
   const ctx = S.rec.context, b = $('duel-send');
   const fields = {trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]}, blob = S.rec.blob, mot = S.rec.motion;
-  S.busy = true; b.disabled = true; b.textContent = 'Uploading…';
+  S.busy = true; b.disabled = true; postProgress(0);
   try {
     if (!blob || !blob.size) throw new Error('Nothing recorded');
     const r = await postSaved({kind: 'duel', fields, blob, motion: mot, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
@@ -3890,7 +3979,7 @@ async function sendDuelClip(){
     if (r.status === 'posted') await refresh(true);
     await openDuel(dId);
   } catch (err){
-    toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.textContent = 'Landed: send it';
+    toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.classList.remove('loading'); b.textContent = 'Landed: send it';
   } finally { S.busy = false; }
 }
 async function bail(){
@@ -3990,7 +4079,7 @@ document.addEventListener('click', async e => {
     case 'close-splash': return closeSplash();
     case 'ob-sport': setRides(b.dataset.k); return S.me.home_resort ? finishOnboarding('') : onboardResort();
     case 'ob-resort': return finishOnboarding(b.dataset.k);
-    case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
+    case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); else nextReward(); return; }
     case 'rankup-tap': { const el = $('splash'); if (!el) return; if (el.classList.contains('done')) return closeSplash(); return el._finish && el._finish(); }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
     case 'flush': return outboxTap();
@@ -4000,6 +4089,8 @@ document.addEventListener('click', async e => {
     case 'save-go': return saveGo(b);
     case 'share-ready': return shareReady();
     case 'save-later': return hideSave();
+    case 'posted-done': S.saveFile = null; return hidePosted();
+    case 'posted-judge': S.saveFile = null; hidePosted(); return openTab('judge');
     case 'save-never': store.set('save-ask', 'off'); toast('Okay. Turn it back on in ⚙ settings.'); return hideSave();
     case 'install-later': store.set('install-later', String(Date.now() + 3 * 864e5)); return hideInstall();   // ask again in 3 days
     case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
@@ -4218,6 +4309,15 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
     if (!store.get('signup-src', '')) store.set('signup-src', src.toLowerCase());
     q.delete('src');
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+  }
+}
+// ---------- straight to the form (?join=1 sign up, ?join=in sign in): where the front page's buttons land ----------
+{
+  const q = new URLSearchParams(location.search);
+  if (q.has('join')){
+    S.joinDirect = true; S.authMode = q.get('join') === 'in' ? 'signin' : 'signup';
+    q.delete('join');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   }
 }
 // ---------- crew invite links (?crew=CODE): one link per crew (028) ----------
