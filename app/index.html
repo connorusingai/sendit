@@ -839,6 +839,10 @@ const sportOf = t => SPORTS[t.sport] ? t.sport : 'ski';
 const tricksFor = (sport, cat) => S.tricks.filter(t => sportOf(t) === sport && (!cat || t.category === cat));
 // What you ride (Connor 10/27): 'ski', 'snowboard' or 'both'. A skier never sees snowboard tricks or Trick of the Day.
 const ridesSports = () => S.sports === 'both' ? Object.keys(SPORTS) : [S.sports];
+// The ski / snowboard switch on Record is only hidden for a rider who TOLD this phone they ride one thing.
+// A fresh phone (or the home-screen app, which starts with empty storage) hasn't been told, so it keeps the switch:
+// otherwise a snowboarder would be stuck on ski tricks until they found Settings.
+const needsSportSwitch = () => store.get('sports', '') === '' || ridesSports().length > 1;
 function setRides(k){
   S.sports = k; store.set('sports', k);
   if (k !== 'both'){ S.sport = k; store.set('sport', k); }
@@ -2221,7 +2225,7 @@ const views = {
     if (F.mode === 'judge'){
       const fr = S.firstRun;
       const done = fr ? '<p class="sub">That was the last one waiting. Here comes your pass.</p>'
-        : `<div class="disp" style="font-size:34px">all called.</div><p class="sub" style="margin-top:10px">${J.list.length ? "That's every clip waiting on you." : 'No clips need your call right now.'} Your call counts ×${trickTierOf(S.me.points).w}.</p>
+        : `<div class="disp" style="font-size:34px">all called.</div><p class="sub" style="margin-top:10px">${J.list.length ? "That's every clip waiting on you." : 'No clips need your call right now.'}${Date.now() - Date.parse(S.me.created_at) > 7 * 864e5 ? ` Your call counts ×${trickTierOf(S.me.points).w}.` : ''}</p>
           <button class="btn primary glove" data-act="feed-mode" data-k="clips">Watch clips</button>${landedRule()}`;
       return `<div class="feedwrap">
         ${fr ? `<div class="first-run">call ${fr.need} clips to get your pass</div>`
@@ -2269,7 +2273,7 @@ const views = {
           <button class="shutter ${R.mode === 'recording' ? 'stop' : ''}" data-act="${R.mode === 'recording' ? 'rec-stop' : 'rec-start'}" aria-label="${R.mode === 'recording' ? 'Stop recording' : 'Start recording'}"></button>
           <button class="cam-side" data-act="cam-flip" aria-label="Flip camera">${ic('turn', 24)}</button>
         </div></div>`;
-    else body = `${ctx || ridesSports().length < 2 ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
+    else body = `${ctx || !needsSportSwitch() ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
       <div class="cam"><div class="cam-empty"><div style="display:grid;gap:14px;justify-items:center">
         <button class="big-cam" data-act="cam-open" aria-label="Open camera">${ICON.cam}</button>
         <strong>tap to film</strong>
@@ -2830,7 +2834,7 @@ function postForm(){
       <select id="post-rider"><option value="">Me (@${esc(S.me.username)})</option>${
         pals.map(p => `<option value="${p.id}" ${S.postRider === p.id ? 'selected' : ''}>@${esc(p.username)} (I filmed it)</option>`).join('')}</select>
       <span class="hint" id="post-rider-hint">${riderHint(pals.find(p => p.id === S.postRider))}</span></div>` : ''}
-    ${ridesSports().length > 1 ? sportSwitch(S.sport, 'sport') : ''}
+    ${needsSportSwitch() ? sportSwitch(S.sport, 'sport') : ''}
     <div class="two">
       <div class="field"><label class="label" for="post-cat">Category</label>
         <select id="post-cat">${sp.cats.map(c => `<option>${c}</option>`).join('')}</select></div>

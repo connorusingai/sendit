@@ -53,6 +53,8 @@ def handle(route, req):
         return route.fulfill(json=None)
     if m == "POST" and path.startswith("/rest/v1/clips"):
         return route.fulfill(status=201, json={"id": "99999999-0000-0000-0000-000000000099"})
+    if m == "GET" and path.startswith("/rest/v1/clips") and "rider_ok=eq.false" in path:
+        return route.fulfill(json=[])                        # no "a friend filmed you" clips waiting
     return w.handle(route, req)
 
 

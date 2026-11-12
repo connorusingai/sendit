@@ -64,6 +64,9 @@ def main():
             pg.wait_for_selector("#post-form", timeout=8000)
             return True
         W.attempt("the record button opens the camera, I film, and it shows me the clip to post", record)
+        # this phone was never told what I ride (a fresh phone, or the home-screen app): the switch has to be there
+        W.attempt("a rider who never said ski or snowboard on this phone still gets the switch on the post form",
+                  lambda: pg.locator("#post-form .sport-switch button").count() == 2)
         pg.screenshot(path=w.SHOTS / "story2-1-review.png")
 
         seen = []
@@ -107,6 +110,18 @@ def main():
             pg.wait_for_timeout(1500)
             return "2 calls to go" in pg.locator(".sheet-grid .tile").first.inner_text().lower()
         W.attempt("on Me, the clip is marked '2 calls to go' until riders decide", on_me)
+
+        def one_sport():
+            pg.evaluate("localStorage.setItem('sendit-sports', 'snowboard'); localStorage.setItem('sendit-sport', 'snowboard')")
+            pg.reload(wait_until="networkidle")
+            pg.wait_for_timeout(2500)
+            pg.click("#tabs [data-tab=record]")
+            pg.wait_for_timeout(900)
+            k.film(pg)
+            pg.wait_for_selector("#post-form", timeout=8000)
+            names = " ".join(k.texts(pg, "#post-grab option")).lower()
+            return pg.locator("#post-form .sport-switch").count() == 0 and "indy" in names
+        W.attempt("once I've said I only snowboard, the switch is gone and the form is snowboard tricks", one_sport)
         pg.screenshot(path=w.SHOTS / "story2-4-me.png", full_page=True)
         b.close()
     srv.shutdown()
