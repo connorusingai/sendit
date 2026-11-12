@@ -24,7 +24,9 @@ Tier colors live only on season passes and their trail marks (see below). Never 
 - Display: **Archivo** at width 125%, weight 800-900, lowercase ("land it. prove it.", "landed or bailed?", "your bag").
 - Wordmark: **STOMPED**, all caps, Archivo 900 wide.
 - UI/body: **Figtree** 400-700.
-- **JetBrains Mono 700** only for the REC timecode and numbers on passes (840 / 1,000 PTS, NO. 0042). Not for labels.
+- **JetBrains Mono 700** only for the REC timecode and numbers on passes (840 / 1,000 PTS, NO. 0042). Not for labels,
+  and not for other numbers either: leaderboard points, "1 of 3" and counts are Figtree with `tabular-nums`
+  (11/11 design pass: six leftover mono labels removed).
 
 ## Film bits
 - REC dot + timecode (`REC 00:00:07`) top-left on clips, the camera and the reward.
@@ -59,23 +61,33 @@ STOMPED + season (26/27) on top, the tier's trail mark, the tier name, @handle, 
 
 ## Layout
 Tabs: **base / feed / record / crew / me** (record = orange dot in a ring, in the middle).
-- **Base:** your pass big at the top → today's trick as one line + Film it → "N clips need your call" → your week in
-  3 numbers (landed, bailed, #rank at your mountain). No clip replays on Base.
+- **Base:** your pass big at the top → today's trick as one line + Film it → "N clips need your call" → one line per
+  S.K.I. game waiting on you ("your turn vs @maya · match the 540") → your week in 3 numbers (landed, bailed, #rank at
+  your mountain). No clip replays on Base.
 - **Feed:** full screen, one clip at a time, REC + brackets, tabs = your mountain / crew / CU. A clip that still needs
   calls shows Bailed / Landed right on it; the rider's name stays hidden until you call it (judging stays fair).
 - **Judge:** video on top, a thin progress line, then "@rider · trick · mountain", "landed or bailed?", two 64px
-  buttons, "Your call is anonymous." + Skip.
+  buttons, "needs 2 more calls. Your call is anonymous." + Skip. The number comes from the database (`calls_left()`,
+  supabase/030); anywhere a clip is still being judged it carries the same "needs N more calls".
+- **Posted:** right after a post, one sheet: "posted. riders call it next." and three steps with a dot each
+  (posted / riders call it, needs N calls / +points, the bell tells you). The Post button fills with the upload percent.
 - **Reward:** your clip, the STOMPED stamp slams on, +points huge, the bar to your next pass, Collect (60px).
 - **Crew:** "eldora, this week", tabs mountain / CU / friends (+ crews), a podium of the top-3 passes, then the list.
   Below: friends / your crew / duels.
 - **Me:** your pass, 6 stats, "your bag" (landed tricks solid, next ones dashed), then your clips as a contact sheet
   with STOMPED / BAILED stamps. Settings live behind the gear.
 - **Landing:** Connor's backflip full-bleed with REC + the stamp, "land it. prove it.", Make an account.
+  Since 11/11 this is a real static page at the site root (`index.html`, no library needed): hero, one sentence,
+  three steps each shown with the real thing (the record dot, the judge panel, the six passes), questions, footer.
+  ONE Make an account button, pinned to the bottom of the screen. It opens `/app/?join=1`: the sign-up form and
+  nothing else. On wide screens the clip stays up on the left and the page scrolls on the right.
 - **First run:** ski or snowboard → home mountain (picked at signup from the short list) → call 3 clips → green pass.
 
 ## Glove-proof
 Main moves are **at least 56px tall with real gaps** (12px+): Film it, Landed / Bailed (64 on Judge), Collect (60),
-Post / Retake, Keep it, the shutter (80). Everything else that's tappable is at least 44px.
+Post / Retake, Keep it, the shutter (80). Everything else that's tappable is at least 44px **in both directions**
+(a short word like "all" still gets a 44px-wide tab; small things like a rider's name keep their size and get an
+invisible larger touch area).
 
 ## Shapes + motion
 - Flat. Hairline rules between rows, not cards everywhere. 4px corners on buttons, 6px on the few cards.
@@ -83,7 +95,8 @@ Post / Retake, Keep it, the shutter (80). Everything else that's tappable is at 
 
 ## Voice
 Chill park rat: short, lowercase, like texting your crew ("stomped. +140 pts", "needs your call. what's yours?").
-No hype words, no emoji spam.
+No hype words, no emoji spam. Anything set in the display face is lowercase ("no friends yet", "is it free?");
+buttons and form labels stay Sentence case (Film it, Keep it, Username).
 
 ## Never (no AI tells)
 No glow, no floating particles, no confetti, no little code-font labels, no gradient text, no second accent,

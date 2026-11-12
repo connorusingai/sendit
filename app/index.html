@@ -53,7 +53,7 @@ h3{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-
 .ic,.ic-line{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ic-line{width:auto;height:auto}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-.mono{font-family:var(--mono);font-weight:700}
+.mono{font-weight:700;font-variant-numeric:tabular-nums}   /* numbers that line up; the code font is only for REC + passes (DESIGN.md) */
 .hint{color:var(--mute);font-size:13px}
 .sub{color:var(--ink-2);margin:0 0 14px}
 .label{font-size:13px;font-weight:700;color:var(--mute)}
@@ -129,7 +129,7 @@ body.signed-out .top{display:none}
 .bar{height:6px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--ink);transition:width 1.2s ease-out}
 .seg{display:flex;gap:22px;border-bottom:1px solid var(--line)}
-.seg button{background:none;border:0;padding:12px 0;min-height:44px;font-weight:600;font-size:15px;color:var(--mute);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.seg button{background:none;border:0;padding:12px 0;min-height:44px;font-weight:600;font-size:15px;color:var(--mute);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;text-transform:lowercase}
 .seg button.on{color:var(--ink);font-weight:700;border-bottom-color:var(--hot)}
 .cnt{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--hot);color:var(--hot-ink);font-size:11px;font-weight:800;margin-left:4px}
 .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none;border:0;background:var(--ink);color:#fff;cursor:pointer}
@@ -233,7 +233,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .base{display:grid;gap:18px}
 .today{display:flex;align-items:center;gap:12px;padding-top:4px}
 .today .grow{display:grid;gap:6px}
-.today small{font-family:var(--mono);font-weight:700;font-size:11px;color:var(--mute)}
 .today b{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:1;font-size:26px}
 .today .btn{min-height:var(--btn);flex:none}
 .calls{display:flex;align-items:center;justify-content:space-between;min-height:56px;border:0;border-top:1px solid var(--line);background:none;width:100%;padding:0;
@@ -272,7 +271,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--hot);outline-off
 .fi-info{position:absolute;left:16px;right:72px;bottom:24px;z-index:2;display:grid;gap:8px}
 .fi-info .who{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
 .fi-info .who .avatar{width:32px;height:32px}
-.fi-info .where{margin-left:auto;font-family:var(--mono);font-weight:700;font-size:11px;opacity:.8;white-space:nowrap}
+.fi-info .where{margin-left:auto;font-weight:600;font-size:12px;opacity:.85;white-space:nowrap}
 .fi-info .trick{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:1;font-size:40px;overflow-wrap:anywhere}
 .fi-info .meta{font-size:15px;color:#d0d4d8}
 .fi-info .meta b{color:#fff}
@@ -368,13 +367,13 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .podium .p2{padding-top:30px}.podium .p3{padding-top:52px}
 .podium b.place{font-family:var(--display);font-stretch:125%;font-weight:800;font-size:30px;line-height:1}
 .podium .nm{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
-.podium .pts{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--mute)}
+.podium .pts{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;color:var(--mute)}
 .board{list-style:none;margin:0;padding:0}
 .board li{display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid var(--line);cursor:pointer}
-.board li .n{font-family:var(--mono);font-weight:700;font-size:13px;width:22px;color:var(--mute)}
+.board li .n{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;width:22px;color:var(--mute)}
 .board li > div{flex:1;min-width:0}
 .board li b{font-weight:600;font-size:15px}
-.board li .score{font-family:var(--mono);font-weight:700;font-size:13px}
+.board li .score{font-variant-numeric:tabular-nums;font-weight:700;font-size:14px}
 .board li.you{background:rgba(255,90,31,.08);margin-inline:-16px;padding-inline:16px}
 .mini-board{list-style:none;margin:8px 0 0;padding:0}
 .mini-board li{display:flex;align-items:center;gap:10px;min-height:48px;border-top:1px solid var(--line);cursor:pointer}
@@ -384,7 +383,7 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .crew-sec > .row{margin-bottom:8px}
 .crew-card{display:grid;gap:10px}
 .crew-head{display:flex;align-items:center;gap:12px}
-.crew-tag{display:inline-grid;place-items:center;min-width:46px;height:30px;padding:0 6px;border-radius:4px;background:var(--ink);color:#fff;font-family:var(--mono);font-weight:700;font-size:13px}
+.crew-tag{display:inline-grid;place-items:center;min-width:46px;height:30px;padding:0 6px;border-radius:4px;background:var(--ink);color:#fff;font-weight:700;font-size:13px;letter-spacing:.02em}
 .crew-tag.sm{min-width:38px;height:24px;font-size:11px}
 .crew-name{font-family:var(--display);font-stretch:125%;font-weight:800;font-size:20px;letter-spacing:-.02em}
 .crew-code{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px}
@@ -424,7 +423,7 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .bag{display:grid;gap:10px}
 .sec-h{font-family:var(--display);font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:1;font-size:22px}
 .clip-filter{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
-.clip-filter button{height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;flex:none;border:1px solid var(--line);background:none;cursor:pointer}
+.clip-filter button{height:44px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:600;flex:none;border:1px solid var(--line);background:none;cursor:pointer}
 .clip-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .sheet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .tile-wrap{position:relative}
@@ -439,13 +438,15 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .founder-plate{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:12px}
 .founder-plate b{display:block}
 .founder-plate .mono{font-size:12px;color:var(--mute)}
-.achs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.ach{display:grid;justify-items:center;gap:2px;text-align:center;padding:10px 4px;border:1px dashed var(--line-2);border-radius:4px;color:var(--mute);font-size:12px}
-.ach b{font-size:13px;color:var(--mute)}
-.ach.got{border:1px solid var(--ink);color:var(--ink)}
-.ach.got b{color:var(--ink)}
-.ach span{font-size:11px}
-.ach-more{grid-column:1/-1}
+.achs{display:grid}
+.ach{display:grid;grid-template-columns:28px 1fr;column-gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);color:var(--mute)}
+.ach .emb{grid-row:span 2;display:grid;place-items:center;opacity:.55}
+.ach b{font-size:15px;color:var(--mute);font-weight:600}
+.ach.got{color:var(--ink)}
+.ach.got .emb{opacity:1}
+.ach.got b{color:var(--ink);font-weight:700}
+.ach span{font-size:13px;color:var(--mute)}
+.ach-more{justify-self:start}
 
 /* settings (gear) */
 .settings h2{margin-top:6px}
@@ -458,7 +459,7 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 
 /* trick book */
 .book-cat{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.ring{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--mute)}
+.ring{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;color:var(--mute)}
 .ring i{font-style:normal}
 .book-row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;min-height:60px;border-top:1px solid var(--line);padding:6px 0}
 .book-row b{font-weight:700}
@@ -491,9 +492,31 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .install-sheet ol{margin:0;padding-left:20px;display:grid;gap:6px}
 .install-sheet ol svg{width:18px;height:18px;vertical-align:-3px}
 .install-sheet .btns .btn{min-height:var(--btn)}
+/* after a post: posted -> riders call it -> points (the dot shows where your clip is) */
+.next3{list-style:none;padding:0 !important;margin:0;display:grid;gap:0 !important}
+.next3 li{display:grid;grid-template-columns:14px 1fr;column-gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.next3 li::before{content:"";grid-row:span 2;width:12px;height:12px;margin-top:5px;border-radius:50%;border:2px solid var(--line-2)}
+.next3 li.done::before{background:var(--ink);border-color:var(--ink)}
+.next3 li.now::before{background:var(--hot);border-color:var(--hot)}
+.next3 b{font-size:16px}
+.next3 span{color:var(--ink-2);font-size:14px;line-height:1.35}
+/* the Post button fills as the video uploads */
+.btn.loading{background:linear-gradient(90deg,var(--hot) var(--p,0%),#ffc9b3 var(--p,0%));border-color:var(--hot);color:var(--hot-ink);font-variant-numeric:tabular-nums}
+.btn.loading:disabled{opacity:1}
+/* "needs 2 more calls" on clips that are still being judged */
+.calls-left{color:#fff;font-weight:700}
+.jfoot .calls-left{color:var(--on-dark)}
+.calls.duel-turn b{color:var(--ink)}
+.calls.duel-turn>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+/* sign-up opened from the front page: the form first, no second pitch */
+.land.direct{padding-top:env(safe-area-inset-top,0px)}
+.direct-top{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px}
+.direct-top .brand{text-decoration:none;font-size:20px}
+.land.direct .land-body{padding-top:4px}
+.land.direct .auth-h{margin-top:6px;font-size:34px}
 .onboard{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;justify-content:safe center;gap:14px;padding:24px 16px;overflow-y:auto;background:var(--snow)}
 .onboard h2{font-size:40px;margin:0}
-.onboard .ob-step{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--mute)}
+.onboard .ob-step{font-weight:700;font-size:13px;color:var(--mute)}
 .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ob-grid .btn{min-height:110px;font-size:20px;flex-direction:column}
 .ob-grid .btn svg{width:34px;height:34px}
@@ -599,6 +622,26 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .player.playing .pl-play{display:none}
 .rail{display:none}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto !important}}
+/* ---------- glove-proof sweep (11/11 design pass): everything you can tap is at least 44px in BOTH directions ---------- */
+.feed-tabs{gap:12px}
+.feed-tabs button,.jtop button,.seg button{min-width:44px;text-align:center}
+.jtop{gap:12px}
+.jfoot button{min-width:56px;padding:0 10px;margin-right:-10px}
+/* small things keep their size on screen; the invisible ::after is the part your thumb hits */
+.fi-info .who .avatar,.fi-info .who .linkname,button.chip,.agree a,.foot a,.legal a,.direct-top .brand{position:relative}
+.fi-info .who .avatar::after{content:"";position:absolute;inset:-6px}
+.fi-info .who .linkname:not(.avatar)::after{content:"";position:absolute;inset:-12px -4px}
+button.chip::after{content:"";position:absolute;inset:-7px 0}
+.agree a::after,.foot a::after,.legal a::after{content:"";position:absolute;inset:-14px -5px}
+.direct-top .brand{display:inline-flex;align-items:center;min-height:44px}
+.agree{align-items:center;min-height:44px}
+.agree input{width:24px;min-height:24px;height:24px;margin:0;flex:none}
+/* white type over the hero photo: a little shade behind the top bar so "sign in" reads on a bright sky */
+.land-hero::before{content:"";position:absolute;inset:0 0 auto 0;height:130px;background:linear-gradient(rgba(17,19,22,.4),rgba(17,19,22,0));pointer-events:none}
+.land-hero .land-top,.land-hero .rec{z-index:1}
+.land-hero .stamp-svg{max-width:52%}
+/* the smallest phones (320 wide): the mountain name keeps its room in the top bar */
+@media (max-width:350px){.top{gap:6px}.brand{font-size:16px}.mt-chip{padding:0 10px;max-width:38vw}.me-chip{min-width:40px}}
 </style>
 
 <div class="shell">
@@ -733,7 +776,7 @@ const S = {
   search: {q: '', results: null},
   feed: {mode: 'clips', limit: 30, rows: [], more: false, loaded: false, scope: store.get('feed-scope', '')},   // mode: 'clips' (watch) or 'judge'; scope: mt / crew / all ('' = your mountain if it has clips, else all)
   board: {scope: store.get('board-scope', 'global'), period: 'week', resort: '', rows: [], pass: {}},   // scope: global (Everyone) / mt / friends / crews (crews lives inside the Friends tab)
-  myClips: [], mtRank: null, blocked: new Set(), blockedNames: new Map(), firstRun: null, signupMt: null, clipFilter: 'all', passMenu: false,
+  myClips: [], callsLeft: null, rewards: [], mtRank: null, blocked: new Set(), blockedNames: new Map(), firstRun: null, signupMt: null, clipFilter: 'all', passMenu: false,
   crew: {ready: false, mine: null, members: []},   // ready = the crews database update (010) is installed
   profile: null, openComments: null, comments: {},
   sport: store.get('sport', 'ski'),
@@ -796,6 +839,10 @@ const sportOf = t => SPORTS[t.sport] ? t.sport : 'ski';
 const tricksFor = (sport, cat) => S.tricks.filter(t => sportOf(t) === sport && (!cat || t.category === cat));
 // What you ride (Connor 10/27): 'ski', 'snowboard' or 'both'. A skier never sees snowboard tricks or Trick of the Day.
 const ridesSports = () => S.sports === 'both' ? Object.keys(SPORTS) : [S.sports];
+// The ski / snowboard switch on Record is only hidden for a rider who TOLD this phone they ride one thing.
+// A fresh phone (or the home-screen app, which starts with empty storage) hasn't been told, so it keeps the switch:
+// otherwise a snowboarder would be stuck on ski tricks until they found Settings.
+const needsSportSwitch = () => store.get('sports', '') === '' || ridesSports().length > 1;
 function setRides(k){
   S.sports = k; store.set('sports', k);
   if (k !== 'both'){ S.sport = k; store.set('sport', k); }
@@ -1117,7 +1164,7 @@ const FOUNDER_UNTIL = '2026-12-16T07:00:00Z';   // end of Dec 15 in Colorado
 const CREATOR_ID = '713e0c5f-7de1-4842-b845-d1679b4eb7b3';   // rider #001, the guy who built Stomped: gold plate + crown
 const riderNo = n => '#' + String(n).padStart(3, '0');
 const ACHIEVEMENTS = [
-  {icon: 'shield', name: 'Founder',  desc: 'Joined before Dec 15, 2026', test: (L, u) => !!u && !!u.created_at && u.created_at < FOUNDER_UNTIL},
+  {icon: 'crown', name: 'Founder',  desc: 'Joined before Dec 15, 2026', test: (L, u) => !!u && !!u.created_at && u.created_at < FOUNDER_UNTIL},
   {icon: 'flag', name: 'First Send',    desc: 'Land any trick',        test: L => L.size >= 1},
   {icon: 'spin', name: 'Spin Cycle',    desc: '3 spins',               test: L => hasName(L, /\b(180|360|540|720|900|1080)\b/) >= 3},
   {icon: 'swap', name: 'Switch Hitter', desc: '3 switch tricks',       test: L => hasName(L, /Switch|Cab/) >= 3},
@@ -1139,9 +1186,9 @@ function achievementsHtml(L, u){
   const shown = S.achAll ? [...earned, ...locked] : earned.length ? earned : locked.slice(0, 4);
   const desc = a => a.name === 'Founder' && u && u.founderNo && a.test(L, u) ? `Rider ${riderNo(u.founderNo)}` : a.desc;
   const tile = a => `<div class="ach ${earned.includes(a) ? 'got' : ''}" title="${esc(desc(a))}">
-    <div class="emb">${ic(a.icon, 26)}</div><b>${esc(a.name)}</b><span>${esc(desc(a))}</span></div>`;
-  const more = locked.length && !S.achAll ? `<button class="linkish ach-more" data-act="ach-all">See all ${ACHIEVEMENTS.length} badges ›</button>` : '';
-  return `<div class="row" style="margin-bottom:10px"><div class="label">Badges</div><span class="hint mono">${earned.length}/${ACHIEVEMENTS.length}</span></div>
+    <div class="emb">${ic(a.icon, 22)}</div><b>${esc(a.name)}</b><span>${esc(desc(a))}</span></div>`;
+  const more = locked.length && !S.achAll ? `<button class="linkish ach-more" data-act="ach-all">see all ${ACHIEVEMENTS.length} badges</button>` : '';
+  return `<div class="row" style="margin-bottom:10px"><span class="sec-h">badges</span><span class="hint mono">${earned.length} of ${ACHIEVEMENTS.length}</span></div>
   <div class="achs">${shown.map(tile).join('')}${more}</div>`;
 }
 
@@ -1302,6 +1349,7 @@ async function loadAll(){
   await loadFounderQueue();
   await loadFilmedForMe();
   await loadFilmers(S.clips);
+  await loadCallsLeft();
   loadSeenStatus();
   noticeResults(before);
   try { await loadInbox(); } catch (e){ console.warn('inbox', e); }   // a bell problem must never stop the app loading
@@ -1419,19 +1467,37 @@ async function loadFeed(){
   F.rows = list;
 }
 const activeDuelWith = id => S.duels.find(d => d.status === 'active' && d.other && d.other.id === id);
+// How many more calls each clip that's still being judged needs (supabase/030 works it out, so every phone agrees).
+// Best effort: until 030 is pasted the function isn't there, S.callsLeft stays null and the number just isn't shown.
+async function loadCallsLeft(){
+  const ids = [...new Set([...S.clips, ...(S.myClips || []), ...S.feed.rows].filter(c => c.status === 'pending').map(c => c.id))].slice(0, 200);
+  if (!ids.length) return;
+  try {
+    const r = await db.rpc('calls_left', {p_clips: ids});
+    if (!r.error && Array.isArray(r.data)) S.callsLeft = Object.fromEntries(r.data.map(x => [x.clip_id, Math.max(0, parseInt(x.calls_left, 10) || 0)]));
+  } catch (e) {}
+}
+const callsLeft = c => (S.callsLeft && c.status === 'pending' && S.callsLeft[c.id]) || 0;
+// "needs 2 more calls", or '' when we don't know
+const callsLine = (c, more = ' more') => { const n = callsLeft(c); return n ? `needs ${n}${more} call${n > 1 ? 's' : ''}` : ''; };
 
 // Toast when one of my clips gets decided while the app is open.
 function noticeResults(before){
-  const mine = S.clips.filter(c => c.user_id === myId());
+  // S.myClips, not the feed: on a busy day your clip drops out of the newest 80 before it's verified (audit 11/10)
+  const mine = (S.myClips && S.myClips.length ? S.myClips : S.clips.filter(c => c.user_id === myId())).filter(c => c.rider_ok !== false);
   if (seenStatus){
-    for (const c of mine){
-      if (seenStatus[c.id] !== 'pending' || c.status === 'pending') continue;
-      const name = clipName(c);
-      if (c.status === 'verified'){
-        const a = rankInfo(before ? before.points : Math.max(0, S.me.points - (c.points_awarded || 0)), TRICK_TIERS), b = rankInfo(S.me.points, TRICK_TIERS);
-        showReward(c, a.label !== b.label ? {from: a, to: b} : null);
-      } else toast(`The community didn't verify your ${name}`, 4500);
+    const decided = mine.filter(c => seenStatus[c.id] === 'pending' && c.status !== 'pending');
+    const won = decided.filter(c => c.status === 'verified').sort((a, b) => Date.parse(a.verified_at || a.created_at) - Date.parse(b.verified_at || b.created_at));
+    const lost = decided.filter(c => c.status === 'rejected');
+    // Two clips verified since you last looked: each gets its own moment, oldest first, with the points it really
+    // started from (before this, only the last one showed).
+    let pts = Math.max(0, S.me.points - won.reduce((s, c) => s + (c.points_awarded || 0), 0));
+    for (const c of won){
+      const a = rankInfo(pts, TRICK_TIERS), b = rankInfo(pts += c.points_awarded || 0, TRICK_TIERS);
+      S.rewards.push({c, rankUp: a.label !== b.label ? {from: a, to: b} : null, at: b});
     }
+    if (lost.length) toast(lost.length > 1 ? `Riders called ${lost.length} of your clips bails. Film them again?` : `Riders called your ${clipName(lost[0])} a bail. Film it again?`, 4500);
+    nextReward();
   }
   seenStatus = Object.fromEntries(mine.map(c => [c.id, c.status]));
   try { localStorage.setItem('seen-status-' + myId(), JSON.stringify(seenStatus)); } catch (e) {}
@@ -1631,15 +1697,21 @@ async function loadGate(){
   try { const r = await fetch('sounds/gate.mp3'); if (r.ok) GATE.buf = await a.decodeAudioData(await r.arrayBuffer()); } catch (e) {}
 }
 // The STOMPED moment: your clip, the stamp slams on, points count up and the bar climbs (breaking into the next rank on a rank-up). The tap follows Collect.
-function showReward(c, rankUp){
-  const pts = c.points_awarded || 0, r = rankUp ? rankUp.from : rankInfo(S.me.points, TRICK_TIERS);
+// Show the next waiting reward, unless something is already on screen (a reward, the rank-up, first-time setup)
+function nextReward(){
+  if (!S.rewards.length || $('overlay').firstElementChild) return;
+  const r = S.rewards.shift(); showReward(r.c, r.rankUp, r.at);
+}
+// at = your pass right after this clip's points (with two rewards in a row, that isn't where you are now)
+function showReward(c, rankUp, at){
+  const pts = c.points_awarded || 0, r = rankUp ? rankUp.from : at || rankInfo(S.me.points, TRICK_TIERS);
   $('overlay').innerHTML = `<div class="reward" id="reward" role="dialog" aria-label="Stomped: your clip was called landed">
     <div class="rw-shot">${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}" autoplay muted loop playsinline></video>` : ''}${brackets()}<span class="rec">${recCode(hashNum(c.id))}</span></div>
     <div class="rw-stamp">${stampSVG('STOMPED', '#ff5a1f', '#edf1f4')}</div>
     ${rankUp ? `<div class="rw-flash" style="background:${PASS_ART[rankUp.to.tier.key].g[0]}"></div>` : ''}<div class="rw-body reward-card">
       <div class="rw-pts"><b>${pts ? '+<span id="reward-n">0</span>' : 'repeat'}</b><span>${pts ? 'pts' : 'already in your bag'}</span></div>
       <span class="rw-trick">${esc(clipName(c))}${c.totd ? ', double points day' : ''}</span>
-      <span class="rw-why">Riders called it landed.</span>
+      <span class="rw-why">Riders called it landed.${S.rewards.length ? ` <b>${S.rewards.length} more to collect.</b>` : ''}</span>
       <div class="rw-next ${rankUp ? 'up' : ''}"><div class="row"><span id="rw-rank">${esc(r.label)}</span><span id="rw-left">${r.nextLabel ? `${r.toNext} to ${esc(r.nextLabel)}` : 'top of the mountain'}</span></div>
         <div class="bar"><i id="rw-bar" style="width:${Math.max(2, r.pct)}%${rankUp ? `;background:${PASS_ART[r.tier.key].g[0]}` : ''}"></i></div></div>
       <button class="btn primary rw-go" data-act="reward-collect">Collect</button>
@@ -1797,7 +1869,7 @@ function feedItem(c){
   const liked = S.myLikes.has(c.id), open = S.openComments === c.id, pts = c.profiles ? c.profiles.points : 0;
   const verdict = c.status === 'verified' ? stampSVG('STOMPED') : c.status === 'rejected' ? stampSVG('BAILED', '#c3c8ce') : '';
   const line = c.status === 'verified' ? (c.points_awarded ? `stomped. <b>+${c.points_awarded}</b> pts` : 'stomped. already in the book')
-    : c.status === 'rejected' ? 'bailed. riders didn’t call it' : mine ? 'riders are calling it' : 'still being called';
+    : c.status === 'rejected' ? 'bailed. riders didn’t call it' : (mine ? 'riders are calling it' : 'still being called') + (callsLine(c) ? ` · <span class="calls-left">${callsLine(c)}</span>` : '');
   return `<article class="reel-item feed-item" id="clip-${c.id}" data-id="${c.id}">
     ${c.video_path ? `<video class="fit" data-act="play" src="${esc(videoUrl(c.video_path))}" playsinline muted loop preload="metadata"></video>`
       : `<div class="poster"><div class="tname">${esc(t.name)}</div></div>`}
@@ -1812,7 +1884,7 @@ function feedItem(c){
     <div class="fi-info">
       <div class="who"><button class="avatar linkname ${mine ? 'you' : ''}" data-act="profile" data-id="${c.user_id}" aria-label="${esc(who)}'s pass">${esc(initials(who))}</button>
         <button class="linkname" data-act="profile" data-id="${c.user_id}">@${esc(who)}</button>${rankTag(pts)}
-        <span class="where">${esc(dots(mtShort(c.resort).toUpperCase(), ago(c.created_at)))}</span></div>
+        <span class="where">${esc(dots(mtShort(c.resort).toLowerCase(), ago(c.created_at)))}</span></div>
       <div class="trick">${esc(clipName(c))}</div>
       <div class="meta">${line}${c.totd ? ' · 2× day' : ''}${filmedBy(c) ? ' · ' + filmedBy(c) : ''}</div>
     </div>
@@ -1995,7 +2067,7 @@ async function shareClipVideo(id){
 const clipFile = (blob, name) => new File([blob], `stomped-${String(name).replace(/\W+/g, '-').toLowerCase()}.${/mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm'}`, {type: blob.type || 'video/mp4'});
 // Phones only open the share sheet straight after a tap, and stamping takes as long as the clip, so: stamp, then one more tap
 function readyToShare(file){
-  hideSave(); hideInstall(); S.readyFile = file;
+  hideSave(); hideInstall(); hidePosted(); S.readyFile = file;
   const sh = document.createElement('section');
   sh.id = 'save-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Your stamped clip is ready');
   sh.innerHTML = `<h3>stamped. ready to go.</h3><p>Save it to your camera roll or send it anywhere.${isIOS() ? ' iPhone: tap <b>Save Video</b> in the next sheet.' : ''}</p>
@@ -2065,6 +2137,8 @@ const views = {
     const jq = judgeQueue(), mine = S.myClips || [], wk = mine.filter(c => Date.parse(c.created_at) > weekAgo());
     const totdK = ridesSports().find(k => S.totds[k] && trickById(S.totds[k])), totd = totdK && trickById(S.totds[totdK]);
     const next = !totd && nextPicks()[0];
+    const turns = S.duels.filter(d => d.status === 'active' && d.turn === myId() && d.other && !S.blocked.has(d.other.id));   // S.K.I. games waiting on you
+    const chev = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
     const thumbs = jq.slice(0, 3).map(c => c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline preload="metadata" aria-hidden="true"
       style="width:34px;height:34px;object-fit:cover;border-radius:4px;border:2px solid var(--snow);margin-left:-10px;background:var(--ink-2)"></video>` : '<i></i>').join('');
     return `<section class="base">
@@ -2072,12 +2146,16 @@ const views = {
       ${S.filmedForMe.length > 1 && !S.filmedAll ? `<button class="linkish filmed-more" data-act="filmed-all">+${S.filmedForMe.length - 1} more clip${S.filmedForMe.length > 2 ? 's' : ''} friends filmed of you</button>` : ''}
       <div class="pass-wrap"><button class="pass-btn" data-act="me" aria-label="Your season pass">${passSVG(S.me, {pick: true})}</button></div>
       <div class="today">
-        <div class="grow"><small>${totd ? 'TODAY · 2× PTS' : 'NEXT UP'}</small><b>${totd ? `${esc(totd.name.toLowerCase())} pays double` : next ? esc(next.name.toLowerCase()) : 'film anything'}</b></div>
+        <div class="grow"><b>${totd ? `${esc(totd.name.toLowerCase())} pays double today` : next ? `next up: ${esc(next.name.toLowerCase())}` : 'film anything'}</b></div>
         <button class="btn primary glove" data-act="${totd ? 'totdpost' : next ? 'book-record' : 'tab'}" ${totd ? `data-k="${totdK}"` : next ? `data-id="${next.id}"` : 'data-tab="record"'}>Film it</button>
       </div>
       <div>
         <button class="calls" data-act="tab" data-tab="judge"><span>${jq.length ? `${jq.length} clip${jq.length > 1 ? 's' : ''} need${jq.length > 1 ? '' : 's'} your call` : 'all caught up. no clips to call'}</span>
           <span class="thumbs"><span style="padding-left:10px">${thumbs}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
+        ${turns.slice(0, 2).map(d => `<button class="calls duel-turn" data-act="open-duel" data-id="${d.id}"><span><b>your turn</b> vs @${esc(d.other.username)} · ${
+            d.phase === 'match' ? 'match the ' + esc(trickById(d.trick_id).name.toLowerCase()) : 'set a trick'}</span>
+          <span class="thumbs"><span class="ski">${lettersHtml(d.challenger === myId() ? d.letters_challenger : d.letters_opponent, true)}</span>${chev}</span></button>`).join('')}
+        ${turns.length > 2 ? `<button class="calls duel-turn" data-act="tab" data-tab="duels"><span>+${turns.length - 2} more duel${turns.length > 3 ? 's' : ''} waiting on you</span>${chev}</button>` : ''}
         <div class="week3">
           <div class="num"><b>${wk.filter(c => c.status === 'verified').length}</b><span>landed this week</span></div>
           <div class="num"><b>${wk.filter(c => c.status === 'rejected').length}</b><span>bailed</span></div>
@@ -2091,29 +2169,31 @@ const views = {
   },
   auth(){
     // Signed out = the landing page: Connor's backflip, land it. prove it., how it works, then the form.
-    const up = S.authMode === 'signup';
-    return `<section class="land">
-      <div class="land-hero">
+    // Opened from the front page's button (?join=1): they just read the pitch, so it's the form and nothing else.
+    const up = S.authMode === 'signup', direct = !!S.joinDirect;
+    return `<section class="land ${direct ? 'direct' : ''}">
+      ${direct ? `<div class="direct-top"><a class="brand" href="../?home=1" aria-label="Stomped front page">STOMPED</a><button class="linkish" data-act="authmode">${up ? 'sign in' : 'make an account'}</button></div>`
+      : `<div class="land-hero">
         <img src="icons/landing.jpg" alt="A rider mid-backflip over a park jump" onerror="this.remove()">
         <div class="land-top"><span class="brand">STOMPED</span><button data-act="join" data-mode="signin">sign in</button></div>
         <span class="rec">REC 00:03:05</span>
         ${stampSVG('STOMPED')}
         <h1>land it.<br>prove it.</h1>
-      </div>
+      </div>`}
       ${inviteCrew ? `<a class="card sent-you" href="#auth-top"><b>You're invited to ${esc(inviteCrew.name)}.</b> Make an account or sign in and you're in the crew.</a>`
         : store.get('pending-clip', '') ? `<a class="card sent-you" href="#auth-top"><b>A friend sent you a clip.</b> Make an account and it opens right after.</a>`
         : store.get('pending-from', '') ? `<a class="card sent-you" href="#auth-top"><b>@${esc(store.get('pending-from', ''))} invited you.</b> Make an account and you can add them right away.</a>` : ''}
       ${inAppBrowser() ? `<div class="card sent-you inapp-note"><b>Open this in ${realBrowser()} first.</b> Tap ••• at the top, then Open in ${realBrowser()}. ${inAppBrowser()}'s browser can't keep Stomped on your home screen or keep you signed in.</div>` : ''}
       <div class="land-body">
-        <p class="lede">Film a trick in the app. Riders who weren't there call it landed or bailed. Landed tricks earn points and rank your season pass up.</p>
-        <div class="land-cta"><button class="btn primary" data-act="join" data-mode="signup">Make an account</button><span>Free. Built at CU Boulder.</span></div>
+        ${direct ? '' : `<p class="lede">Film a trick in the app. Riders who weren't there call it landed or bailed. Landed tricks earn points and rank your season pass up.</p>
+        <div class="land-cta"><button class="btn primary" data-act="join" data-mode="signup">Make an account</button><span>Free. Built by two college riders.</span></div>
         <div class="land-rule"><span>landed or bailed? you call it.</span>${ic('down', 20)}</div>
         <ol class="land-how">
           <li><b>film it</b><span>Record in the app, up to 20 seconds. No uploads, so no old or borrowed clips.</span></li>
           <li><b>riders call it</b><span>Other riders call it landed or bailed. Your call is anonymous.</span></li>
           <li><b>rank up</b><span>New tricks pay points. Your pass goes green, blue, black, double, triple, park rat.</span></li>
         </ol>
-        <div class="land-tiers" aria-label="The six passes">${TRICK_TIERS.slice().reverse().map(t => passSVG({username: 'you', points: t.min}, {tier: t.key, photo: ''})).join('')}</div>
+        <div class="land-tiers" aria-label="The six passes">${TRICK_TIERS.slice().reverse().map(t => passSVG({username: 'you', points: t.min}, {tier: t.key, photo: ''})).join('')}</div>`}
         <h2 id="auth-top" class="auth-h">${up ? 'make an account' : 'sign in'}</h2>
         <p class="sub">${up ? `Pick a username. Your email stays private.${Date.now() < Date.parse(FOUNDER_UNTIL) ? ' Join before Dec 15 and keep the <b>Founder</b> badge.' : ''}` : 'Sign in to film, call clips and climb the board.'}</p>
         <form class="form" id="auth-form">
@@ -2134,7 +2214,7 @@ const views = {
           <button class="btn ghost" type="button" data-act="authmode">${up ? 'I already have an account' : 'Make an account'}</button>
           ${up ? '' : '<button class="linkish" type="button" data-act="forgot" style="justify-self:center">Forgot password?</button>'}
         </form>
-        <footer class="foot">Stomped · built at CU Boulder<br><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>
+        <footer class="foot">Stomped · built by two college riders<br><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>
       </div></section>`;
   },
 
@@ -2145,7 +2225,7 @@ const views = {
     if (F.mode === 'judge'){
       const fr = S.firstRun;
       const done = fr ? '<p class="sub">That was the last one waiting. Here comes your pass.</p>'
-        : `<div class="disp" style="font-size:34px">all called.</div><p class="sub" style="margin-top:10px">${J.list.length ? "That's every clip waiting on you." : 'No clips need your call right now.'} Your call counts ×${trickTierOf(S.me.points).w}.</p>
+        : `<div class="disp" style="font-size:34px">all called.</div><p class="sub" style="margin-top:10px">${J.list.length ? "That's every clip waiting on you." : 'No clips need your call right now.'}${Date.now() - Date.parse(S.me.created_at) > 7 * 864e5 ? ` Your call counts ×${trickTierOf(S.me.points).w}.` : ''}</p>
           <button class="btn primary glove" data-act="feed-mode" data-k="clips">Watch clips</button>${landedRule()}`;
       return `<div class="feedwrap">
         ${fr ? `<div class="first-run">call ${fr.need} clips to get your pass</div>`
@@ -2193,7 +2273,7 @@ const views = {
           <button class="shutter ${R.mode === 'recording' ? 'stop' : ''}" data-act="${R.mode === 'recording' ? 'rec-stop' : 'rec-start'}" aria-label="${R.mode === 'recording' ? 'Stop recording' : 'Start recording'}"></button>
           <button class="cam-side" data-act="cam-flip" aria-label="Flip camera">${ic('turn', 24)}</button>
         </div></div>`;
-    else body = `${ctx ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
+    else body = `${ctx || !needsSportSwitch() ? '' : sportSwitch(S.sport, 'sport') + '<div style="height:12px"></div>'}
       <div class="cam"><div class="cam-empty"><div style="display:grid;gap:14px;justify-items:center">
         <button class="big-cam" data-act="cam-open" aria-label="Open camera">${ICON.cam}</button>
         <strong>tap to film</strong>
@@ -2219,7 +2299,7 @@ const views = {
     const tab = (k, label, n) => `<button class="${sq === k ? 'on' : ''}" data-act="squad" data-k="${k}">${label}${n ? ` <span class="cnt">${n}</span>` : ''}</button>`;
     return `${head}${b.scope === 'crews' ? crewBoard() : boardHtml()}
       <div class="crew-sec"><div class="seg squad-seg" role="tablist" aria-label="Your people">${tab('friends', 'friends', incoming.length)}${tab('crew', 'your crew', 0)}${tab('duels', 'duels', myTurn)}</div>
-      <div style="padding-top:14px">${sq === 'crew' ? (crewCard() || '<div class="empty"><strong>Crews are coming</strong>Not switched on yet.</div>')
+      <div style="padding-top:14px">${sq === 'crew' ? (crewCard() || '<div class="empty"><strong>crews are coming</strong>Not switched on yet.</div>')
         : sq === 'duels' ? duelsList() : friendsList()}</div></div>`;
   },
 
@@ -2361,10 +2441,10 @@ const views = {
         ${shown.length ? `<div class="sheet-grid">${shown.map(c => `<div class="tile-wrap">
           <button class="tile" data-act="playtile" aria-label="Play ${esc(trickById(c.trick_id).name)}">
             ${c.video_path ? `<video src="${esc(videoUrl(c.video_path))}#t=0.1" muted playsinline loop preload="metadata"></video>` : ''}
-            ${c.status === 'verified' ? stampSVG('STOMPED') : c.status === 'rejected' ? stampSVG('BAILED', '#c3c8ce') : '<span class="wait-tag">calling</span>'}
+            ${c.status === 'verified' ? stampSVG('STOMPED') : c.status === 'rejected' ? stampSVG('BAILED', '#c3c8ce') : `<span class="wait-tag">${callsLeft(c) ? `${callsLeft(c)} call${callsLeft(c) > 1 ? 's' : ''} to go` : 'calling'}</span>`}
             <span class="tn">${esc(trickById(c.trick_id).name)}${c.status === 'verified' && c.points_awarded ? ' · +' + c.points_awarded : ''}</span></button>
           ${mine ? `<button class="tile-del" data-act="${c.status === 'pending' ? 'delete' : 'remove-clip'}" data-id="${c.id}" aria-label="Delete ${esc(trickById(c.trick_id).name)}">${ICON.trash}</button>` : ''}</div>`).join('')}</div>`
-          : `<div class="empty"><strong>No clips here</strong>${mine ? 'Film your first trick.' : ''}</div>`}</div>
+          : `<div class="empty"><strong>no clips here</strong>${mine ? 'Film your first trick.' : ''}</div>`}</div>
       ${achievementsHtml(L, u)}
     </div>`;
   },
@@ -2375,7 +2455,7 @@ const SIGNUP_MTS = [['Eldora', 'Eldora'], ['Copper', 'Copper'], ['Winter Park', 
 // The board: podium of the top 3 passes, then everyone else. Every row opens that rider's pass.
 function boardHtml(){
   const b = S.board, rows = b.rows.filter(u => !S.blocked.has(u.id));
-  if (!rows.length) return `<div class="empty"><strong>Nobody yet</strong>${b.scope === 'friends' ? 'Add friends below.' : b.scope === 'mt' ? 'Be the first at your mountain this week.' : 'Be the first on the board.'}</div>`;
+  if (!rows.length) return `<div class="empty"><strong>nobody yet</strong>${b.scope === 'friends' ? 'Add friends below.' : b.scope === 'mt' ? 'Be the first at your mountain this week.' : 'Be the first on the board.'}</div>`;
   const top = rows.slice(0, 3), order = [top[1], top[0], top[2]], cls = ['p2', 'p1', 'p3'], place = [2, 1, 3];
   const card = u => ({...u, ...(b.pass && b.pass[u.id] || {})});
   return `<div class="podium">${order.map((u, i) => u ? `<div class="${cls[i]}" data-act="profile" data-id="${u.id}" style="cursor:pointer">
@@ -2391,7 +2471,7 @@ function crewBoard(){
       <span class="crew-tag sm">${esc(c.tag)}</span>
       <div><b>${esc(c.name)}</b><div class="hint">${c.members} rider${c.members === 1 ? '' : 's'}</div></div>
       <span class="score">${c.score}</span></li>`).join('')}</ol>`
-    : `<div class="empty"><strong>No crews yet</strong>Start one below.</div>`;
+    : `<div class="empty"><strong>no crews yet</strong>Start one below.</div>`;
 }
 function crewCard(){
   const C = S.crew;
@@ -2431,7 +2511,7 @@ function friendsList(){
     ${incoming.length ? `<div class="label" style="margin:16px 0 4px">Requests</div>${incoming.map(f => friendRow(f.other, 'incoming')).join('')}` : ''}
     <div class="label" style="margin:16px 0 4px">Your friends · ${friends.length}</div>
     ${friends.length ? friends.map(f => friendRow(f.other, 'friend')).join('')
-      : `<div class="empty"><strong>No friends yet</strong>Search their username above, or send them the app with Invite.</div>`}
+      : `<div class="empty"><strong>no friends yet</strong>Search their username above, or send them the app with Invite.</div>`}
     ${sent.length ? `<p class="hint" style="margin-top:8px">Waiting on: ${sent.map(f => esc(f.other.username)).join(', ')}</p>` : ''}`;
 }
 function duelsList(){
@@ -2444,7 +2524,7 @@ function duelsList(){
         <div><b>vs @${esc(d.other.username)}</b><div class="hint" style="display:flex;gap:10px;align-items:center;margin-top:4px">
           you ${lettersHtml(myL, true)} them ${lettersHtml(theirL, true)}</div></div>
         ${d.turn === myId() ? '<span class="your-turn">your turn</span>' : '<span class="hint">their turn</span>'}</button>`;
-    }).join('') : `<div class="empty"><strong>No duels yet</strong>${friends.length ? 'Pick a friend. You set a trick, they have to land it. Miss and you take a letter: spell S-K-I and you lose.' : 'A duel is a game of S.K.I. with a friend. Add a friend to start one.'}</div>`}
+    }).join('') : `<div class="empty"><strong>no duels yet</strong>${friends.length ? 'Pick a friend. You set a trick, they have to land it. Miss and you take a letter: spell S-K-I and you lose.' : 'A duel is a game of S.K.I. with a friend. Add a friend to start one.'}</div>`}
     ${!mine.length && friends.length ? friends.map(f => friendRow(f.other, 'friend')).join('') : ''}
     ${done.length ? `<h3>recent duels</h3><ul class="board">${done.map(d => {
         const won = d.winner === myId();
@@ -2457,7 +2537,7 @@ function friendRow(p, kind){
   const f = S.friends.find(x => x.other && x.other.id === p.id);
   let acts = '';
   if (kind === 'incoming') acts = `<button class="btn small good" data-act="accept-friend" data-id="${p.id}">Accept</button>
-      <button class="btn small" data-act="remove-friend" data-id="${p.id}" aria-label="Decline">✕</button>`;
+      <button class="btn small" data-act="remove-friend" data-id="${p.id}" aria-label="Decline">${ic('x', 16)}</button>`;
   else if (kind === 'friend'){
     const d = activeDuelWith(p.id);
     acts = d ? `<button class="btn small" data-act="open-duel" data-id="${d.id}">View duel</button>`
@@ -2548,7 +2628,7 @@ function reelItem(c){
         <div class="jmeta"><span>${what}</span><span class="mono">${n} of ${total}</span></div>
         <h1>landed or bailed?</h1>
         ${voted ? `<div class="jbtns"><span></span><span></span></div>` : asking ? reasons(true) : `<div class="jbtns">${calls}</div>`}
-        <div class="jfoot"><span>Your call is anonymous.</span>${S.firstRun ? '' : `<button class="round skip" data-act="skip" data-id="${c.id}">Skip</button>`}</div>
+        <div class="jfoot"><span>${callsLine(c) ? `<b class="calls-left">${callsLine(c)}.</b> ` : ''}Your call is anonymous.</span>${S.firstRun ? '' : `<button class="round skip" data-act="skip" data-id="${c.id}">Skip</button>`}</div>
       </div></div>
     </section>`;
   }
@@ -2556,9 +2636,9 @@ function reelItem(c){
     ${video}<div class="shade"></div>${brackets()}<span class="rec">${recCode(hashNum(c.id))}</span>${hints}
     ${voted ? voteStamp(J.voted[c.id]) : ''}
     <div class="fi-info">
-      <div class="who"><span class="avatar" aria-hidden="true">?</span><span>rider</span><span class="where">${esc(dots(mtShort(c.resort).toUpperCase(), ago(c.created_at)))}</span></div>
+      <div class="who"><span class="avatar" aria-hidden="true">?</span><span>rider</span><span class="where">${esc(dots(mtShort(c.resort).toLowerCase(), ago(c.created_at)))}</span></div>
       <div class="trick">${esc(clipName(c))}</div>
-      <div class="meta">needs your call. what's yours?${c.totd ? ' · 2× day' : ''}</div>
+      <div class="meta">${callsLine(c) ? `<span class="calls-left">${callsLine(c)}</span>. what's yours?` : `needs your call. what's yours?`}${c.totd ? ' · 2× day' : ''}</div>
       ${voted ? '' : asking ? reasons(true) : `<div class="fi-calls">${calls}</div>`}
     </div>
   </article>`;
@@ -2639,7 +2719,7 @@ async function feedMore(){
   const F = S.feed;
   if (S.tab !== 'feed' || F.mode !== 'clips' || !F.more || feedLoading) return;
   feedLoading = true; F.limit += FEED_PAGE;
-  try { await loadFeed(); } catch (err){ toast(err.message); }
+  try { await loadFeed(); await loadCallsLeft(); } catch (err){ toast(err.message); }
   feedLoading = false; render(true);
 }
 function maybeBreak(){
@@ -2754,7 +2834,7 @@ function postForm(){
       <select id="post-rider"><option value="">Me (@${esc(S.me.username)})</option>${
         pals.map(p => `<option value="${p.id}" ${S.postRider === p.id ? 'selected' : ''}>@${esc(p.username)} (I filmed it)</option>`).join('')}</select>
       <span class="hint" id="post-rider-hint">${riderHint(pals.find(p => p.id === S.postRider))}</span></div>` : ''}
-    ${sportSwitch(S.sport, 'sport')}
+    ${needsSportSwitch() ? sportSwitch(S.sport, 'sport') : ''}
     <div class="two">
       <div class="field"><label class="label" for="post-cat">Category</label>
         <select id="post-cat">${sp.cats.map(c => `<option>${c}</option>`).join('')}</select></div>
@@ -2789,7 +2869,7 @@ function syncPost(){
   const sel = $('post-trick'), prev = S.postPreset || sel.value;
   // No default trick: a wrong label costs judges' time and the rider's points, so it's always a real choice
   sel.innerHTML = '<option value="" disabled selected>Pick your trick</option>' + tricksFor(S.sport, cat.value)
-    .map(t => `<option value="${t.id}">${S.landed.has(t.id) ? '✓ ' : ''}${esc(t.name)}${isTotd(t.id) ? ' 🔥' : ''}</option>`).join('');
+    .map(t => `<option value="${t.id}">${esc(t.name)}${isTotd(t.id) ? ' · 2× today' : ''}${S.landed.has(t.id) ? ' · in your bag' : ''}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   S.postPreset = null;
   syncCombo(cat.value === 'Rails' ? sel.value : null);
@@ -2807,7 +2887,7 @@ function syncCombo(firstId){
   box.hidden = false;
   box.innerHTML = `<label class="label" for="post-combo-add">Then on the same feature (combo)</label>
     ${S.postCombo.length ? `<div class="chips" style="margin:6px 0">${S.postCombo.map((id, i) =>
-      `<button class="btn small" type="button" data-act="combo-del" data-id="${i}" aria-label="Remove ${esc(trickById(id).name)}">→ ${esc(trickById(id).name)} ✕</button>`).join('')}</div>` : ''}
+      `<button class="btn small" type="button" data-act="combo-del" data-id="${i}" aria-label="Remove ${esc(trickById(id).name)}">then ${esc(trickById(id).name)} ${ic('x', 14)}</button>`).join('')}</div>` : ''}
     ${S.postCombo.length < MAX_COMBO ? `<select id="post-combo-add"><option value="">${S.postCombo.length ? '+ Add another' : '+ Add the next trick (optional)'}</option>${
       left.map(t => `<option value="${t.id}">${esc(t.name)} (${t.pts})</option>`).join('')}</select>`
       : `<div class="hint">Max ${MAX_COMBO + 1} tricks in one combo.</div>`}
@@ -2834,6 +2914,12 @@ async function queueClip(item){
   return it;
 }
 let obTimer = null, obSending = '';
+// The Post button fills up as the video goes up, so you can see it's moving (and how far) on slow mountain signal
+function postProgress(p){
+  const b = $('post-btn') || $('duel-send'); if (!b) return;
+  b.classList.add('loading'); b.style.setProperty('--p', p + '%');
+  b.textContent = p >= 100 ? 'Posting…' : `Uploading ${p}%`;
+}
 async function updateOutboxChip(){
   const chip = $('outbox-chip'); if (!chip) return;
   let list = []; try { if (myId()) list = await OB.waiting(myId()); } catch (e) {}
@@ -2848,7 +2934,8 @@ async function flushOutbox(force = true, first = null, only = false){
   let r;
   try {
     r = await OB.flush({api: outboxApi(), uid: myId(), force, first, only,
-      onStart: (it, done) => { if (it.id !== first){ obSending = `Posting saved clip${done ? ` (${done + 1})` : ''}…`; updateOutboxChip(); } }});
+      onStart: (it, done) => { if (it.id !== first){ obSending = `Posting saved clip${done ? ` (${done + 1})` : ''}…`; updateOutboxChip(); } },
+      onProgress: (it, p) => { if (it.id === first) postProgress(p); }});
   } catch (e){ obSending = ''; updateOutboxChip(); return null; }   // phone storage unavailable (private browsing)
   obSending = '';
   for (const it of r.sent){
@@ -2879,7 +2966,7 @@ async function postSaved(item){
     if (/MB/.test(e.message)) throw e;
     // The phone can't store it (private browsing): upload straight from memory, like before.
     it = {uid: myId(), ...item, memory: true};
-    try { await OB.send(it, outboxApi()); }
+    try { await OB.send(it, outboxApi(), postProgress); }
     catch (err){ throw OB.isTransient(err) ? new Error("No signal, and this browser can't save clips. Keep the app open and try again.") : err; }
     runTrickAI(it.clipId, it.blob, trickById(it.fields.trick_id));
     logEvent('clip_posted', it.fields.rider ? 'for_friend' : trickById(it.fields.trick_id).category);
@@ -2934,7 +3021,7 @@ function showStuck(it){
   if ($('stuck-sheet')) return;
   const sh = document.createElement('section');
   sh.id = 'stuck-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', "A clip didn't post");
-  sh.innerHTML = `<h3>A clip didn't post</h3><p>${esc(trickById(it.fields && it.fields.trick_id).name || 'Clip')}: ${esc(it.lastError || 'the server refused it')}. It's still saved on your phone.</p>
+  sh.innerHTML = `<h3>a clip didn't post</h3><p>${esc(trickById(it.fields && it.fields.trick_id).name || 'Clip')}: ${esc(it.lastError || 'the server refused it')}. It's still saved on your phone.</p>
     <div class="btns"><button class="btn ghost" data-act="outbox-delete" data-id="${it.id}">Delete</button><button class="btn ghost" data-act="outbox-save" data-id="${it.id}">Save</button><button class="btn primary" data-act="outbox-retry" data-id="${it.id}">Try again</button></div>`;
   document.body.appendChild(sh);
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
@@ -3346,7 +3433,7 @@ function offerInstall(){
   else body = `<ol><li>Tap ${SHARE_IC} <b>Share</b> (on the newest iPhones it's under <b>•••</b>)</li><li>Scroll down, tap <b>Add to Home Screen</b></li></ol>`;
   const sh = document.createElement('section');
   sh.id = 'install-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Add Stomped to your home screen');
-  sh.innerHTML = `<h3>Put Stomped on your home screen</h3>${body}
+  sh.innerHTML = `<h3>put Stomped on your home screen</h3>${body}
     <div class="btns"><button class="btn ghost" data-act="install-later">Later</button>${go}</div>`;
   document.body.appendChild(sh);
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
@@ -3360,12 +3447,37 @@ function offerSave(blob, trickId){
   S.saveTrick = trickById(trickId).name || '';
   const sh = document.createElement('section');
   sh.id = 'save-sheet'; sh.className = 'card install-sheet'; sh.setAttribute('aria-label', 'Save this clip to your camera roll');
-  sh.innerHTML = `<h3>Save to camera roll?</h3><p>Keep your own copy of this clip.${isIOS() ? ' Tap <b>Save</b>, then <b>Save Video</b>.' : ''}</p>
+  sh.innerHTML = `<h3>save to camera roll?</h3><p>Keep your own copy of this clip.${isIOS() ? ' Tap <b>Save</b>, then <b>Save Video</b>.' : ''}</p>
     <div class="btns"><button class="btn ghost" data-act="save-later">Not now</button><button class="btn primary" data-act="save-go">Save</button></div>
     <button class="linkish" data-act="save-never" style="justify-self:center">Don't ask again</button>`;
   hideInstall(); document.body.appendChild(sh);
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
 }
+// Right after a post: what happens next, in three steps. It carries Save to camera roll too, so two sheets never stack.
+function showPosted(clipId, blob, trickId, worth){
+  hideInstall(); hideSave(); hidePosted();
+  const t = trickById(trickId), c = (S.myClips || []).find(x => x.id === clipId), n = c ? callsLeft(c) : 0, q = judgeQueue().length;
+  const canSave = !!blob && store.get('save-ask', 'on') !== 'off';
+  if (canSave){
+    const ext = /mp4/.test(blob.type) ? 'mp4' : /quicktime/.test(blob.type) ? 'mov' : 'webm';
+    S.saveFile = new File([blob], `stomped-${(t.name || 'clip').replace(/\W+/g, '-').toLowerCase()}.${ext}`, {type: blob.type || 'video/mp4'});
+    S.saveTrick = t.name || '';
+  }
+  const sh = document.createElement('section');
+  sh.id = 'posted-sheet'; sh.className = 'card install-sheet posted-sheet'; sh.setAttribute('role', 'status'); sh.setAttribute('aria-label', 'Your clip is posted');
+  sh.innerHTML = `<h3>posted. riders call it next.</h3>
+    <ol class="next3">
+      <li class="done"><b>posted</b><span>Your ${esc((t.name || 'clip').toLowerCase())} is in the feed.</span></li>
+      <li class="now"><b>riders call it</b><span>${n ? `It needs ${n} call${n > 1 ? 's' : ''}. ` : ''}Landed or bailed, and nobody sees who called what.</span></li>
+      <li><b>${worth ? `+${worth} pts` : 'the stamp'}</b><span>${worth ? 'Yours if they call it landed.' : "It's already in your bag, so no new points."} The bell tells you when it's decided.</span></li>
+    </ol>
+    <div class="btns">${canSave ? '<button class="btn" data-act="save-go">Save video</button>' : ''}${q
+      ? `<button class="btn primary" data-act="posted-judge">Call ${q} clip${q > 1 ? 's' : ''}</button>` : '<button class="btn primary" data-act="posted-done">Done</button>'}</div>
+    ${q ? '<button class="linkish" data-act="posted-done" style="justify-self:center">Done</button>' : ''}`;
+  document.body.appendChild(sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+}
+function hidePosted(){ const sh = $('posted-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
 function hideSave(){ S.saveFile = null; S.readyFile = null; const sh = $('save-sheet'); if (sh){ sh.classList.remove('open'); setTimeout(() => sh.remove(), 350); } }
 // Save adds the STOMPED stamp first (BRAND-DECISIONS.md: exported clips carry it), then hands over with one more tap
 async function saveGo(b){
@@ -3420,7 +3532,7 @@ function showRankUp(r, from = null){
 }
 function closeSplash(){
   const s = $('splash'); if (!s) return;
-  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; showRecHint(); }, 200);
+  s.classList.add('out'); setTimeout(() => { if ($('splash')) $('overlay').innerHTML = ''; showRecHint(); nextReward(); }, 200);
 }
 async function refresh(force = false){
   const wasFailed = S.loadFailed;
@@ -3485,7 +3597,17 @@ async function vote(clipId, landed, reason){
   const send = async () => {
     delete pendingVotes[clipId];
     const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
-    if (r.error){ delete J.voted[clipId]; toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
+    if (r.error){
+      // Decided while you were watching (audit 11/10): say so instead of "You can't do that here."
+      // It still counts as one of your calls and leaves your stack, so a new rider's first calls can't get stuck.
+      const late = r.error.code === '42501' || /row-level security/i.test(r.error.message || '');
+      if (!late){
+        delete J.voted[clipId];
+        toast(r.error.code === '23505' ? 'You already called that one.' : 'Vote failed: ' + r.error.message);
+        refreshReelItem(clipId); return;
+      }
+      toast('Other riders already called that one. Yours wasn\'t needed.', 4000);
+    }
     J.count++;
     S.myVotes.add(clipId);
     if (S.firstRun){ if (J.count >= S.firstRun.need) setTimeout(firstPass, 900); return; }
@@ -3592,13 +3714,13 @@ async function report(target, reason, clipId){
   S.menuFor = null;
   const r = await db.from('reports').insert({...target, reason});
   if (r.error){
-    toast(r.error.code === '23505' ? 'You already reported this.' : notInstalled(r.error) || notSetUp(r.error) ? "Reporting this isn't switched on yet (update 025)." : 'Report failed: ' + r.error.message);
+    toast(r.error.code === '23505' ? 'You already reported this.' : notInstalled(r.error) || notSetUp(r.error) ? "Reporting this isn't switched on yet (update 025)." : /reports today/.test(r.error.message) ? r.error.message : 'Report failed: ' + r.error.message, 6000);
     return render(true);
   }
   // Out of your sight right away, whatever anyone else decides
   if (target.clip_id){ S.clips = S.clips.filter(c => c.id !== target.clip_id); S.feed.rows = S.feed.rows.filter(c => c.id !== target.clip_id); }
   if (target.comment_id && S.comments[clipId]) S.comments[clipId] = S.comments[clipId].filter(m => m.id !== target.comment_id);
-  toast(target.profile_id ? 'Thanks, reported. Three reports take the photo down, and Connor checks every one.' : 'Thanks, reported. You won\'t see it again.');
+  toast(target.profile_id ? 'Thanks, reported. We look at every report.' : 'Thanks, reported. You won\'t see it again.');
   render(true);
 }
 async function removeClip(id){
@@ -3613,8 +3735,16 @@ async function deleteAccount(b){
   b.disabled = true; b.textContent = 'Deleting…';
   try {
     // Videos live in file storage, outside the tables, so delete them first
-    const files = mustOk(await db.storage.from('clips').list(myId(), {limit: 1000}));
-    if (files.length) mustOk(await db.storage.from('clips').remove(files.map(f => `${myId()}/${f.name}`)));
+    // (clips + motion logs, and pass photos: audit 11/10 found pass photos were never deleted)
+    for (const bucket of ['clips', 'passes']){
+      for (let round = 0; round < 20; round++){   // 1000 files at a time
+        const ls = await db.storage.from(bucket).list(myId(), {limit: 1000});
+        if (ls.error){ if (bucket === 'clips') throw ls.error; break; }   // no passes bucket yet (before 024): nothing to delete
+        if (!ls.data.length) break;
+        const gone = mustOk(await db.storage.from(bucket).remove(ls.data.map(f => `${myId()}/${f.name}`)));
+        if (!gone || !gone.length || ls.data.length < 1000) break;
+      }
+    }
     mustOk(await db.rpc('delete_my_account'));
     S.confirmDelete = false;
     toast('Your account is deleted.', 5000);
@@ -3790,24 +3920,27 @@ async function submitPost(){
   const rider = S.postRider && acceptedFriends().map(f => f.other).find(p => p && p.id === S.postRider);
   if (rider) fields.rider = rider.id;
   const blob = S.rec.blob, mot = S.rec.motion;
-  S.busy = true; const b = $('post-btn'); b.disabled = true; b.textContent = 'Uploading…';
+  S.busy = true; const b = $('post-btn'); b.disabled = true; postProgress(0);
   try {
     if (!blob || !blob.size) throw new Error('Nothing recorded');
-    if ((await postSaved({kind: 'post', fields, blob, motion: mot})).status === 'waiting'){
+    const worth = payout(fields.trick_id, fields.grab, fields.combo).pts;   // what it pays if riders call it landed
+    const posted = await postSaved({kind: 'post', fields, blob, motion: mot});
+    if (posted.status === 'waiting'){
       resetRecorder(); S.postCombo = []; S.tab = 'feed'; S.feed.mode = 'clips'; render(true); window.scrollTo(0, 0); offerSave(blob, fields.trick_id);
       toast(WAITING_MSG, 5000);
       return;
     }
-    resetRecorder(); S.postCombo = []; offerSave(blob, fields.trick_id);
+    resetRecorder(); S.postCombo = [];
     if (rider){   // stay on the camera: you're probably filming the next run too
+      offerSave(blob, fields.trick_id);
       toast(`Sent to @${rider.username}. It shows up once they tap Keep.`, 4000);
       render(true); return;
     }
-    toast('Posted. Riders are judging it now.');
     S.tab = 'feed'; S.feed.mode = 'clips'; await refresh(true); window.scrollTo(0, 0);
+    showPosted(posted.item.clipId, blob, fields.trick_id, worth);
   } catch (err){
     console.error(err); toast('Post failed: ' + err.message, 5000);
-    b.disabled = false; b.textContent = 'Post';
+    b.disabled = false; b.classList.remove('loading'); b.textContent = 'Post';
   } finally { S.busy = false; }
 }
 
@@ -3860,7 +3993,7 @@ function startDuelRecording(kind){
 async function sendDuelClip(){
   const ctx = S.rec.context, b = $('duel-send');
   const fields = {trick_id: ctx.trickId, grab: 'No grab', resort: S.me.home_resort || RESORTS[0]}, blob = S.rec.blob, mot = S.rec.motion;
-  S.busy = true; b.disabled = true; b.textContent = 'Uploading…';
+  S.busy = true; b.disabled = true; postProgress(0);
   try {
     if (!blob || !blob.size) throw new Error('Nothing recorded');
     const r = await postSaved({kind: 'duel', fields, blob, motion: mot, duelId: ctx.duelId, trick: ctx.kind === 'set' ? ctx.trickId : null});
@@ -3871,7 +4004,7 @@ async function sendDuelClip(){
     if (r.status === 'posted') await refresh(true);
     await openDuel(dId);
   } catch (err){
-    toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.textContent = 'Landed: send it';
+    toast('Upload failed: ' + err.message, 5000); b.disabled = false; b.classList.remove('loading'); b.textContent = 'Landed: send it';
   } finally { S.busy = false; }
 }
 async function bail(){
@@ -3895,8 +4028,9 @@ async function submitAuth(){
   try {
     if (S.authMode === 'signup'){
       if (!S.signupMt){ toast('Pick your home mountain (or other).'); return; }
-      const taken = await db.from('profiles').select('id').eq('username', username).maybeSingle();
-      if (taken.data){ toast('That username is taken. Try another.'); return; }
+      // ilike = ignore capitals, so "Connor" is taken when "connor" exists (the \ keeps _ from meaning "any letter")
+      const taken = await db.from('profiles').select('id').ilike('username', username.replace(/[\\%_]/g, '\\$&')).limit(1);
+      if (taken.data && taken.data.length){ toast('That username is taken. Try another.'); return; }
       // The confirmation email links back to wherever this page is running (laptop or online)
       const r = await db.auth.signUp({email, password,
         options: {data: {username, src: store.get('signup-src', '') || null, ...(pendingCrewCode() ? {crew: pendingCrewCode()} : {})}, emailRedirectTo: location.origin + location.pathname}});
@@ -3914,6 +4048,7 @@ async function submitAuth(){
   } catch (err){
     const msg = /not confirmed/i.test(err.message) ? 'Confirm your email first (check your inbox).'
       : /invalid login/i.test(err.message) ? 'Wrong email or password.'
+      : /database error saving new user/i.test(err.message) ? 'That username is taken or not allowed. Try another.'
       : err.message;
     toast(msg, 5000);
   } finally {
@@ -3935,7 +4070,7 @@ async function sendReset(b){
 }
 function showNewPassword(){
   $('overlay').innerHTML = `<div class="modal"><form class="card form" id="newpass-form">
-    <div class="rank-word t-plat" style="font-size:32px">New password</div>
+    <div class="rank-word t-plat" style="font-size:32px">new password</div>
     <div class="field"><label class="label" for="newpass">Pick a new password</label>
       <input id="newpass" type="password" autocomplete="new-password" required minlength="8">
       <span class="hint">At least 8 characters.</span></div>
@@ -3969,7 +4104,7 @@ document.addEventListener('click', async e => {
     case 'close-splash': return closeSplash();
     case 'ob-sport': setRides(b.dataset.k); return S.me.home_resort ? finishOnboarding('') : onboardResort();
     case 'ob-resort': return finishOnboarding(b.dataset.k);
-    case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); return; }
+    case 'reward-collect': { sfx('collect'); $('overlay').innerHTML = ''; const r = S.rewardRankUp; S.rewardRankUp = null; if (r) showRankUp(r.to, r.from); else nextReward(); return; }
     case 'rankup-tap': { const el = $('splash'); if (!el) return; if (el.classList.contains('done')) return closeSplash(); return el._finish && el._finish(); }
     case 'play': { const v = b.tagName === 'VIDEO' ? b : b.querySelector('video'); if (v) v.paused ? v.play().catch(() => {}) : v.pause(); return; }
     case 'flush': return outboxTap();
@@ -3979,6 +4114,8 @@ document.addEventListener('click', async e => {
     case 'save-go': return saveGo(b);
     case 'share-ready': return shareReady();
     case 'save-later': return hideSave();
+    case 'posted-done': S.saveFile = null; return hidePosted();
+    case 'posted-judge': S.saveFile = null; hidePosted(); return openTab('judge');
     case 'save-never': store.set('save-ask', 'off'); toast('Okay. Turn it back on in ⚙ settings.'); return hideSave();
     case 'install-later': store.set('install-later', String(Date.now() + 3 * 864e5)); return hideInstall();   // ask again in 3 days
     case 'judge-done': $('overlay').innerHTML = ''; return openTab('feed');
@@ -4197,6 +4334,15 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
     if (!store.get('signup-src', '')) store.set('signup-src', src.toLowerCase());
     q.delete('src');
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+  }
+}
+// ---------- straight to the form (?join=1 sign up, ?join=in sign in): where the front page's buttons land ----------
+{
+  const q = new URLSearchParams(location.search);
+  if (q.has('join')){
+    S.joinDirect = true; S.authMode = q.get('join') === 'in' ? 'signin' : 'signup';
+    q.delete('join');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   }
 }
 // ---------- crew invite links (?crew=CODE): one link per crew (028) ----------
