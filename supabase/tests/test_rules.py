@@ -8,6 +8,7 @@ Setup (once):  py -3.12 -m pip install pgserver "psycopg[binary]"
 Run:           py -3.12 supabase\tests\test_rules.py
 """
 
+import os
 import sys
 import tempfile
 import uuid
@@ -17,7 +18,8 @@ import pgserver
 import psycopg
 
 HERE = Path(__file__).resolve().parent
-SQL_FILES = sorted((HERE.parent).glob("0*.sql"))
+# SQL_UPTO=029 loads only 001-029: the way to see the story 6 checks fail on the old rules
+SQL_FILES = [f for f in sorted((HERE.parent).glob("0*.sql")) if int(f.name[:3]) <= int(os.environ.get("SQL_UPTO", 999))]
 
 # Just enough of Supabase for our SQL to load: roles, auth.users + auth.uid(), storage tables.
 SUPABASE_STANDINS = """
@@ -74,6 +76,7 @@ def main():
         sql = f.read_text(encoding="utf-8")
         q(sql if has_tz else sql.replace("'America/Denver'", "'UTC'"))
     print(f"Loaded {', '.join(f.name for f in SQL_FILES)}\n")
+    has_030 = one("select count(*) from information_schema.columns where table_name = 'judge_stats' and column_name = 'active_at'") == 1
 
     def user(name, points=0, new=False):
         uid = str(uuid.uuid4())
@@ -81,8 +84,10 @@ def main():
           uid, f"{name}@test", name)
         if points:
             q("update public.profiles set points = %s where id = %s", points, uid)
-        if not new:   # test riders are a few days old unless a check is about brand-new accounts (023)
-            q("update public.profiles set created_at = now() - interval '3 days' where id = %s", uid)
+        if not new:   # test riders are a month old and their calls count, unless a check is about brand-new accounts (030)
+            q("update public.profiles set created_at = now() - interval '30 days' where id = %s", uid)
+            if has_030:
+                q("insert into public.judge_stats (user_id, active_at) values (%s, now()) on conflict (user_id) do update set active_at = now()", uid)
         return uid
 
     voters = [user(f"judge{i}") for i in range(5)]
@@ -418,19 +423,17 @@ def main():
     judge(late)
     check("no guesses added after riders decided", blocked(ai_r, guess, late, 180), True)
 
-    print("\n-- Fake accounts count half for their first day (023) --")
+    print("\n-- Fake accounts (023, rewritten by 030; the full story is at the bottom) --")
     cheat, alt1, alt2, alt3 = user("cheater"), user("alt1", new=True), user("alt2", new=True), user("alt3", new=True)
     fake = post(cheat, "540")
     judge(fake, who=[alt1, alt2])
-    check("2 brand-new accounts can't verify your clip anymore", one("select status from public.clips where id = %s", fake), "pending")
-    judge(fake, who=[voters[0]])
-    check("...but one real rider + 2 new ones can (1 + 0.5 + 0.5)", one("select status from public.clips where id = %s", fake), "verified")
+    check("2 brand-new accounts can't verify your clip", one("select status from public.clips where id = %s", fake), "pending")
+    judge(fake, who=[user("real1"), user("real2")])
+    check("...2 real riders still can", one("select status from public.clips where id = %s", fake), "verified")
     target = post(d, "180")
     for r in (alt1, alt2, alt3):
         as_user(r, "insert into public.reports (clip_id, reason) values (%s, 'spam')", target)
     check("3 brand-new accounts can't hide someone's clip", one("select hidden from public.clips where id = %s", target), False)
-    q("update public.profiles set created_at = now() - interval '2 days' where id = any(%s)", [alt1, alt2, alt3])
-    check("after a day they count fully", one("select public.new_account_factor(%s)", alt1), 1)
 
     print("\n-- Season passes (024) --")
     p1, p2 = user("passer1"), user("passer2")
@@ -622,6 +625,124 @@ def main():
           blocked(talker, "update public.profiles set pass_photo = %s where id = %s", f"{talker}/../{quiet}/pass-1.jpg", talker), True)
     check("...a plain file in your folder is fine",
           blocked(talker, "update public.profiles set pass_photo = %s where id = %s", f"{talker}/pass-1731300000000.jpg", talker), False)
+
+    print("\n-- Story 6: a troll with fake accounts can't verify their own clips or hide mine (030) --")
+    status = lambda cid: one("select status from public.clips where id = %s", cid)
+    hidden = lambda cid: one("select hidden from public.clips where id = %s", cid)
+    def age(uid, days):
+        q("update public.profiles set created_at = now() - make_interval(days => %s) where id = %s", days, uid)
+    def call(uid, cid, landed=True):   # blocked(): a refused call or report doesn't stop the run (it does on the old rules)
+        blocked(uid, "insert into public.votes (clip_id, landed) values (%s, %s)", cid, landed)
+    def report(uid, cid):
+        blocked(uid, "insert into public.reports (clip_id, reason) values (%s, 'spam')", cid)
+    troll, victim, fair1, fair2 = user("troll30"), user("victim30"), user("fair30a"), user("fair30b")
+    warm = [post(fair1, t) for t in ("180", "360", "540")]          # three clips any new account can practice on
+    def alt(name, days=0, warmed=True):
+        uid = user(name, new=True)
+        if warmed:
+            for cid in warm:
+                call(uid, cid, landed=False)                        # a quarter of a "bailed" each: never decides them
+        age(uid, days)
+        return uid
+    # the old attack (audit 11/10): two alts that are a day or two old verify the troll's own clip
+    two = [alt("alt30a", days=2), alt("alt30b", days=2)]
+    mine = post(troll, "540")
+    for a in two: call(a, mine)
+    check("2 alts, two days old, can't verify the troll's own clip", status(mine), "pending")
+    seven = two + [alt(f"alt30c{i}", days=1) for i in range(5)]
+    for a in seven[2:]: call(a, mine)
+    check("...and neither can 7 of them (7 quarters = 1.75)", status(mine), "pending")
+    lazy = post(troll, "360")
+    for i in range(6): call(alt(f"lazy30{i}", days=2, warmed=False), lazy)
+    check("accounts that never posted or called 3 clips count for nothing, however many", status(lazy), "pending")
+    # the other old attack: three alts report a clip and it disappears
+    proud = post(victim, "360")
+    for a in seven[:3]: report(a, proud)
+    check("3 alts under 3 days old can't hide the victim's clip", hidden(proud), False)
+    old_alt = alt("alt30old", days=10)
+    report(old_alt, proud)
+    check("...still up with only 1 established reporter among them", hidden(proud), False)
+    busy = [post(victim, t) for t in ("180", "540", "720", "180", "540")]
+    for cid in busy: report(seven[3], cid)
+    check("a rider's 6th report in a day is refused", blocked(seven[3], "insert into public.reports (clip_id, reason) values (%s, 'spam')", post(victim, "180")), True)
+    check("...and 5 reports from one account hid nothing", [hidden(cid) for cid in busy], [False] * 5)
+    # blocking reaches the database
+    hater = user("hater30")
+    as_user(victim, "select public.block_user(%s)", hater)
+    clean = post(victim, "180")
+    check("a blocked rider can still tap Bailed (nothing tells them)", blocked(hater, "insert into public.votes (clip_id, landed) values (%s, false)", clean), False)
+    call(fair1, clean); call(fair2, clean)
+    check("...but it counts for nothing: 2 fair riders verify the clip", status(clean), "verified")
+    as_user(hater, "insert into public.comments (clip_id, body) values (%s, 'trash')", clean)
+    as_user(fair1, "insert into public.comments (clip_id, body) values (%s, 'clean')", clean)
+    check("a blocked rider's comment is invisible to the clip's owner", [r[0] for r in as_user(victim, "select body from public.comments where clip_id = %s", clean)], ["clean"])
+    check("...and to everyone else", [r[0] for r in as_user(fair2, "select body from public.comments where clip_id = %s", clean)], ["clean"])
+    check("...only they still see it", len(as_user(hater, "select body from public.comments where clip_id = %s and body = 'trash'", clean)), 1)
+
+    if has_030:
+        print("\n-- The rest of 030: warm-up, the 7-day quarter, Keep sticks, calls left --")
+        factor = lambda uid: float(one("select public.new_account_factor(%s)", uid))
+        check("votes needed is pinned at 2", one("select public.need_weight()"), 2)
+        fresh = user("fresh30", new=True)
+        check("a brand-new account's calls count 0", factor(fresh), 0.0)
+        pend = post(victim, "360")
+        call(fair1, pend)
+        for a in seven[:3]: call(a, pend)                           # 1 + 3 quarters = 1.75
+        call(fresh, pend)
+        check("...its 1st call is saved but changes nothing", (status(pend), one("select count(*) from public.votes where voter_id = %s", fresh)), ("pending", 1))
+        call(fresh, post(fair2, "180"))
+        check("...2 calls in: still 0", factor(fresh), 0.0)
+        call(fresh, post(fair2, "360"))
+        check("the 3rd call switches them on, at a quarter", factor(fresh), 0.25)
+        check("...and the earlier calls count from that moment (1.75 + 0.25 verifies)", status(pend), "verified")
+        poster30 = user("poster30", new=True)
+        post(poster30, "180")
+        check("posting a clip switches your calls on too", factor(poster30), 0.25)
+        age(poster30, 8)
+        check("after 7 days a call counts fully", factor(poster30), 1.0)
+        boss30 = user("boss30", new=True)
+        q("update public.profiles set is_founder = true where id = %s", boss30)
+        check("a founder's call always counts", factor(boss30), 1.0)
+        check("riders can't read who counts yet", blocked(troll, "select * from public.judge_stats"), True)
+        check("...or switch themselves on", blocked(troll, "select public.activate_judge(%s)", troll), True)
+        check("...or settle a clip by hand", blocked(troll, "select public.settle_clip(%s)", mine), True)
+        # reports: the rule itself, and Keep
+        for a in two: age(a, 4)
+        report(seven[5], proud)                                     # a new report makes the database look again
+        check("3+ reports with 2 established reporters hide it (the rule)", hidden(proud), True)
+        as_user(creator, "select public.founder_keep('clip', %s)", proud)
+        for a in (old_alt, two[0], two[1], seven[2]): report(a, proud)
+        check("after the founder's Keep, reports can't hide it again", hidden(proud), False)
+        check("riders can't mark a clip kept", blocked(troll, "update public.clips set kept = true where id = %s", mine), True)
+        q("update public.reports set created_at = now() - interval '25 hours' where reporter = %s", seven[3])
+        check("the report limit resets after a day", blocked(seven[3], "insert into public.reports (clip_id, reason) values (%s, 'spam')", post(victim, "180")), False)
+        note = as_user(fair1, "insert into public.comments (clip_id, body) values (%s, 'first') returning id", proud)[0][0]
+        for a in seven[4:7]:
+            as_user(a, "insert into public.reports (comment_id, reason) values (%s, 'spam')", note)
+        check("comments follow the same rule: 3 fresh reporters hide nothing", one("select hidden from public.comments where id = %s", note), False)
+        as_user(fair1, "update public.profiles set pass_photo = %s where id = %s", f"{fair1}/pass-30.jpg", fair1)
+        for a in seven[4:7]:
+            as_user(a, "insert into public.reports (profile_id, reason) values (%s, 'inappropriate')", fair1)
+        check("...and pass photos too", one("select pass_photo from public.profiles where id = %s", fair1) is not None, True)
+        # calls left
+        left = lambda uid, cid: dict((str(r[0]), r[1]) for r in as_user(uid, "select * from public.calls_left(%s::uuid[])", [cid])).get(cid)
+        cl = post(victim, "540")
+        check("calls left: a new clip needs 2", left(fair1, cl), 2)
+        call(seven[0], cl)
+        check("...a new account's quarter call doesn't move it yet", left(fair1, cl), 2)
+        call(fair1, cl)
+        check("...after one full call it needs 1", left(fair2, cl), 1)
+        call(fair2, cl, landed=False)
+        check("...a split vote says how many more could settle it", (status(cl), left(victim, cl)), ("pending", 2))
+        check("...a decided clip has no number", left(fair1, clean), None)
+        try:
+            with conn.transaction():
+                q("set local role anon")
+                conn.execute("select * from public.calls_left(%s::uuid[])", ([cl],))
+            anon_ok = True
+        except psycopg.Error:
+            anon_ok = False
+        check("...and signed-out visitors can't ask", anon_ok, False)
 
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
