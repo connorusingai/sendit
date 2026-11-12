@@ -1422,7 +1422,8 @@ const activeDuelWith = id => S.duels.find(d => d.status === 'active' && d.other 
 
 // Toast when one of my clips gets decided while the app is open.
 function noticeResults(before){
-  const mine = S.clips.filter(c => c.user_id === myId());
+  // S.myClips, not the feed: on a busy day your clip drops out of the newest 80 before it's verified (audit 11/10)
+  const mine = (S.myClips && S.myClips.length ? S.myClips : S.clips.filter(c => c.user_id === myId())).filter(c => c.rider_ok !== false);
   if (seenStatus){
     for (const c of mine){
       if (seenStatus[c.id] !== 'pending' || c.status === 'pending') continue;
@@ -3485,7 +3486,17 @@ async function vote(clipId, landed, reason){
   const send = async () => {
     delete pendingVotes[clipId];
     const r = await db.from('votes').insert({clip_id: clipId, landed, reason: reason || null});
-    if (r.error){ delete J.voted[clipId]; toast('Vote failed: ' + r.error.message); refreshReelItem(clipId); return; }
+    if (r.error){
+      // Decided while you were watching (audit 11/10): say so instead of "You can't do that here."
+      // It still counts as one of your calls and leaves your stack, so a new rider's first calls can't get stuck.
+      const late = r.error.code === '42501' || /row-level security/i.test(r.error.message || '');
+      if (!late){
+        delete J.voted[clipId];
+        toast(r.error.code === '23505' ? 'You already called that one.' : 'Vote failed: ' + r.error.message);
+        refreshReelItem(clipId); return;
+      }
+      toast('Other riders already called that one. Yours wasn\'t needed.', 4000);
+    }
     J.count++;
     S.myVotes.add(clipId);
     if (S.firstRun){ if (J.count >= S.firstRun.need) setTimeout(firstPass, 900); return; }
@@ -3613,8 +3624,16 @@ async function deleteAccount(b){
   b.disabled = true; b.textContent = 'Deleting…';
   try {
     // Videos live in file storage, outside the tables, so delete them first
-    const files = mustOk(await db.storage.from('clips').list(myId(), {limit: 1000}));
-    if (files.length) mustOk(await db.storage.from('clips').remove(files.map(f => `${myId()}/${f.name}`)));
+    // (clips + motion logs, and pass photos: audit 11/10 found pass photos were never deleted)
+    for (const bucket of ['clips', 'passes']){
+      for (let round = 0; round < 20; round++){   // 1000 files at a time
+        const ls = await db.storage.from(bucket).list(myId(), {limit: 1000});
+        if (ls.error){ if (bucket === 'clips') throw ls.error; break; }   // no passes bucket yet (before 024): nothing to delete
+        if (!ls.data.length) break;
+        const gone = mustOk(await db.storage.from(bucket).remove(ls.data.map(f => `${myId()}/${f.name}`)));
+        if (!gone || !gone.length || ls.data.length < 1000) break;
+      }
+    }
     mustOk(await db.rpc('delete_my_account'));
     S.confirmDelete = false;
     toast('Your account is deleted.', 5000);
@@ -3895,8 +3914,9 @@ async function submitAuth(){
   try {
     if (S.authMode === 'signup'){
       if (!S.signupMt){ toast('Pick your home mountain (or other).'); return; }
-      const taken = await db.from('profiles').select('id').eq('username', username).maybeSingle();
-      if (taken.data){ toast('That username is taken. Try another.'); return; }
+      // ilike = ignore capitals, so "Connor" is taken when "connor" exists (the \ keeps _ from meaning "any letter")
+      const taken = await db.from('profiles').select('id').ilike('username', username.replace(/[\\%_]/g, '\\$&')).limit(1);
+      if (taken.data && taken.data.length){ toast('That username is taken. Try another.'); return; }
       // The confirmation email links back to wherever this page is running (laptop or online)
       const r = await db.auth.signUp({email, password,
         options: {data: {username, src: store.get('signup-src', '') || null, ...(pendingCrewCode() ? {crew: pendingCrewCode()} : {})}, emailRedirectTo: location.origin + location.pathname}});
@@ -3914,6 +3934,7 @@ async function submitAuth(){
   } catch (err){
     const msg = /not confirmed/i.test(err.message) ? 'Confirm your email first (check your inbox).'
       : /invalid login/i.test(err.message) ? 'Wrong email or password.'
+      : /database error saving new user/i.test(err.message) ? 'That username is taken or not allowed. Try another.'
       : err.message;
     toast(msg, 5000);
   } finally {
