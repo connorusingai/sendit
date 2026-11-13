@@ -134,6 +134,7 @@ def main():
             pg.locator("[data-act=rec-start]").first.click()
             pg.wait_for_timeout(3500)
             pg.locator("[data-act=rec-stop]").first.click()
+            u.retake(pg, 3.5)
             pg.wait_for_selector("#post-form", timeout=8000)
             pg.select_option("#post-trick", index=1)
             pg.click("#post-btn")

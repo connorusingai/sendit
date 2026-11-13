@@ -124,6 +124,14 @@ body.signed-out .top{display:none}
 .pill.wait{border-style:dashed}
 .pill.totd{background:var(--hot);border-color:var(--hot);color:var(--hot-ink)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
+.qpicks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.qpick{min-height:56px;display:grid;align-content:center;gap:2px;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--snow);
+  color:var(--ink);font:600 16px/1.15 'Figtree',system-ui,sans-serif;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis}
+.qpick small{font-weight:500;font-size:12px;color:var(--mute)}
+.qpick.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.qpick.on small{color:var(--ink)}
+.resort-line{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px}
+.resort-line b{color:var(--ink)}
 .chip{height:30px;padding:0 10px;display:inline-flex;align-items:center;border-radius:4px;font-size:13px;font-weight:600;background:var(--ink);color:#fff}
 .chip.next,.chip.todo{background:none;color:var(--mute);border:1.5px dashed var(--line-2)}
 .bar{height:6px;background:var(--line);overflow:hidden}
@@ -603,6 +611,8 @@ body.cam-on .cam .controls{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
 .fd-riders{display:grid;gap:6px;font-size:13px}
 .fd-riders > div{display:grid;border-top:1px solid var(--line);padding-top:6px}
 .fd-riders span{color:var(--mute)}
+.fd-riders.vouch > div{grid-template-columns:1fr auto;align-items:center;gap:10px}
+.fd-riders.vouch b{color:var(--ink)}
 .reports-q{display:grid;gap:8px}
 .reports-q > div{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:8px}
 .reports-q > div > span{flex:1;min-width:0}
@@ -1581,7 +1591,8 @@ function buildInbox(act){
         html: isNew ? `${who} challenged you to S.K.I.` : `Your turn in S.K.I. vs ${who}`});
     }
     if (d.status === 'done' && d.winner) out.push({key: 'done:' + d.id, time: d.updated_at, icon: 'crown', go: {act: 'duel', id: d.id},
-      html: d.winner === me ? `You beat ${who} at S.K.I.` : `${who} won your S.K.I. game`});
+      html: d.winner === me ? (d.timed_out ? `${who} ran out of time. You win S.K.I.` : `You beat ${who} at S.K.I.`)
+                            : (d.timed_out ? `You ran out of time vs ${who}. They win S.K.I.` : `${who} won your S.K.I. game`)});
   }
   for (const c of S.filmedForMe || []){
     const by = c.filmed_by && S.filmers[c.filmed_by];
@@ -1837,6 +1848,11 @@ document.addEventListener('loadedmetadata', e => {
 }, true);
 for (const [ev, on] of [['play', true], ['pause', false]])
   document.addEventListener(ev, e => { const p = e.target.closest && e.target.closest('.player'); if (p) p.classList.toggle('playing', on); }, true);
+// S.K.I. clock (031): each turn has 72 hours. After that the rider waiting can claim the win
+// (or cancel a game nobody ever started). Nothing ends by itself.
+const TURN_HOURS = 72;
+const turnHoursLeft = d => TURN_HOURS - (Date.now() - Date.parse(d.updated_at)) / 3600e3;
+const timeLeft = h => h >= 48 ? `${Math.floor(h / 24)} days` : h >= 24 ? '1 day' : h >= 1 ? `${Math.floor(h)} hour${Math.floor(h) === 1 ? '' : 's'}` : 'under an hour';
 const lettersHtml = (n, small) => `<div class="letters ${small ? 'small' : ''}">${['S','K','I'].map((l, i) => `<b class="${i < n ? 'hit' : ''}">${l}</b>`).join('')}</div>`;
 
 // Skeletons shown while a screen's data is on its way
@@ -2153,7 +2169,8 @@ const views = {
         <button class="calls" data-act="tab" data-tab="judge"><span>${jq.length ? `${jq.length} clip${jq.length > 1 ? 's' : ''} need${jq.length > 1 ? '' : 's'} your call` : 'all caught up. no clips to call'}</span>
           <span class="thumbs"><span style="padding-left:10px">${thumbs}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
         ${turns.slice(0, 2).map(d => `<button class="calls duel-turn" data-act="open-duel" data-id="${d.id}"><span><b>your turn</b> vs @${esc(d.other.username)} · ${
-            d.phase === 'match' ? 'match the ' + esc(trickById(d.trick_id).name.toLowerCase()) : 'set a trick'}</span>
+            d.phase === 'match' ? 'match the ' + esc(trickById(d.trick_id).name.toLowerCase()) : 'set a trick'}${
+            turnHoursLeft(d) < 24 ? ` · ${turnHoursLeft(d) > 0 ? timeLeft(turnHoursLeft(d)) + ' left' : 'time\'s up'}` : ''}</span>
           <span class="thumbs"><span class="ski">${lettersHtml(d.challenger === myId() ? d.letters_challenger : d.letters_opponent, true)}</span>${chev}</span></button>`).join('')}
         ${turns.length > 2 ? `<button class="calls duel-turn" data-act="tab" data-tab="duels"><span>+${turns.length - 2} more duel${turns.length > 3 ? 's' : ''} waiting on you</span>${chev}</button>` : ''}
         <div class="week3">
@@ -2523,13 +2540,16 @@ function duelsList(){
         <div class="avatar">${esc(initials(d.other.username))}</div>
         <div><b>vs @${esc(d.other.username)}</b><div class="hint" style="display:flex;gap:10px;align-items:center;margin-top:4px">
           you ${lettersHtml(myL, true)} them ${lettersHtml(theirL, true)}</div></div>
-        ${d.turn === myId() ? '<span class="your-turn">your turn</span>' : '<span class="hint">their turn</span>'}</button>`;
+        ${d.turn === myId() ? `<span class="your-turn">your turn${turnHoursLeft(d) < 24 ? ` · ${turnHoursLeft(d) > 0 ? timeLeft(turnHoursLeft(d)) + ' left' : 'time\'s up'}` : ''}</span>`
+          : `<span class="hint">${turnHoursLeft(d) > 0 ? 'their turn' : 'they ran out of time'}</span>`}</button>`;
     }).join('') : `<div class="empty"><strong>no duels yet</strong>${friends.length ? 'Pick a friend. You set a trick, they have to land it. Miss and you take a letter: spell S-K-I and you lose.' : 'A duel is a game of S.K.I. with a friend. Add a friend to start one.'}</div>`}
     ${!mine.length && friends.length ? friends.map(f => friendRow(f.other, 'friend')).join('') : ''}
     ${done.length ? `<h3>recent duels</h3><ul class="board">${done.map(d => {
         const won = d.winner === myId();
+        if (!d.winner) return `<li data-act="open-duel" data-id="${d.id}"><span class="n">–</span>
+          <div><b>@${esc(d.other.username)}</b><div class="hint">Cancelled</div></div><span class="score">0</span></li>`;
         return `<li data-act="open-duel" data-id="${d.id}"><span class="n">${won ? 'W' : 'L'}</span>
-          <div><b>@${esc(d.other.username)}</b><div class="hint">${won ? 'You won' : 'You lost'}</div></div>
+          <div><b>@${esc(d.other.username)}</b><div class="hint">${won ? 'You won' : 'You lost'}${d.timed_out ? (won ? ': they ran out of time' : ': you ran out of time') : ''}</div></div>
           <span class="score">${won ? '+' : '−'}${d.rating_change || 0}</span></li>`;
       }).join('')}</ul>` : ''}`;
 }
@@ -2568,14 +2588,23 @@ function duelDetail(){
     return text + clip;
   });
   let turn;
-  if (d.status === 'done'){
+  if (d.status === 'done' && !d.winner){
+    turn = `<div class="what">cancelled.</div>
+      <div class="hint">Nobody moved for ${TURN_HOURS / 24} days, so nobody won. Ratings didn't change.</div>
+      ${activeDuelWith(other.id) ? '' : `<button class="btn primary glove" data-act="challenge" data-id="${other.id}">Start a new game</button>`}`;
+  } else if (d.status === 'done'){
     const won = d.winner === myId();
     turn = `<div class="what">${won ? 'you won.' : `@${esc(other.username)} won.`}</div>
+      ${d.timed_out ? `<div class="hint">${won ? `@${esc(other.username)} ran out of time.` : 'You ran out of time on your turn.'}</div>` : ''}
       <div class="hint">Rating ${won ? '+' : '−'}${d.rating_change || 0}</div>
       ${activeDuelWith(other.id) ? '' : `<button class="btn primary glove" data-act="challenge" data-id="${other.id}">Rematch</button>`}`;
   } else if (d.turn !== myId()){
+    const h = turnHoursLeft(d);
     turn = `<div class="what">@${esc(other.username)}'s turn</div>
-      <div class="hint">${d.phase === 'set' ? 'They\'re picking a trick to set.' : `They're trying to match your ${esc(trickById(d.trick_id).name)}.`}</div>`;
+      <div class="hint">${d.phase === 'set' ? 'They\'re picking a trick to set.' : `They're trying to match your ${esc(trickById(d.trick_id).name)}.`}
+        ${h > 0 ? `They have ${timeLeft(h)} left to move.` : `They haven't moved in ${TURN_HOURS / 24} days.`}</div>
+      ${h > 0 ? '' : moves.length ? '<button class="btn primary glove" data-act="claim-duel">Claim the win</button>'
+                                  : '<button class="btn glove" data-act="claim-duel">Cancel this game</button>'}`;
   } else if (d.phase === 'set'){
     const sport = S.duelSport || S.sport;
     turn = `<div class="what">your turn: set a trick</div>
@@ -2590,6 +2619,11 @@ function duelDetail(){
       ${setMove && setMove.clips && setMove.clips.video_path ? `<div style="border-radius:4px;overflow:hidden">${player(videoUrl(setMove.clips.video_path))}</div>` : ''}
       <div class="btns"><button class="btn bad" data-act="duel-miss">I missed</button>
         <button class="btn primary" data-act="duel-record" data-kind="match">Film my match</button></div>`;
+  }
+  if (d.status === 'active' && d.turn === myId()){
+    const h = turnHoursLeft(d);
+    turn += `<p class="hint duel-clock">${h > 0 ? `You have ${timeLeft(h)} left to move. After that @${esc(other.username)} can claim the win.`
+                                                : `Time's up: @${esc(other.username)} can claim the win. Move now to keep the game going.`}</p>`;
   }
   const watching = S.watchMove && moves.find(m => m.id === S.watchMove);
   return `<button class="linkish back" data-act="duels-home">← All duels</button>
@@ -2800,6 +2834,13 @@ async function startRecording(){
   R.recorder.ondataavailable = e => { if (e.data && e.data.size) R.chunks.push(e.data); };
   R.recorder.onstop = () => {
     const type = (R.recorder.mimeType || mime || 'video/webm').split(';')[0];
+    // An empty take (seen 11/13 in desktop Chrome: the first H.264 recording after the camera opens can come out
+    // 0 bytes) never reaches the post form: say so and open the camera again. The next take works.
+    if (!R.chunks.some(c => c.size)){
+      logEvent('record_empty', type);
+      resetRecorder(true); toast("That take didn't save. Film it again.", 4000);
+      return openCamera();
+    }
     R.blob = new Blob(R.chunks, {type});
     if (R.url) URL.revokeObjectURL(R.url);
     R.url = URL.createObjectURL(R.blob);
@@ -2818,7 +2859,7 @@ async function startRecording(){
   R.stopTimer = setTimeout(() => { if (R.recorder && R.recorder.state === 'recording') R.recorder.stop(); }, MAX_SECONDS * 1000);
 }
 function resetRecorder(keepContext){
-  const R = S.rec;
+  const R = S.rec; S.postResortOpen = false;
   if (R.recorder && R.recorder.state === 'recording'){ R.recorder.onstop = null; R.recorder.stop(); }
   clearInterval(R.tick); clearTimeout(R.stopTimer); stopStream(); motion.stop();
   if (R.url) URL.revokeObjectURL(R.url);
@@ -2835,6 +2876,7 @@ function postForm(){
         pals.map(p => `<option value="${p.id}" ${S.postRider === p.id ? 'selected' : ''}>@${esc(p.username)} (I filmed it)</option>`).join('')}</select>
       <span class="hint" id="post-rider-hint">${riderHint(pals.find(p => p.id === S.postRider))}</span></div>` : ''}
     ${needsSportSwitch() ? sportSwitch(S.sport, 'sport') : ''}
+    ${quickPicks()}
     <div class="two">
       <div class="field"><label class="label" for="post-cat">Category</label>
         <select id="post-cat">${sp.cats.map(c => `<option>${c}</option>`).join('')}</select></div>
@@ -2843,7 +2885,9 @@ function postForm(){
     </div>
     <div class="field"><label class="label" for="post-trick">Trick</label><select id="post-trick" required></select></div>
     <div class="field" id="post-combo" hidden></div>
-    <div class="field"><label class="label" for="post-resort">Resort</label>
+    ${S.me.home_resort && !S.postResortOpen ? `<div class="field resort-line"><span>at <b>${esc(S.me.home_resort)}</b></span>
+      <button class="linkish" type="button" data-act="post-resort-open">Somewhere else?</button></div>` : ''}
+    <div class="field" ${S.me.home_resort && !S.postResortOpen ? 'hidden' : ''}><label class="label" for="post-resort">Resort</label>
       <select id="post-resort" required>${S.me.home_resort ? '' : '<option value="" selected disabled>Where did you ride?</option>'}${
         resortOptions(S.me.home_resort)}</select></div>
     <div class="preview"><div><div class="label">Worth</div><span class="hint" id="post-why">A grab adds 20%</span></div>
@@ -2851,6 +2895,21 @@ function postForm(){
     <div class="btns"><button class="btn" type="button" data-act="retake">Retake</button>
       <button class="btn primary" type="submit" id="post-btn">Post</button></div>
   </form>`;
+}
+// One tap instead of two dropdowns (gloves on the lift). The lists below stay for anything else.
+function quickPicks(){
+  const sp = S.sport, ids = [];
+  const add = id => { const t = trickById(id); if (t && sportOf(t) === sp && !ids.includes(id)) ids.push(id); };
+  if (S.postPreset) add(S.postPreset);
+  if (S.totds[sp]) add(S.totds[sp]);
+  for (const c of S.myClips || []){ if (ids.length >= 4) break; add(c.trick_id); }
+  for (const t of nextPicks(sp)){ if (ids.length >= 6) break; add(t.id); }
+  if (!ids.length) return '';
+  return `<div class="field"><span class="label" id="qp-label">Your trick</span>
+    <div class="qpicks" role="group" aria-labelledby="qp-label">${ids.slice(0, 6).map(id => { const t = trickById(id);
+      return `<button type="button" class="qpick" data-act="quick-trick" data-id="${id}" aria-pressed="false">${esc(t.name.toLowerCase())}<small>${
+        isTotd(id) ? '2× today' : S.landed.has(id) ? 'in your bag' : t.pts + ' pts'}</small></button>`; }).join('')}</div>
+    <span class="hint">Something else? Pick it below.</span></div>`;
 }
 const riderHint = p => p ? `It goes to @${esc(p.username)}'s Base. Once they tap Keep, it's theirs: their points, their profile.`
   : 'Filming a friend? Pick them here.';
@@ -2876,6 +2935,7 @@ function syncPost(){
   const p = sel.value ? payout(sel.value, $('post-grab').value, S.postCombo) : {pts: 0, why: 'Pick a trick to see what it pays'};
   $('post-pts').textContent = p.pts;
   $('post-why').textContent = p.why;
+  document.querySelectorAll('.qpick').forEach(q => { const on = q.dataset.id === sel.value; q.classList.toggle('on', on); q.setAttribute('aria-pressed', on); });
 }
 // Rail combos: after the first rail trick, chain up to MAX_COMBO more (270 On → Swap → 270 Out).
 function syncCombo(firstId){
@@ -3255,15 +3315,35 @@ function founderDash(){
     <div class="label">Trick AI (in the background)</div>
     <p class="hint">${ai ? `Guessed ${ai.guessed} clips. Of ${ai.decided} riders decided: landed right ${ai.landed_right}/${ai.landed_calls}, spin right ${ai.spin_right}/${ai.spin_calls}, can't tell ${ai.cant_tell}.`
       : 'Starts once supabase/022 is pasted.'}</p>
+    ${vouchList(F.fresh)}
     <div class="label">Riders</div>
     <div class="fd-riders">${(st.riders_list || []).map(r => `<div><b>@${esc(r.username)}</b><span>${esc(r.src)} · joined ${ago2(r.joined)} · seen ${ago2(r.last_seen)}</span>
       <span class="mono">${r.clips} clips · ${r.votes} votes</span></div>`).join('')}</div></section>`;
 }
+// Vouch (031): riders under 7 days old count a quarter (or 0 before their first post / 3 calls). Vouch for the ones
+// you know in real life and their calls count fully right away.
+function vouchList(fresh){
+  if (!fresh) return '';
+  if (fresh.error) return `<div class="label">Vouch for riders you know</div><p class="hint">${esc(fresh.error)}</p>`;
+  const counts = n => n >= 1 ? 'calls count fully' : n > 0 ? 'calls count ¼' : 'calls count 0 until they post or make 3 calls';
+  return `<div class="label">Vouch for riders you know</div>
+    <p class="hint">New accounts count less for a week, so fake accounts can't verify clips. Vouch for riders you know in real life and their calls count fully now.</p>
+    <div class="fd-riders vouch">${fresh.rows.length ? fresh.rows.map(r => `<div><span><b>@${esc(r.username)}</b> · joined ${ago(r.joined)} · ${counts(Number(r.counts))}</span>
+      <button class="btn small ${r.vouched ? '' : 'primary'}" data-act="vouch" data-id="${r.id}" data-on="${r.vouched ? '' : '1'}" aria-pressed="${r.vouched}">${r.vouched ? 'Vouched · undo' : 'Vouch'}</button></div>`).join('')
+      : '<p class="hint">No riders under a week old.</p>'}</div>`;
+}
+async function vouch(id, on){
+  const r = await db.rpc('vouch', {p_user: id, p_on: on});
+  if (r.error){ toast(notSetUp(r.error) ? 'Paste supabase/031 first to switch vouching on.' : 'Vouch failed: ' + r.error.message, 5000); return; }
+  toast(on ? 'Vouched. Their calls count fully now.' : 'Vouch removed.'); logEvent('founder_vouch', on ? 'on' : 'off');
+  await loadFounderDash();
+}
 async function loadFounderDash(){
   S.fdash = {loading: true}; render(true);
-  const [st, ai] = await Promise.all([db.rpc('founder_stats'), db.rpc('founder_ai_stats')]);
+  const [st, ai, fr] = await Promise.all([db.rpc('founder_stats'), db.rpc('founder_ai_stats'), db.rpc('founder_new_riders')]);
+  const fresh = fr.error ? {error: notSetUp(fr.error) ? 'Paste supabase/031 to vouch for riders here.' : fr.error.message} : {rows: fr.data || []};
   S.fdash = st.error ? {error: /function|schema|does not exist/i.test(st.error.message) ? 'Paste supabase/021_events.sql into Supabase first (2 min).' : st.error.message}
-                     : {stats: st.data, ai: ai.error ? null : ai.data};
+                     : {stats: st.data, ai: ai.error ? null : ai.data, fresh};
   render(true);
 }
 
@@ -3756,7 +3836,7 @@ async function deleteAccount(b){
 }
 
 // ---------- pass photo (any photo from the camera roll), blocking, founder removes (supabase/024-026) ----------
-const notSetUp = err => /pass_photo|passes|blocks|block_user|unblock_user|founder_remove|founder_reports|founder_keep|profile_id|bucket/i.test(err && err.message || '')
+const notSetUp = err => /pass_photo|passes|blocks|block_user|unblock_user|founder_remove|founder_reports|founder_keep|claim_duel|vouch|founder_new_riders|profile_id|bucket/i.test(err && err.message || '')
   && /exist|find|schema cache|not found|column/i.test(err && err.message || '');
 // Crop to the pass's photo window (76 × 96), shrink, JPEG: about 40 KB
 async function passPhotoBlob(file){
@@ -4179,6 +4259,7 @@ document.addEventListener('click', async e => {
       S.squad = b.dataset.k; store.set('squad', S.squad); S.duelId = null;
       return render(true);
     case 'fdash': return loadFounderDash();
+    case 'vouch': return vouch(id, !!b.dataset.on);
     case 'fq-judge': return openTab('judge');
     case 'invite': {
       const url = `${location.origin}${location.pathname}?from=${encodeURIComponent(S.me.username)}`;
@@ -4244,6 +4325,9 @@ document.addEventListener('click', async e => {
     case 'rec-start': return startRecording();
     case 'rec-stop': if (S.rec.recorder && S.rec.recorder.state === 'recording') S.rec.recorder.stop(); return;
     case 'retake': dropDraft(); resetRecorder(true); return openCamera();
+    case 'quick-trick': { const t = trickById(id); if (!t) return; S.postPreset = id; return syncPost(); }
+    case 'post-resort-open': { S.postResortOpen = true; const r = $('post-resort'); if (!r) return;   // open in place: the trick and grab stay picked
+      r.closest('.field').hidden = false; const line = b.closest('.resort-line'); if (line) line.remove(); r.focus(); return; }
     case 'combo-del': S.postCombo.splice(Number(id), 1); return syncPost();
     case 'rec-cancel': { const dId = S.rec.context && S.rec.context.duelId; dropDraft(); resetRecorder(); return dId ? openDuel(dId) : render(true); }
     // friends & duels
@@ -4263,6 +4347,12 @@ document.addEventListener('click', async e => {
       await refresh(true); return openDuel(ctx.duelId);
     }
     case 'watch-move': S.watchMove = Number(id); return render(true);
+    case 'claim-duel': {
+      const r = await db.rpc('claim_duel', {p_duel: S.duelId});
+      if (r.error){ toast(notSetUp(r.error) ? 'Paste supabase/031 first to switch the S.K.I. clock on.' : r.error.message, 5000); return; }
+      toast(r.data === 'cancelled' ? 'Game cancelled. No rating change.' : 'You win: they ran out of time.');
+      return refresh(true);
+    }
     case 'forfeit':
       if (!confirm('Forfeit this duel? You lose rating like a normal loss.')) return;
       { const r = await db.rpc('forfeit_duel', {p_duel: S.duelId}); if (r.error) toast(r.error.message); }

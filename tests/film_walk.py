@@ -90,6 +90,7 @@ def main():
             cam.first.click(); pg.wait_for_timeout(1500)
         pg.locator("[data-act=rec-start]").first.click(); pg.wait_for_timeout(3000)
         pg.locator("[data-act=rec-stop]").first.click()
+        w.retake(pg, 3)
         pg.wait_for_selector("#post-form", timeout=8000)
         ok.append(("Post form: 'Who's riding?' lists @pal", pg.locator("#post-rider option", has_text="@pal").count() == 1))
         pg.select_option("#post-rider", PAL["id"]); pg.wait_for_timeout(200)
