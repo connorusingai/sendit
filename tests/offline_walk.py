@@ -78,6 +78,7 @@ def main():
             pg.locator("[data-act=rec-start]").first.click()
             pg.wait_for_timeout(2500)
             pg.locator("[data-act=rec-stop]").first.click()
+            u.retake(pg)
             pg.wait_for_selector("#post-form", timeout=8000)
             pg.wait_for_timeout(800)          # the draft saves
 

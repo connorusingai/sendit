@@ -77,14 +77,21 @@ def wants_one(req):
 
 
 def film(pg, seconds=2.5):
-    """Open the camera (Chrome's fake one), record, stop. Ends on the review screen."""
+    """Open the camera (Chrome's fake one), record, stop. Ends on the review screen.
+    Desktop Chrome sometimes records the first take after the camera opens as 0 bytes; the app then says
+    "That take didn't save" and opens the camera again, so film again like a rider would (up to 3 takes)."""
     cam = pg.locator("[data-act=cam-open]")
     if cam.count():
         cam.first.click()
         pg.wait_for_timeout(1500)
-    pg.locator("[data-act=rec-start]").first.click()
-    pg.wait_for_timeout(int(seconds * 1000))
-    pg.locator("[data-act=rec-stop]").first.click()
+    for _ in range(3):
+        pg.locator("[data-act=rec-start]").first.click()
+        pg.wait_for_timeout(int(seconds * 1000))
+        pg.locator("[data-act=rec-stop]").first.click()
+        pg.wait_for_timeout(1200)
+        if not pg.locator("[data-act=rec-start]").count():
+            return
+        pg.wait_for_timeout(800)
 
 
 def texts(pg, sel):

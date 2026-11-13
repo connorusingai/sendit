@@ -69,6 +69,13 @@ Tabs: **base / feed / record / crew / me** (record = orange dot in a ring, in th
 - **Judge:** video on top, a thin progress line, then "@rider · trick · mountain", "landed or bailed?", two 64px
   buttons, "needs 2 more calls. Your call is anonymous." + Skip. The number comes from the database (`calls_left()`,
   supabase/030); anywhere a clip is still being judged it carries the same "needs N more calls".
+- **Post form:** up to 6 one-tap trick buttons first (56px, two columns: what you came to film, today's 2x trick,
+  your recent tricks, what's next for you), each with one small line (2x today / in your bag / N pts). Nothing is
+  picked for you. The category + trick lists stay underneath for anything else. With a home mountain the resort is
+  one line, "at eldora · Somewhere else?".
+- **S.K.I. clock:** 72 hours a turn (supabase/031). Your turn says how long you have; in the last day Base and the
+  duel list show it too. Nothing ends by itself: once their turn is over 72 hours, you get "Claim the win" (or
+  "Cancel this game" if nobody ever moved).
 - **Posted:** right after a post, one sheet: "posted. riders call it next." and three steps with a dot each
   (posted / riders call it, needs N calls / +points, the bell tells you). The Post button fills with the upload percent.
 - **Reward:** your clip, the STOMPED stamp slams on, +points huge, the bar to your next pass, Collect (60px).

@@ -68,6 +68,19 @@ def handle(route, req):
     return route.fulfill(json={} if single else [])
 
 
+def retake(pg, seconds=2.5, tries=2):
+    """Call right after clicking Stop. Desktop Chrome sometimes records the first take after the camera opens as
+    0 bytes; the app then says "That take didn't save" and opens the camera again. Film again, like a rider would."""
+    for _ in range(tries):
+        pg.wait_for_timeout(1200)
+        if not pg.locator("[data-act=rec-start]").count():
+            return
+        pg.wait_for_timeout(800)
+        pg.locator("[data-act=rec-start]").first.click()
+        pg.wait_for_timeout(int(seconds * 1000))
+        pg.locator("[data-act=rec-stop]").first.click()
+
+
 def serve():
     # A free port every run: on Windows two servers can share a fixed port, and then another worktree's server answers
     global PORT, URL

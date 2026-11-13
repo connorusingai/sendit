@@ -744,6 +744,59 @@ def main():
             anon_ok = False
         check("...and signed-out visitors can't ask", anon_ok, False)
 
+    has_031 = one("select count(*) from pg_proc where proname = 'claim_duel'") == 1
+    if has_031:
+        print("\n-- 031: the founder's vouch --")
+        boss = user("boss31")
+        q("update public.profiles set is_founder = true where id = %s", boss)
+        pal, rando = user("pal31", new=True), user("rando31")
+        check("a rider can't vouch for anyone (or themselves)", blocked(rando, "select public.vouch(%s)", rando), True)
+        check("...nor read the new-riders list", blocked(rando, "select * from public.founder_new_riders()"), True)
+        wait31 = post(rando, "540")
+        call(pal, wait31)                                            # a day-one call: saved, counts 0
+        check("a day-one rider's call doesn't count yet", (factor(pal), status(wait31)), (0.0, "pending"))
+        rows = as_user(boss, "select username, vouched, counts from public.founder_new_riders()")
+        check("the founder sees new riders and what their calls count", ("pal31", False, 0) in [(r[0], r[1], float(r[2])) for r in rows], True)
+        as_user(boss, "select public.vouch(%s)", pal)
+        check("vouched: their calls count fully on day one", factor(pal), 1.0)
+        call(fair1, wait31)
+        check("...so 1 fair call + their earlier call verifies the clip", status(wait31), "verified")
+        pal2 = user("pal31b", new=True)
+        early = post(rando, "180")
+        call(pal2, early); call(fair2, early)                         # 0 + 1: waiting
+        as_user(boss, "select public.vouch(%s)", pal2)
+        check("vouching looks again at clips they already called", status(early), "verified")
+        as_user(boss, "select public.vouch(%s, false)", pal)
+        check("undo: back to the normal new-account rule (1 call made: still 0)", factor(pal), 0.0)
+        check("...and the list shows who's vouched", sorted((r[0], r[1]) for r in as_user(boss, "select username, vouched from public.founder_new_riders()")
+                                                           if r[0] in ("pal31", "pal31b")), [("pal31", False), ("pal31b", True)])
+
+        print("\n-- 031: 72 hours a turn in Game of S.K.I. --")
+        k1, k2 = user("clock31a"), user("clock31b")
+        as_user(k1, "insert into public.friendships (addressee) values (%s)", k2)
+        as_user(k2, "update public.friendships set status = 'accepted' where requester = %s", k1)
+        g = as_user(k1, "select public.start_duel(%s)", k2)[0][0]
+        stale = lambda h: q("update public.duels set updated_at = now() - make_interval(hours => %s) where id = %s", h, g)
+        check("the rider whose turn it is can't claim", blocked(k1, "select public.claim_duel(%s)", g), True)
+        stale(71)
+        check("71 hours in: they still have time", blocked(k2, "select public.claim_duel(%s)", g), True)
+        stale(73)
+        check("nobody ever moved: claiming cancels it, no rating change",
+              (as_user(k2, "select public.claim_duel(%s)", g)[0][0], one("select status from public.duels where id = %s", g),
+               one("select winner from public.duels where id = %s", g), one("select rating_change from public.duels where id = %s", g)),
+              ("cancelled", "done", None, 0))
+        g = as_user(k1, "select public.start_duel(%s)", k2)[0][0]
+        check("...and a new game can start right away", g is not None, True)
+        as_user(k1, "select public.duel_move(%s, false, '540', null)", g)   # k1 bails the set: k2's turn to set
+        r2 = one("select rating from public.profiles where id = %s", k2)
+        stale(80)
+        check("a stranger can't claim someone else's game", blocked(rando, "select public.claim_duel(%s)", g), True)
+        check("72 hours on their turn: the waiting rider claims the win",
+              (as_user(k1, "select public.claim_duel(%s)", g)[0][0], one("select winner::text from public.duels where id = %s", g),
+               one("select timed_out from public.duels where id = %s", g)), ("won", k1, True))
+        check("...and the slow rider's rating drops like any loss", one("select rating from public.profiles where id = %s", k2) < r2, True)
+        check("...a finished game can't be claimed again", blocked(k1, "select public.claim_duel(%s)", g), True)
+
     conn.close()
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if all(results) else 1)

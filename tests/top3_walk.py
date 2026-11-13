@@ -66,6 +66,7 @@ def main():
         ok.append(("Timer has no typed dot", "●" not in pg.locator("#rec-timer").inner_text()))
         pg.screenshot(path=w.SHOTS / "top3-3-recording.png")
         stop.click()
+        w.retake(pg)
 
         # 3. Post form
         pg.wait_for_selector("#post-form", timeout=8000); pg.wait_for_timeout(500)
